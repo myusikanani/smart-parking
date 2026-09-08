@@ -1,10 +1,17 @@
 const ParkingSlot = require('../models/ParkingSlot');
 const { logAudit } = require('../utils/auditLogger');
+const { seedAll } = require('../utils/seeder');
 
 const allowedStatuses = ['available', 'occupied', 'reserved', 'maintenance'];
 
 exports.getSlots = async (req, res) => {
   try {
+    const totalSlots = await ParkingSlot.countDocuments();
+    if (totalSlots === 0) {
+      console.log('Database empty, auto-seeding initial data...');
+      await seedAll();
+    }
+
     const filter = {};
     if (req.query.category) filter.category = req.query.category;
     if (req.query.floor) filter.floor = req.query.floor;

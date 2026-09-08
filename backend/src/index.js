@@ -77,6 +77,21 @@ app.use('/api/realtime', require('./routes/realtime'));
 app.use('/api/layout', require('./routes/layout'));
 app.use('/api/payments', require('./routes/payments'));
 
+// Direct web seed endpoint for initialization
+app.get('/api/seed', async (req, res) => {
+  try {
+    const { seedAll } = require('./utils/seeder');
+    const result = await seedAll();
+    res.json({
+      success: true,
+      message: 'Database seeded successfully with default slots, users, and security watchlist!',
+      data: result,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
