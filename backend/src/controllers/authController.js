@@ -19,21 +19,6 @@ const registerUser = async (req, res) => {
   }
 
   try {
-    if (mongoose.connection.readyState !== 1) {
-      const userRole = req.body.role === 'security' ? 'security' : 'user';
-      return res.status(201).json({
-        success: true,
-        token: `demo-token-${Date.now()}`,
-        user: {
-          id: 'demo-user-id-' + userRole,
-          name: name || 'Registered User',
-          email: email,
-          phone: phone || '9876543210',
-          role: userRole
-        }
-      });
-    }
-
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'User already exists' });
@@ -90,21 +75,11 @@ const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    if (mongoose.connection.readyState !== 1) {
-      const userRole = email?.includes('admin') ? 'admin' : email?.includes('security') ? 'security' : 'user';
-      const userName = userRole === 'admin' ? 'Admin User' : userRole === 'security' ? 'Security Officer' : 'Demo Driver';
-      return res.status(200).json({
-        success: true,
-        token: `demo-token-${Date.now()}`,
-        user: {
-          id: 'demo-user-id-' + userRole,
-          name: userName,
-          email: email || 'user@example.com',
-          phone: '9876543210',
-          role: userRole,
-          twoFactorEnabled: false
-        }
-      });
+    const totalUsers = await User.countDocuments();
+    if (totalUsers === 0) {
+      console.log('No users found in database, auto-seeding default accounts...');
+      const { seedAll } = require('../utils/seeder');
+      await seedAll();
     }
 
     const user = await User.findOne({ email }).select('+password +twoFactorSecret +twoFactorTempSecret');
