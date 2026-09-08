@@ -52,6 +52,21 @@ app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Parking System API is running with Socket.io & Cron Jobs', timestamp: new Date().toISOString() });
 });
 
+// Ensure DB connection before processing API requests (crucial for Vercel Serverless)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('Database connection error:', err.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Database connection error. Ensure MongoDB Atlas allows 0.0.0.0/0 in Network Access.',
+      error: err.message,
+    });
+  }
+});
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/slots', require('./routes/slots'));
 app.use('/api/bookings', require('./routes/bookings'));
