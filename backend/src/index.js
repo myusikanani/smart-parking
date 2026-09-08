@@ -1,0 +1,70 @@
+const http = require('http');
+const express = require('express');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+
+const connectDB = require('./config/db');
+const errorHandler = require('./middleware/errorHandler');
+const { initSocket } = require('./utils/socket');
+const { isAllowedOrigin } = require('./utils/corsOrigins');
+const { initCronJobs } = require('./jobs/cronJobs');
+
+const path = require('path');
+dotenv.config({ path: path.join(__dirname, '../.env') });
+dotenv.config({ path: './.env' }); // fallback
+
+connectDB();
+
+const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.io
+initSocket(server);
+
+// Initialize Background Cron Jobs
+initCronJobs();
+
+// Security Middleware
+app.use(helmet());
+app.use(mongoSanitize());
+
+// Rate Limiting (brute-force protection for credentials endpoints)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200,
+  message: { success: false, message: 'Too many requests, please try again later.' }
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+
+// Comma-separated list of allowed origins, e.g. "http://localhost:5173,https://yourdomain.com"
+app.use(cors({
+  origin: (origin, callback) => callback(null, isAllowedOrigin(origin)),
+  credentials: true,
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+app.get('/api/health', (req, res) => {
+  res.json({ success: true, message: 'Parking System API is running with Socket.io & Cron Jobs', timestamp: new Date().toISOString() });
+});
+
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/slots', require('./routes/slots'));
+app.use('/api/bookings', require('./routes/bookings'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/security', require('./routes/security'));
+app.use('/api/ai', require('./routes/ai'));
+app.use('/api/realtime', require('./routes/realtime'));
+app.use('/api/layout', require('./routes/layout'));
+app.use('/api/payments', require('./routes/payments'));
+
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`🚀 Server with Socket.io running on port ${PORT}`);
+});
