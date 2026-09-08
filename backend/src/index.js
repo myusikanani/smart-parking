@@ -48,6 +48,17 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    name: 'ParkEase Smart Parking API Server',
+    status: 'online',
+    healthCheck: '/api/health',
+    slots: '/api/slots',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Parking System API is running with Socket.io & Cron Jobs', timestamp: new Date().toISOString() });
 });
