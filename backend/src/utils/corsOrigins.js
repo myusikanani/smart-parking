@@ -15,6 +15,10 @@ const getAllowedOrigins = () =>
     .map((o) => o.trim())
     .filter(Boolean);
 
-const isAllowedOrigin = (origin) => !origin || getAllowedOrigins().includes(origin);
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  const allowed = getAllowedOrigins();
+  return allowed.includes('*') || allowed.includes(origin);
+};
 
 module.exports = { getAllowedOrigins, isAllowedOrigin };
