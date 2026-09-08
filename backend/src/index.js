@@ -65,6 +65,10 @@ app.use('/api/payments', require('./routes/payments'));
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server with Socket.io running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  server.listen(PORT, () => {
+    console.log(`🚀 Server with Socket.io running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
