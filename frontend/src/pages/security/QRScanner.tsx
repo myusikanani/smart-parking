@@ -16,6 +16,8 @@ import {
   HiOutlineCamera,
   HiOutlineExclamationTriangle,
   HiOutlineTicket,
+  HiOutlinePhoto,
+  HiOutlineSparkles,
 } from 'react-icons/hi2';
 import { securityApi } from '../../services/api';
 import { CarSedan } from '../../components/vehicles';
@@ -127,6 +129,7 @@ const QRScanner = () => {
   // OCR Pipeline States & Refs
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const ocrWorkerRef = useRef<Worker | null>(null);
   const ocrLoopActiveRef = useRef(false);
   const [ocrTelemetry, setOcrTelemetry] = useState<{ text: string; confidence: number; isProcessing: boolean }>({
@@ -287,73 +290,128 @@ const QRScanner = () => {
     }
   };
 
-  // Run Real-Time Frame Grabber & Optical Recognition Loop
-  const runPlateOcrLoop = async () => {
-    const worker = await getOcrWorker();
-
-    while (ocrLoopActiveRef.current && videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      if (video.readyState < 2 || video.videoWidth === 0) {
-        await new Promise((r) => setTimeout(r, 100));
-        continue;
-      }
-
+  // Core Plate OCR Recognition Pipeline
+  const processImageForPlateOCR = async (imageSource: CanvasImageSource, sourceWidth: number, sourceHeight: number): Promise<boolean> => {
+    try {
+      const worker = await getOcrWorker();
+      const canvas = canvasRef.current || document.createElement('canvas');
+      canvas.width = sourceWidth;
+      canvas.height = sourceHeight;
       const ctx = canvas.getContext('2d');
-      if (!ctx) break;
+      if (!ctx) return false;
 
-      // Extract the license plate ROI (central 70% width, 35% height)
-      const roiWidth = Math.floor(video.videoWidth * 0.7);
-      const roiHeight = Math.floor(video.videoHeight * 0.35);
-      const roiX = Math.floor((video.videoWidth - roiWidth) / 2);
-      const roiY = Math.floor((video.videoHeight - roiHeight) / 2);
+      ctx.drawImage(imageSource, 0, 0, sourceWidth, sourceHeight);
 
-      canvas.width = roiWidth;
-      canvas.height = roiHeight;
-
-      // Draw ROI to canvas
-      ctx.drawImage(video, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
-
-      // Contrast enhancement & Binarization filter
-      const imgData = ctx.getImageData(0, 0, roiWidth, roiHeight);
+      // Contrast enhancement & Grayscale (adaptive for glare and shadows)
+      const imgData = ctx.getImageData(0, 0, sourceWidth, sourceHeight);
       const d = imgData.data;
       for (let i = 0; i < d.length; i += 4) {
         const v = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-        const boosted = v > 120 ? 255 : 0; // threshold
+        const contrast = 1.25;
+        const factor = (259 * (contrast * 255 + 255)) / (255 * (259 - contrast * 255));
+        const boosted = Math.min(255, Math.max(0, factor * (v - 128) + 128));
         d[i] = boosted;
         d[i + 1] = boosted;
         d[i + 2] = boosted;
       }
       ctx.putImageData(imgData, 0, 0);
 
-      try {
-        setOcrTelemetry((prev) => ({ ...prev, isProcessing: true }));
-        const result = await worker.recognize(canvas);
-        const raw = result.data.text || '';
-        const cleaned = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      setOcrTelemetry((prev) => ({ ...prev, isProcessing: true }));
+      const result = await worker.recognize(canvas);
+      const raw = result.data.text || '';
+      const cleaned = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-        setOcrTelemetry({
-          text: cleaned,
-          confidence: Math.round(result.data.confidence || 0),
-          isProcessing: false,
-        });
+      // Regex matching for standard plates: State(2) + Num(1-2) + Series(1-3) + Num(4)
+      const plateRegex = /[A-Z]{2}[0-9]{1,2}[A-Z]{1,3}[0-9]{4}/;
+      const match = cleaned.match(plateRegex);
+      const extractedPlate = match ? match[0] : (cleaned.length >= 4 && cleaned.length <= 14 ? cleaned : '');
 
-        // Test if extracted text matches a valid license plate pattern (5 to 13 alphanumeric characters)
-        if (cleaned.length >= 5 && cleaned.length <= 13 && result.data.confidence > 50) {
-          // Found matching plate!
-          ocrLoopActiveRef.current = false;
-          setScannerStatus('detected');
-          if (soundEnabled) playBeep(true);
-          stopScanner();
-          handleVerify(cleaned);
-          break;
-        }
-      } catch (err) {
-        console.warn('OCR Frame error:', err);
+      setOcrTelemetry({
+        text: extractedPlate || cleaned,
+        confidence: Math.round(result.data.confidence || 0),
+        isProcessing: false,
+      });
+
+      if (extractedPlate && extractedPlate.length >= 4) {
+        setScannerStatus('detected');
+        if (soundEnabled) playBeep(true);
+        stopScanner();
+        handleVerify(extractedPlate);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.warn('OCR processing error:', err);
+      setOcrTelemetry((prev) => ({ ...prev, isProcessing: false }));
+      return false;
+    }
+  };
+
+  // Run Real-Time Frame Grabber & Optical Recognition Loop
+  const runPlateOcrLoop = async () => {
+    while (ocrLoopActiveRef.current && videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      if (video.readyState < 2 || video.videoWidth === 0) {
+        await new Promise((r) => setTimeout(r, 100));
+        continue;
       }
 
-      // 250ms frame interval to maintain smooth UI
-      await new Promise((r) => setTimeout(r, 250));
+      // Extract ROI: center 80% width, 45% height
+      const roiWidth = Math.floor(video.videoWidth * 0.8);
+      const roiHeight = Math.floor(video.videoHeight * 0.45);
+      const roiX = Math.floor((video.videoWidth - roiWidth) / 2);
+      const roiY = Math.floor((video.videoHeight - roiHeight) / 2);
+
+      const canvas = canvasRef.current;
+      canvas.width = roiWidth;
+      canvas.height = roiHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
+        const recognized = await processImageForPlateOCR(canvas, roiWidth, roiHeight);
+        if (recognized) {
+          break;
+        }
+      }
+
+      // 300ms frame interval for smooth responsiveness
+      await new Promise((r) => setTimeout(r, 300));
+    }
+  };
+
+  // Handle Photo / Image Upload for License Plate OCR
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCameraPermissionError('');
+    setOcrTelemetry({ text: 'Analyzing image file...', confidence: 0, isProcessing: true });
+
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = async () => {
+      URL.revokeObjectURL(objectUrl);
+      const found = await processImageForPlateOCR(img, img.naturalWidth || img.width, img.naturalHeight || img.height);
+      if (!found) {
+        setCameraPermissionError('Could not clearly read a license plate from the uploaded image. Please try a clearer photo or enter manually.');
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      setCameraPermissionError('Failed to load image file. Please try another picture.');
+    };
+    img.src = objectUrl;
+    e.target.value = '';
+  };
+
+  // Manual Frame Capture
+  const handleCaptureFrame = async () => {
+    if (!videoRef.current || videoRef.current.videoWidth === 0) return;
+    const video = videoRef.current;
+    setOcrTelemetry((prev) => ({ ...prev, isProcessing: true }));
+    const found = await processImageForPlateOCR(video, video.videoWidth, video.videoHeight);
+    if (!found) {
+      setCameraPermissionError('Plate not clearly recognized in current frame. Please hold steady or adjust lighting.');
     }
   };
 
@@ -726,21 +784,50 @@ const QRScanner = () => {
                   : 'Camera is currently in standby mode'}
               </p>
 
-              <div className="w-full max-w-sm flex gap-3">
+              {/* HIDDEN FILE INPUT FOR UPLOADS */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+
+              <div className="w-full max-w-md flex flex-col sm:flex-row gap-3">
                 {!scannerActive ? (
-                  <button
-                    onClick={startScanner}
-                    className="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-600 via-indigo-600 to-emerald-600 hover:opacity-90 text-white shadow-xl flex items-center justify-center gap-2"
-                  >
-                    📷 Start {scannerType === 'qr' ? 'QR Pass Scanner' : 'AI Plate Scanner'}
-                  </button>
+                  <>
+                    <button
+                      onClick={startScanner}
+                      className="flex-1 py-3 px-5 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-600 via-indigo-600 to-emerald-600 hover:opacity-90 text-white shadow-xl flex items-center justify-center gap-2"
+                    >
+                      <HiOutlineCamera className="w-5 h-5" /> Start {scannerType === 'qr' ? 'QR Pass Scanner' : 'AI Plate Scanner'}
+                    </button>
+                    {scannerType === 'plate_ocr' && (
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="py-3 px-5 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 shadow-lg flex items-center justify-center gap-2"
+                      >
+                        <HiOutlinePhoto className="w-5 h-5" /> Upload Plate Image
+                      </button>
+                    )}
+                  </>
                 ) : (
-                  <button
-                    onClick={stopScanner}
-                    className="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-white/10 hover:bg-white/15 text-white flex items-center justify-center gap-2"
-                  >
-                    🛑 Stop Camera
-                  </button>
+                  <>
+                    <button
+                      onClick={stopScanner}
+                      className="flex-1 py-3 px-5 rounded-xl font-bold text-sm bg-white/10 hover:bg-white/15 text-white flex items-center justify-center gap-2"
+                    >
+                      🛑 Stop Camera
+                    </button>
+                    {scannerType === 'plate_ocr' && (
+                      <button
+                        onClick={handleCaptureFrame}
+                        className="py-3 px-5 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-600 to-cyan-600 hover:opacity-95 text-white shadow-lg flex items-center justify-center gap-2"
+                      >
+                        <HiOutlineSparkles className="w-5 h-5" /> Capture Now
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
