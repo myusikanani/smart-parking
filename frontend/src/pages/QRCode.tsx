@@ -83,25 +83,221 @@ const QRCode = () => {
     return () => { mounted = false; };
   }, [location.state]);
 
-  const handleDownload = () => {
-    if (!booking || !booking.qrCode) return;
+  const handleDownload = async () => {
+    if (!booking) return;
 
-    // Fetch image as blob for direct download
-    fetch(booking.qrCode)
-      .then(res => res.blob())
-      .then(blob => {
+    try {
+      const raw = booking as unknown as Record<string, unknown>;
+      const slotObj = (raw.slot as Record<string, unknown>) || {};
+      const slotNum = String(booking.slotNumber || slotObj.number || 'A-01');
+      const floorNum = Number(slotObj.floor || 1);
+      const categoryStr = String(booking.category || slotObj.category || 'Four Wheeler')
+        .replace('-', ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+      const userObj = typeof raw.user === 'object' && raw.user !== null ? (raw.user as Record<string, unknown>) : null;
+      const driverName = String(booking.userName || userObj?.name || 'Registered Driver');
+      const vehicleNum = String(booking.vehicleNumber || 'MH-12-AB-3456');
+      const passId = String(booking.id || raw._id || raw.id || 'GATE').slice(0, 8).toUpperCase();
+
+      const startDate = new Date(booking.startTime);
+      const endDate = new Date(booking.endTime);
+      const timeFormat = (d: Date) => isNaN(d.getTime()) ? '—' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const dateFormat = (d: Date) => isNaN(d.getTime()) ? '—' : d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+
+      const dateStr = dateFormat(startDate);
+      const timeStr = `${timeFormat(startDate)} → ${timeFormat(endDate)}`;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 800;
+      canvas.height = 1180;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Dark futuristic background
+      ctx.fillStyle = '#0b0f19';
+      ctx.fillRect(0, 0, 800, 1180);
+
+      // Card border
+      ctx.strokeStyle = '#06b6d4';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(20, 20, 760, 1140);
+
+      // Header Gradient
+      const grad = ctx.createLinearGradient(20, 20, 780, 240);
+      grad.addColorStop(0, '#0891b2');
+      grad.addColorStop(0.5, '#4f46e5');
+      grad.addColorStop(1, '#059669');
+      ctx.fillStyle = grad;
+      ctx.fillRect(20, 20, 760, 220);
+
+      // Header Text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 32px sans-serif';
+      ctx.fillText('ParkEase Gate Pass', 50, 80);
+
+      ctx.fillStyle = '#a5f3fc';
+      ctx.font = 'bold 14px monospace';
+      ctx.fillText('DIGITAL RFID & QR PARKING ACCESS', 50, 110);
+
+      // Confirmed Badge in Header
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.beginPath();
+      ctx.roundRect(620, 50, 130, 36, 12);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.fillText('CONFIRMED', 638, 74);
+
+      // Bay & Plate Banner inside Header
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+      ctx.beginPath();
+      ctx.roundRect(50, 130, 700, 90, 16);
+      ctx.fill();
+
+      ctx.fillStyle = '#67e8f9';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillText('RESERVED BAY', 70, 155);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 32px monospace';
+      ctx.fillText(`BAY ${slotNum}`, 70, 195);
+
+      ctx.fillStyle = '#cffafe';
+      ctx.font = '14px sans-serif';
+      ctx.fillText(`Floor ${floorNum} • ${categoryStr}`, 240, 195);
+
+      // Plate Box
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.beginPath();
+      ctx.roundRect(520, 145, 210, 60, 12);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText('VEHICLE PLATE', 535, 165);
+      ctx.fillStyle = '#a5f3fc';
+      ctx.font = 'bold 20px monospace';
+      ctx.fillText(vehicleNum, 535, 192);
+
+      // Details Grid Box (4 tiles)
+      const drawTile = (x: number, y: number, w: number, h: number, label: string, val: string, valColor = '#ffffff') => {
+        ctx.fillStyle = '#131b2e';
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, 14);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.fillText(label.toUpperCase(), x + 16, y + 28);
+
+        ctx.fillStyle = valColor;
+        ctx.font = 'bold 17px sans-serif';
+        ctx.fillText(val, x + 16, y + 56);
+      };
+
+      drawTile(50, 270, 335, 75, 'Driver Name', driverName);
+      drawTile(415, 270, 335, 75, 'Vehicle Type', categoryStr);
+      drawTile(50, 360, 335, 75, 'Entry Date', dateStr);
+      drawTile(415, 360, 335, 75, 'Duration', timeStr, '#38bdf8');
+
+      // Perforation line
+      ctx.setLineDash([8, 8]);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(50, 465);
+      ctx.lineTo(750, 465);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Notches
+      ctx.fillStyle = '#000000';
+      ctx.beginPath();
+      ctx.arc(20, 465, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(780, 465, 16, 0, Math.PI * 2);
+      ctx.fill();
+
+      // QR Container Box
+      ctx.fillStyle = '#101828';
+      ctx.beginPath();
+      ctx.roundRect(50, 490, 700, 560, 20);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Instructions Header
+      ctx.fillStyle = '#34d399';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🛡️ Verified Digital Entry Gate Pass', 400, 530);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '13px sans-serif';
+      ctx.fillText('Scan at boom barrier camera for barrier opening', 400, 555);
+
+      // White background for QR code
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(260, 580, 280, 280, 24);
+      ctx.fill();
+
+      // Draw QR Image
+      const qrImg = new Image();
+      qrImg.crossOrigin = 'anonymous';
+      qrImg.src =
+        booking.qrCode ||
+        `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
+          booking.qrToken || booking.id || 'PARKSMART-PASS'
+        )}`;
+
+      await new Promise((resolve) => {
+        qrImg.onload = () => {
+          ctx.drawImage(qrImg, 275, 595, 250, 250);
+          resolve(null);
+        };
+        qrImg.onerror = () => resolve(null);
+      });
+
+      // Footer bar inside QR Box
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 16px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`PASS ID: ${passId}   •   STATUS: PAID`, 400, 915);
+
+      ctx.fillStyle = '#64748b';
+      ctx.font = '13px sans-serif';
+      ctx.fillText(`Valid 10m before arrival until 15m after slot time`, 400, 950);
+
+      // Bottom Footer Copyright
+      ctx.fillStyle = '#475569';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('PARKEASE SMART PARKING SYSTEM • OFFICIAL ENTRY PASS', 400, 1100);
+
+      // Trigger Download
+      canvas.toBlob((blob) => {
+        if (!blob) return;
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `ParkEase-QRPass-${(booking.id || 'GATE').slice(0, 8).toUpperCase()}.png`;
+        link.download = `ParkEase-ParkingPass-${passId}.png`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-      })
-      .catch(() => {
+      }, 'image/png');
+    } catch (err) {
+      console.error('Download pass error:', err);
+      // Fallback to direct QR image download
+      if (booking.qrCode) {
         window.open(booking.qrCode, '_blank');
-      });
+      }
+    }
   };
 
   const handleEmailQR = async () => {
@@ -191,11 +387,11 @@ const QRCode = () => {
 
       <div className="space-y-3">
         <button
-          className="btn-neon w-full py-3 px-6 rounded-xl font-semibold text-lg flex items-center justify-center gap-2"
+          className="btn-neon w-full py-3.5 px-6 rounded-xl font-semibold text-base flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20"
           onClick={handleDownload}
         >
           <HiOutlineArrowDownTray className="w-5 h-5" />
-          Download QR
+          Download Parking Pass Card (PNG)
         </button>
         <button
           className="btn-outline w-full py-3 px-6 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 disabled:opacity-50"
