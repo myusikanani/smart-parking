@@ -26,6 +26,11 @@ const QRCode = () => {
     const isPaidWithQR = (b: Record<string, unknown>) =>
       b.paymentStatus === 'paid' && !!b.qrCode && !!b.qrToken;
 
+    const normalizeBooking = (b: Record<string, unknown>): Booking => ({
+      ...b,
+      id: String(b._id || b.id || ''),
+    } as unknown as Booking);
+
     const loadPass = async () => {
       setLoading(true);
       setNoPass(false);
@@ -33,7 +38,7 @@ const QRCode = () => {
         if (state?.booking) {
           const raw = state.booking as Record<string, unknown>;
           if (isPaidWithQR(raw)) {
-            if (mounted) setBooking(raw as unknown as Booking);
+            if (mounted) setBooking(normalizeBooking(raw));
             return;
           }
           // Booking passed but not paid yet (or no QR) — never fabricate one.
@@ -45,7 +50,7 @@ const QRCode = () => {
           const res = await bookingApi.getById(state.bookingId as string);
           const raw = res.booking as unknown as Record<string, unknown> | undefined;
           if (mounted && raw && isPaidWithQR(raw)) {
-            setBooking(raw as unknown as Booking);
+            setBooking(normalizeBooking(raw));
             return;
           }
           if (mounted) setNoPass(true);
@@ -58,7 +63,7 @@ const QRCode = () => {
         if (mounted && res.bookings && res.bookings.length > 0) {
           const paid = (res.bookings as Array<Record<string, unknown>>).find(isPaidWithQR);
           if (paid) {
-            setBooking(paid as unknown as Booking);
+            setBooking(normalizeBooking(paid));
             return;
           }
           setNoPass(true);

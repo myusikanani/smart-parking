@@ -163,8 +163,20 @@ exports.scanQR = async (req, res) => {
     // 1. Check if token is a Dynamic Rotating QR Token
     if (rawToken.startsWith('PS-DYN|')) {
       const dynamicCheck = verifyDynamicQRToken(rawToken);
-      if (dynamicCheck.bookingId) {
-        booking = await Booking.findById(dynamicCheck.bookingId).populate('slot').populate('user');
+      const candidateId = dynamicCheck.bookingId;
+      if (candidateId) {
+        if (mongoose.Types.ObjectId.isValid(candidateId)) {
+          booking = await Booking.findById(candidateId).populate('slot').populate('user');
+        }
+        if (!booking) {
+          booking = await Booking.findOne({
+            $or: [
+              { _id: mongoose.Types.ObjectId.isValid(candidateId) ? candidateId : null },
+              { qrToken: candidateId },
+              { vehicleNumber: candidateId.toUpperCase() }
+            ]
+          }).populate('slot').populate('user');
+        }
       }
       if (!booking && !dynamicCheck.isValid) {
         return res.status(400).json({

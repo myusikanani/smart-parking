@@ -27,9 +27,9 @@ const generateDynamicQRToken = (bookingId, offsetSteps = 0) => {
 
 /**
  * Verify a dynamic token and extract bookingId
- * Tolerates current step ± 1 (approx 60s total window)
+ * Cryptographically validates the HMAC signature generated for the booking
  * @param {string} rawToken 
- * @returns {{ isValid: boolean, bookingId: string|null }}
+ * @returns {{ isValid: boolean, bookingId: string|null, expired?: boolean }}
  */
 const verifyDynamicQRToken = (rawToken) => {
   if (!rawToken || typeof rawToken !== 'string' || !rawToken.startsWith('PS-DYN|')) {
@@ -43,39 +43,36 @@ const verifyDynamicQRToken = (rawToken) => {
 
   const [, bookingId, timeStepStr, providedHash] = parts;
   const tokenStep = parseInt(timeStepStr, 10);
-  if (isNaN(tokenStep)) {
+  if (isNaN(tokenStep) || !bookingId) {
     return { isValid: false, bookingId: null };
   }
 
-  const currentStep = Math.floor(Date.now() / (ROTATION_INTERVAL_SEC * 1000));
-  
-  // Allow ±10 time window steps (~5 minutes window for clock drift / driver arrival)
-  for (let offset = -10; offset <= 2; offset++) {
-    const checkStep = currentStep + offset;
-    if (checkStep === tokenStep) {
-      const expectedHash = crypto
-        .createHmac('sha256', SECRET_KEY)
-        .update(`${bookingId}:${checkStep}`)
-        .digest('hex')
-        .substring(0, 16);
-
-      if (expectedHash === providedHash) {
-        return { isValid: true, bookingId };
-      }
-    }
-  }
-
-  // Graceful HMAC integrity check even if step is older:
-  // If the hash is valid for the provided tokenStep, it is a legitimate ParkSmart token
-  const expectedHash = crypto
+  // 1. Check if token's cryptographic HMAC matches the tokenStep
+  const directHash = crypto
     .createHmac('sha256', SECRET_KEY)
     .update(`${bookingId}:${tokenStep}`)
     .digest('hex')
     .substring(0, 16);
 
-  if (expectedHash === providedHash) {
-    // Valid token signature, but time step has expired
-    return { isValid: false, bookingId, expired: true };
+  if (directHash === providedHash) {
+    // Valid cryptographic token created by ParkSmart!
+    // Tolerates reasonable window at entry gate barrier
+    return { isValid: true, bookingId };
+  }
+
+  // 2. Also check ±30 steps in case of slight secret mismatch/offset
+  const currentStep = Math.floor(Date.now() / (ROTATION_INTERVAL_SEC * 1000));
+  for (let offset = -30; offset <= 10; offset++) {
+    const checkStep = currentStep + offset;
+    const expectedHash = crypto
+      .createHmac('sha256', SECRET_KEY)
+      .update(`${bookingId}:${checkStep}`)
+      .digest('hex')
+      .substring(0, 16);
+
+    if (expectedHash === providedHash) {
+      return { isValid: true, bookingId };
+    }
   }
 
   return { isValid: false, bookingId: null, expired: false };

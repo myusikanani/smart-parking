@@ -43,6 +43,9 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const rawBooking = booking as unknown as Record<string, unknown>;
+  const bookingId = String(booking.id || rawBooking._id || rawBooking.id || '');
+
   const [dynamicQrUrl, setDynamicQrUrl] = useState<string>(booking.qrCode || '');
   const [secondsLeft, setSecondsLeft] = useState<number>(30);
   const [isRotating, setIsRotating] = useState<boolean>(false);
@@ -62,12 +65,11 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
     let isMounted = true;
 
     const fetchDynamicQR = async () => {
-      const bId = booking.id || (booking as unknown as { _id?: string })._id;
-      if (!bId) return;
+      if (!bookingId) return;
 
       try {
         setIsRotating(true);
-        const res = await bookingApi.getDynamicQR(bId);
+        const res = await bookingApi.getDynamicQR(bookingId);
         if (isMounted && res.success && res.dynamicQrCode) {
           setDynamicQrUrl(res.dynamicQrCode);
           setSecondsLeft(res.expiresIn || 30);
@@ -97,10 +99,9 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
       isMounted = false;
       clearInterval(timer);
     };
-  }, [booking.id, booking.qrCode]);
+  }, [bookingId, booking.qrCode]);
 
   // Extract display values
-  const rawBooking = booking as unknown as Record<string, unknown>;
   const slotObj = (rawBooking.slot as Record<string, unknown>) || {};
   const slotNum = String(booking.slotNumber || slotObj.number || 'A-01');
   const floorNum = Number(slotObj.floor || 1);
@@ -364,7 +365,7 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
         {/* Footer Summary */}
         <div className="flex items-center justify-between pt-3 border-t border-white/10">
           <p className="text-xs font-semibold text-gray-400 tracking-wider font-mono">
-            PASS ID: {(booking.id || 'BK-LIVE').slice(0, 8).toUpperCase()}
+            PASS ID: {(bookingId || 'BK-LIVE').slice(0, 8).toUpperCase()}
           </p>
           <Badge variant={paymentVariant[booking.paymentStatus] || 'success'}>
             {(booking.paymentStatus || 'paid').toUpperCase()}
