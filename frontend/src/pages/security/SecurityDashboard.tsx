@@ -115,12 +115,12 @@ const SecurityDashboard = () => {
   const [gateMode, setGateMode] = useState<'entry' | 'exit'>('entry');
   const [time, setTime] = useState(new Date());
   const [stats, setStats] = useState({
-    entries: 14,
-    exits: 9,
-    occupancy: 72,
-    pendingVerifications: 2,
-    blacklistedCount: 2,
-    openIncidentsCount: 1
+    entries: 0,
+    exits: 0,
+    occupancy: 0,
+    pendingVerifications: 0,
+    blacklistedCount: 0,
+    openIncidentsCount: 0
   });
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(false);
@@ -167,15 +167,15 @@ const SecurityDashboard = () => {
     try {
       setLoading(true);
       const data = await securityApi.getDashboard();
-      if (data.success) {
+      if (data.success && data.stats) {
         const s = data.stats as Record<string, unknown>;
         setStats({
-          entries: (s.todayEntries as number) || (s.entries as number) || 14,
-          exits: (s.todayExits as number) || (s.exits as number) || 9,
-          occupancy: (s.currentOccupancy as number) || (s.occupancy as number) || 72,
-          pendingVerifications: (s.pendingVerifications as number) || 2,
-          blacklistedCount: (s.blacklistedCount as number) ?? 2,
-          openIncidentsCount: (s.openIncidentsCount as number) ?? 1
+          entries: Number(s.todayEntries ?? s.entries ?? 0),
+          exits: Number(s.todayExits ?? s.exits ?? 0),
+          occupancy: Number(s.currentOccupancy ?? s.occupancy ?? 0),
+          pendingVerifications: Number(s.pendingVerifications ?? 0),
+          blacklistedCount: Number(s.blacklistedCount ?? 0),
+          openIncidentsCount: Number(s.openIncidentsCount ?? 0)
         });
       }
     } catch {
@@ -573,29 +573,21 @@ const SecurityDashboard = () => {
           icon={<HiOutlineArrowRightOnRectangle className="w-5 h-5 text-emerald-400" />}
           title="Today Entries"
           value={String(stats.entries)}
-          change="+1"
-          changeType="increase"
         />
         <StatCard
           icon={<HiOutlineArrowLeftOnRectangle className="w-5 h-5 text-orange-400" />}
           title="Today Exits"
           value={String(stats.exits)}
-          change="+1"
-          changeType="increase"
         />
         <StatCard
           icon={<HiOutlineUserGroup className="w-5 h-5 text-cyan-400" />}
           title="Live Occupancy"
           value={`${stats.occupancy}%`}
-          change="Normal"
-          changeType="increase"
         />
         <StatCard
           icon={<HiOutlineShieldExclamation className="w-5 h-5 text-pink-400" />}
           title="Pending Queue"
           value={String(stats.pendingVerifications)}
-          change="Clear"
-          changeType="increase"
         />
       </motion.div>
 

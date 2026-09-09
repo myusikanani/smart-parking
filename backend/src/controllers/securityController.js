@@ -72,29 +72,31 @@ exports.getDashboardStats = async (req, res) => {
       return res.status(200).json({
         success: true,
         stats: {
-          todayEntries: 12,
-          todayExits: 8,
-          currentOccupancy: 15,
-          pendingVerifications: 3,
-          blacklistedCount: 2,
-          openIncidentsCount: 1,
+          todayEntries: 0,
+          todayExits: 0,
+          currentOccupancy: 0,
+          pendingVerifications: 0,
+          blacklistedCount: 0,
+          openIncidentsCount: 0,
           recentActivity: []
         }
       });
     }
 
+    const totalSlots = await ParkingSlot.countDocuments();
+    const occupiedSlots = await ParkingSlot.countDocuments({ status: 'occupied' });
+    const occupancyPercentage = totalSlots > 0 ? Math.round((occupiedSlots / totalSlots) * 100) : 0;
+
     const [
       todayEntries,
       todayExits,
-      currentOccupancy,
       pendingVerifications,
       blacklistedCount,
       openIncidentsCount,
       recentActivity
     ] = await Promise.all([
-      Booking.countDocuments({ status: 'active', entryTime: { $gte: startOfDay, $lte: endOfDay } }),
+      Booking.countDocuments({ entryTime: { $gte: startOfDay, $lte: endOfDay } }),
       Booking.countDocuments({ status: 'completed', exitTime: { $gte: startOfDay, $lte: endOfDay } }),
-      Booking.countDocuments({ status: 'active' }),
       Booking.countDocuments({ status: 'confirmed', startTime: { $gte: startOfDay, $lte: endOfDay } }),
       Blacklist.countDocuments({ isActive: true }),
       IncidentReport.countDocuments({ status: { $in: ['open', 'investigating'] } }),
@@ -110,7 +112,7 @@ exports.getDashboardStats = async (req, res) => {
       stats: {
         todayEntries,
         todayExits,
-        currentOccupancy,
+        currentOccupancy: occupancyPercentage,
         pendingVerifications,
         blacklistedCount,
         openIncidentsCount,
