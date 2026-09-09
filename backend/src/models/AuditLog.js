@@ -28,7 +28,7 @@ const auditLogSchema = new mongoose.Schema({
       'login', 'logout', 'booking_create', 'booking_cancel', 'booking_email_qr',
       'slot_change', 'payment', 'user_update', 'user_delete', 'pricing_update',
       'entry', 'exit', 'blacklist_add', 'blacklist_remove', 'incident_report',
-      'emergency_sos', 'walkin_entry'
+      'emergency_sos', 'walkin_entry', 'security', 'recovery', 'backup'
     ],
     required: true,
   },

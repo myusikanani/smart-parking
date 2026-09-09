@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { HiOutlineUser, HiOutlineShieldExclamation } from 'react-icons/hi2';
 import { useAuth } from '../context/AuthContext';
 import AuthLayout from '../layouts/AuthLayout';
+import TermsAndConditionsModal from '../components/TermsAndConditionsModal';
 
 const UserIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -71,6 +72,7 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -378,21 +380,38 @@ const Register = () => {
               </div>
 
               <div>
-                <label className="flex items-start gap-2 cursor-pointer">
+                <div className="flex items-start gap-2">
                   <input
                     type="checkbox"
+                    id="agreeTermsCheckbox"
                     checked={agreeTerms}
-                    onChange={(e) => setAgreeTerms(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded border-gray-600 accent-cyan-500 focus:ring-cyan-500"
+                    onChange={(e) => {
+                      setAgreeTerms(e.target.checked);
+                      if (e.target.checked && errors.terms) {
+                        setErrors((prev) => {
+                          const n = { ...prev };
+                          delete n.terms;
+                          return n;
+                        });
+                      }
+                    }}
+                    className="mt-1 w-4 h-4 rounded border-gray-600 accent-cyan-500 focus:ring-cyan-500 cursor-pointer"
                     style={{ backgroundColor: 'var(--input-bg)' }}
                   />
-                  <span className="text-sm text-gray-400">
-                    I agree to{' '}
-                    <span className="font-medium text-cyan-400">
+                  <label htmlFor="agreeTermsCheckbox" className="text-sm text-gray-400 select-none leading-relaxed">
+                    I agree to the{' '}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowTermsModal(true);
+                      }}
+                      className="font-medium text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors cursor-pointer"
+                    >
                       Terms & Conditions
-                    </span>
-                  </span>
-                </label>
+                    </button>
+                  </label>
+                </div>
                 {errors.terms && (
                   <p className="mt-1 text-xs text-red-400">{errors.terms}</p>
                 )}
@@ -499,6 +518,19 @@ const Register = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <TermsAndConditionsModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        onAccept={() => {
+          setAgreeTerms(true);
+          setErrors((prev) => {
+            const n = { ...prev };
+            delete n.terms;
+            return n;
+          });
+        }}
+      />
     </AuthLayout>
   );
 };

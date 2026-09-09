@@ -113,13 +113,19 @@ export const authApi = {
     api.put<{ success: boolean; message: string }>('/auth/change-password', { currentPassword, newPassword }),
 
   forgotPassword: (email: string) =>
-    api.post<{ success: boolean; message: string }>('/auth/forgot-password', { email }),
+    api.post<{ success: boolean; message: string; resetCode?: string; rawToken?: string }>('/auth/forgot-password', { email }),
+
+  resetPassword: (payload: { email: string; token?: string; code?: string; newPassword: string }) =>
+    api.post<{ success: boolean; message: string; token?: string; user?: Record<string, unknown> }>('/auth/reset-password', payload),
 
   setupTwoFactor: () =>
     api.post<{ success: boolean; qrCodeUrl: string; secret: string; message: string }>('/auth/2fa/setup', {}),
 
   confirmTwoFactor: (code: string) =>
-    api.post<{ success: boolean; message: string }>('/auth/2fa/confirm', { code }),
+    api.post<{ success: boolean; message: string; backupCodes?: string[] }>('/auth/2fa/confirm', { code }),
+
+  regenerateBackupCodes: () =>
+    api.post<{ success: boolean; message: string; backupCodes: string[] }>('/auth/2fa/regenerate-backup-codes', {}),
 
   sendTwoFactorEmailCode: (userId: string) =>
     api.post<{ success: boolean; message: string; expiresIn?: number; code?: string }>('/auth/2fa/email-code', { userId }),
@@ -240,6 +246,40 @@ export const adminApi = {
 
   getWaitingList: () =>
     api.get<{ success: boolean; waitingList: Record<string, unknown>[] }>('/admin/waiting-list'),
+
+  triggerRecovery: () =>
+    api.post<{
+      success: boolean;
+      message: string;
+      recoveredPending: number;
+      recoveredOrphanedSlots: number;
+      orphanedSlotNumbers: string[];
+      cancelledNoShows: number;
+      flaggedOverstays: number;
+      unlockedAccounts: number;
+      durationMs: number;
+    }>('/admin/recovery/sweep', {}),
+
+  getRecoveryDiagnostics: () =>
+    api.get<{
+      success: boolean;
+      diagnostics: {
+        systemHealth: 'HEALTHY' | 'RECOVERY_RECOMMENDED';
+        totalSlots: number;
+        availableSlots: number;
+        occupiedSlots: number;
+        reservedSlots: number;
+        maintenanceSlots: number;
+        activeBookings: number;
+        orphanedSlotsDetected: number;
+        stalePendingHolds: number;
+        lockedUsersCount: number;
+        totalBookings: number;
+        lastChecked: string;
+      };
+    }>('/admin/recovery/diagnostics'),
+
+  exportBackupUrl: () => `${API_BASE}/admin/backup/export`,
 };
 
 export const securityApi = {

@@ -101,9 +101,62 @@ const sendQREmail = async (userEmail, bookingDetails) => {
   }
 };
 
+const sendResetPasswordEmail = async (userEmail, resetToken, resetCode) => {
+  const transporter = createTransporter();
+  const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}&email=${encodeURIComponent(userEmail)}`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; background: #0b132b; color: #e2e8f0; border-radius: 12px; border: 1px solid #1e293b;">
+      <h2 style="color: #06b6d4; margin-top: 0;">ParkSmart Password Recovery</h2>
+      <p style="font-size: 15px; line-height: 1.6; color: #94a3b8;">
+        We received a request to reset your password. You can reset your password using the verification code below or by clicking the direct reset link:
+      </p>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <div style="display: inline-block; background: rgba(6,182,212,0.15); border: 1px solid #06b6d4; padding: 12px 28px; border-radius: 8px; font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #38bdf8;">
+          ${resetCode}
+        </div>
+        <p style="font-size: 13px; color: #64748b; margin-top: 8px;">(Code valid for 15 minutes)</p>
+      </div>
+
+      <div style="text-align: center; margin: 25px 0;">
+        <a href="${resetUrl}" style="display: inline-block; background: #06b6d4; color: #020617; font-weight: bold; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
+          Reset Password Online
+        </a>
+      </div>
+
+      <p style="font-size: 13px; color: #64748b; border-top: 1px solid #1e293b; padding-top: 15px;">
+        If you did not request a password reset, please ignore this email or notify security immediately.
+      </p>
+    </div>
+  `;
+
+  if (!transporter) {
+    console.log(`[EMAIL SIMULATION] Password reset email for ${userEmail}:`);
+    console.log(`  -> 6-Digit Code: ${resetCode}`);
+    console.log(`  -> Direct Link: ${resetUrl}`);
+    return true;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: '"ParkSmart Security" <noreply@parksmart.com>',
+      to: userEmail,
+      subject: 'Password Reset Request - ParkSmart',
+      html
+    });
+    return true;
+  } catch (error) {
+    console.error('Failed to send reset password email:', error.message);
+    return false;
+  }
+};
+
 module.exports = {
   sendBookingEmail,
   sendQREmail,
   send2FAAlertEmail,
-  send2FAEmailCode
+  send2FAEmailCode,
+  sendResetPasswordEmail
 };
+

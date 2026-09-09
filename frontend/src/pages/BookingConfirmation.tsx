@@ -24,8 +24,8 @@ const BookingConfirmation = () => {
   const slot = (booking?.slot as Record<string, unknown>)?.number || 'A-1';
   const date = booking?.startTime ? new Date(String(booking.startTime)).toLocaleDateString() : '2026-07-02';
   const time = booking?.startTime && booking?.endTime
-    ? `${new Date(String(booking.startTime)).toLocaleTimeString()} - ${new Date(String(booking.endTime)).toLocaleTimeString()}`
-    : '10:00 AM - 12:00 PM';
+    ? `${new Date(String(booking.startTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(String(booking.endTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+    : '—';
   const amount = booking?.totalAmount || 25;
 
   return (

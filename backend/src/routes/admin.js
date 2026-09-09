@@ -1,6 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const { getDashboardStats, getAllBookings, getUsers, getUserById, updateUser, deleteUser, getRevenueReport, getAnalytics, getNoShowReport, getOverstayReport, updatePricing, getAuditLogs, getWaitingList } = require('../controllers/adminController');
+const {
+  getDashboardStats,
+  getAllBookings,
+  getUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+  getRevenueReport,
+  getAnalytics,
+  getNoShowReport,
+  getOverstayReport,
+  updatePricing,
+  getAuditLogs,
+  getWaitingList,
+  triggerSystemRecovery,
+  getRecoveryStatus,
+  exportBackupSnapshot
+} = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/auth');
 
 router.use(protect, authorize('admin'));
@@ -18,5 +35,10 @@ router.get('/reports/overstay', getOverstayReport);
 router.put('/pricing', updatePricing);
 router.get('/audit-logs', getAuditLogs);
 router.get('/waiting-list', getWaitingList);
+
+// System Recovery & Disaster Recovery
+router.post('/recovery/sweep', triggerSystemRecovery);
+router.get('/recovery/diagnostics', getRecoveryStatus);
+router.get('/backup/export', exportBackupSnapshot);
 
 module.exports = router;

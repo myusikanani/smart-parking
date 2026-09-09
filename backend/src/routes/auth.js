@@ -15,12 +15,14 @@ const {
   verifyTwoFactor,
   setupTwoFactor,
   confirmTwoFactorSetup,
+  regenerateBackupCodes,
   sendTwoFactorEmailCode,
   disableTwoFactor,
   getMe,
   updateProfile,
   changePassword,
-  forgotPassword
+  forgotPassword,
+  resetPassword
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
@@ -28,6 +30,7 @@ router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.post('/verify-2fa', twoFALimiter, verifyTwoFactor);
 router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
@@ -36,6 +39,7 @@ router.put('/change-password', protect, changePassword);
 // TOTP 2FA Routes
 router.post('/2fa/setup', protect, setupTwoFactor);
 router.post('/2fa/confirm', protect, confirmTwoFactorSetup);
+router.post('/2fa/regenerate-backup-codes', protect, regenerateBackupCodes);
 router.post('/2fa/email-code', twoFALimiter, sendTwoFactorEmailCode);
 router.post('/2fa/disable', protect, disableTwoFactor);
 

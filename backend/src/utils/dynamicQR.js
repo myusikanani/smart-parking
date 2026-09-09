@@ -49,8 +49,8 @@ const verifyDynamicQRToken = (rawToken) => {
 
   const currentStep = Math.floor(Date.now() / (ROTATION_INTERVAL_SEC * 1000));
   
-  // Allow ±1 time window step
-  for (let offset = -1; offset <= 1; offset++) {
+  // Allow ±10 time window steps (~5 minutes window for clock drift / driver arrival)
+  for (let offset = -10; offset <= 2; offset++) {
     const checkStep = currentStep + offset;
     if (checkStep === tokenStep) {
       const expectedHash = crypto
@@ -65,7 +65,20 @@ const verifyDynamicQRToken = (rawToken) => {
     }
   }
 
-  return { isValid: false, bookingId: null, expired: true };
+  // Graceful HMAC integrity check even if step is older:
+  // If the hash is valid for the provided tokenStep, it is a legitimate ParkSmart token
+  const expectedHash = crypto
+    .createHmac('sha256', SECRET_KEY)
+    .update(`${bookingId}:${tokenStep}`)
+    .digest('hex')
+    .substring(0, 16);
+
+  if (expectedHash === providedHash) {
+    // Valid token signature, but time step has expired
+    return { isValid: false, bookingId, expired: true };
+  }
+
+  return { isValid: false, bookingId: null, expired: false };
 };
 
 module.exports = {

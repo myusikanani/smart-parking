@@ -42,3 +42,5 @@ scratch/
 .system_generated/
 mobile-flow-failure.png
 backend/scripts/tmp-*
+backend/backups/*.json
+*.tsbuildinfo

@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect, type FormEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, type FormEvent } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { bookingApi } from '../services/api';
 import {
   HiOutlineHome,
   HiOutlineCalendarDays,
@@ -21,10 +22,22 @@ import {
   HiOutlineMagnifyingGlass,
   HiOutlineSparkles,
   HiOutlineShieldCheck,
+  HiOutlineCreditCard,
+  HiOutlineCheckCircle,
 } from 'react-icons/hi2';
 import Footer from '../components/Footer';
 import ThemeToggle from '../components/ThemeToggle';
 import { CarSedan } from '../components/vehicles';
+
+interface NavNotif {
+  id: string;
+  title: string;
+  message: string;
+  targetUrl: string;
+  badgeColor: string;
+  bookingData?: Record<string, unknown>;
+  icon: typeof HiOutlineBell;
+}
 
 const userSidebarItems = [
   { to: '/', label: 'Home Website', icon: HiOutlineSparkles },
@@ -51,9 +64,74 @@ const UserLayout = () => {
   const [notifOpen, setNotifOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [navNotifs, setNavNotifs] = useState<NavNotif[]>([]);
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
+
+  const fetchNavNotifs = useCallback(async () => {
+    try {
+      const res = await bookingApi.getMyBookings();
+      if (res.success && Array.isArray(res.bookings)) {
+        const list: NavNotif[] = [];
+        res.bookings.forEach((b: Record<string, unknown>) => {
+          const bId = String(b._id || b.id || '');
+          const slotNum = (b.slot as Record<string, unknown>)?.number || b.slotNumber || 'Slot';
+          const status = String(b.status || 'pending');
+          const pStatus = String(b.paymentStatus || 'pending');
+
+          if (pStatus === 'pending' || status === 'pending') {
+            list.push({
+              id: `nav-${bId}-pay`,
+              title: 'Payment Pending',
+              message: `Complete checkout for Slot #${slotNum}`,
+              targetUrl: `/dashboard/payments?bookingId=${bId}`,
+              badgeColor: 'text-amber-400',
+              icon: HiOutlineCreditCard,
+              bookingData: b,
+            });
+          } else if (status === 'confirmed') {
+            list.push({
+              id: `nav-${bId}-conf`,
+              title: 'Booking Confirmed',
+              message: `Digital pass ready for Slot #${slotNum}`,
+              targetUrl: '/qr-code',
+              badgeColor: 'text-cyan-400',
+              icon: HiOutlineQrCode,
+              bookingData: b,
+            });
+          } else if (status === 'active') {
+            list.push({
+              id: `nav-${bId}-act`,
+              title: 'Vehicle Inside Parking',
+              message: `Slot #${slotNum} session active`,
+              targetUrl: '/qr-code',
+              badgeColor: 'text-emerald-400',
+              icon: HiOutlineCheckCircle,
+              bookingData: b,
+            });
+          }
+        });
+        setNavNotifs(list);
+      }
+    } catch (_) {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNavNotifs();
+  }, [fetchNavNotifs, location.pathname]);
+
+  const handleNotifClick = (n: NavNotif) => {
+    setNotifOpen(false);
+    navigate(n.targetUrl, {
+      state: {
+        booking: n.bookingData,
+        bookingId: n.bookingData?._id || n.bookingData?.id,
+      },
+    });
+  };
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -204,11 +282,14 @@ const UserLayout = () => {
             <button
               onClick={() => { setNotifOpen(!notifOpen); setUserOpen(false); }}
               className="relative p-2 rounded-lg text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
+              title="Notifications"
             >
               <HiOutlineBell className="w-5 h-5" />
-              <span className="badge-neon absolute -top-0.5 -right-0.5 w-4 h-4 text-[10px] font-bold rounded-full flex items-center justify-center">
-                2
-              </span>
+              {navNotifs.length > 0 && (
+                <span className="badge-neon absolute -top-0.5 -right-0.5 w-4 h-4 text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {navNotifs.length > 9 ? '9+' : navNotifs.length}
+                </span>
+              )}
             </button>
 
             <AnimatePresence>
@@ -218,19 +299,44 @@ const UserLayout = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] glass-card py-2 shadow-2xl z-50"
+                  className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] glass-card py-2 shadow-2xl z-50 divide-y divide-white/5"
                 >
-                  <div className="px-4 py-2 border-b border-white/5 flex items-center justify-between">
-                    <p className="text-sm font-semibold neon-text">User Notifications</p>
-                    <Link to="/notifications" className="text-xs text-cyan-400 hover:underline">View All</Link>
+                  <div className="px-4 py-2 flex items-center justify-between">
+                    <p className="text-sm font-semibold neon-text">Notifications</p>
+                    <Link
+                      to="/notifications"
+                      onClick={() => setNotifOpen(false)}
+                      className="text-xs text-cyan-400 hover:underline"
+                    >
+                      View All
+                    </Link>
                   </div>
-                  <div className="px-4 py-3 hover:bg-cyan-500/5 cursor-pointer transition-colors">
-                    <p className="text-sm font-medium text-emerald-400">Booking Confirmed</p>
-                    <p className="text-xs text-gray-400">Slot #A-04 reserved successfully.</p>
-                  </div>
-                  <div className="px-4 py-3 hover:bg-cyan-500/5 cursor-pointer transition-colors">
-                    <p className="text-sm font-medium text-cyan-400">QR Gate Key Ready</p>
-                    <p className="text-xs text-gray-400">Digital pass active for today check-in.</p>
+
+                  <div className="max-h-64 overflow-y-auto divide-y divide-white/5">
+                    {navNotifs.length === 0 ? (
+                      <div className="px-4 py-6 text-center text-xs text-gray-400">
+                        No new notifications
+                      </div>
+                    ) : (
+                      navNotifs.slice(0, 5).map((n) => {
+                        const Icon = n.icon;
+                        return (
+                          <div
+                            key={n.id}
+                            onClick={() => handleNotifClick(n)}
+                            className="px-4 py-3 hover:bg-cyan-500/10 cursor-pointer transition-colors flex items-start gap-3 text-left group"
+                          >
+                            <div className="p-1.5 rounded-lg bg-white/5 text-cyan-400 mt-0.5 group-hover:bg-cyan-500/20 transition-colors">
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-xs font-semibold ${n.badgeColor} truncate`}>{n.title}</p>
+                              <p className="text-[11px] text-gray-300 truncate mt-0.5">{n.message}</p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </motion.div>
               )}

@@ -8,23 +8,29 @@ const connectDB = async () => {
   }
 
   if (!cachedPromise) {
-    const uri = process.env.MONGO_URI;
-    if (!uri) {
-      console.warn('⚠️ MONGO_URI environment variable is missing');
-    }
+    const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/parking-system';
 
     cachedPromise = mongoose
-      .connect(uri || 'mongodb://127.0.0.1:27017/parking-system', {
-        serverSelectionTimeoutMS: 10000,
+      .connect(uri, {
+        serverSelectionTimeoutMS: 4000,
       })
       .then((m) => {
         console.log(`✅ MongoDB Connected: ${m.connection.host}`);
         return m.connection;
       })
-      .catch((err) => {
-        cachedPromise = null;
-        console.error(`❌ MongoDB Connection Error: ${err.message}`);
-        throw err;
+      .catch(async (err) => {
+        console.warn(`⚠️ Primary MongoDB Connection Failed (${err.message}). Trying fallback local MongoDB...`);
+        try {
+          const fallback = await mongoose.connect('mongodb://127.0.0.1:27017/parking-system', {
+            serverSelectionTimeoutMS: 3000,
+          });
+          console.log(`✅ Fallback Local MongoDB Connected: ${fallback.connection.host}`);
+          return fallback.connection;
+        } catch (fallbackErr) {
+          cachedPromise = null;
+          console.error(`❌ MongoDB Connection Error: ${err.message}`);
+          throw err;
+        }
       });
   }
 

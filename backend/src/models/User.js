@@ -58,6 +58,28 @@ const userSchema = new mongoose.Schema({
     type: String,
     select: false
   },
+  twoFactorBackupCodes: {
+    type: [
+      {
+        codeHash: { type: String, required: true },
+        used: { type: Boolean, default: false },
+        usedAt: { type: Date, default: null }
+      }
+    ],
+    select: false
+  },
+  resetPasswordToken: {
+    type: String,
+    select: false
+  },
+  resetPasswordCode: {
+    type: String,
+    select: false
+  },
+  resetPasswordExpire: {
+    type: Date,
+    select: false
+  },
   failedLoginAttempts: {
     type: Number,
     default: 0

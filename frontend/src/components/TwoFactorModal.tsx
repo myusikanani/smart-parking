@@ -15,13 +15,15 @@ export const TwoFactorModal: FC<TwoFactorModalProps> = ({
   isEnabled,
   onSuccess,
 }) => {
-  const [step, setStep] = useState<'init' | 'scan' | 'disabled'>('init');
+  const [step, setStep] = useState<'init' | 'scan' | 'backup_codes'>('init');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [secret, setSecret] = useState('');
   const [code, setCode] = useState('');
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [codesCopied, setCodesCopied] = useState(false);
 
   if (!isOpen) return null;
 
@@ -51,9 +53,14 @@ export const TwoFactorModal: FC<TwoFactorModalProps> = ({
     setLoading(true);
     setError('');
     try {
-      await authApi.confirmTwoFactor(code);
-      onSuccess();
-      onClose();
+      const res = await authApi.confirmTwoFactor(code);
+      if (res.backupCodes && res.backupCodes.length > 0) {
+        setBackupCodes(res.backupCodes);
+        setStep('backup_codes');
+      } else {
+        onSuccess();
+        onClose();
+      }
     } catch (err: unknown) {
       const errorObj = err as { message?: string; data?: { serverTime?: string } };
       setError(
@@ -66,6 +73,20 @@ export const TwoFactorModal: FC<TwoFactorModalProps> = ({
     }
   };
 
+  const handleRegenerateCodes = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await authApi.regenerateBackupCodes();
+      setBackupCodes(res.backupCodes || []);
+      setStep('backup_codes');
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      setError(errorObj.message || 'Failed to regenerate backup codes.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDisable = async () => {
     setLoading(true);
@@ -88,6 +109,23 @@ export const TwoFactorModal: FC<TwoFactorModalProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const copyAllBackupCodes = () => {
+    navigator.clipboard.writeText(backupCodes.join('\n'));
+    setCodesCopied(true);
+    setTimeout(() => setCodesCopied(false), 2000);
+  };
+
+  const downloadBackupCodes = () => {
+    const text = `PARKSMART 2FA EMERGENCY BACKUP RECOVERY CODES\nGenerated: ${new Date().toLocaleString()}\n\nEach code can only be used once if you lose access to your authenticator app:\n\n${backupCodes.map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\nKeep these codes in a secure password manager.`;
+    const element = document.createElement('a');
+    const file = new Blob([text], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = 'parksmart-2fa-backup-codes.txt';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl max-w-md w-full max-h-[calc(100vh-2rem)] overflow-y-auto p-6 shadow-2xl relative">
@@ -103,8 +141,8 @@ export const TwoFactorModal: FC<TwoFactorModalProps> = ({
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[var(--text)]">Authy / 2FA Authenticator</h3>
-            <p className="text-xs text-[var(--text-secondary)]">Two-Factor Authentication Setup</p>
+            <h3 className="text-lg font-bold text-[var(--text)]">Two-Factor Authentication (2FA)</h3>
+            <p className="text-xs text-[var(--text-secondary)]">Security & Emergency Recovery</p>
           </div>
         </div>
 
@@ -115,7 +153,55 @@ export const TwoFactorModal: FC<TwoFactorModalProps> = ({
           </div>
         )}
 
-        {isEnabled ? (
+        {step === 'backup_codes' ? (
+          <div className="space-y-4">
+            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+              <p className="font-bold text-sm flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" /> Save Your Emergency Backup Codes
+              </p>
+              <p className="text-xs text-gray-300 mt-1">
+                If you lose access to your phone or authenticator app, you can use these one-time codes to sign in. Each code works once.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 bg-[var(--bg-elevated)] p-3 rounded-xl border border-[var(--border)] font-mono text-center text-xs font-bold text-cyan-300">
+              {backupCodes.map((c, idx) => (
+                <div key={idx} className="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                  {c}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={copyAllBackupCodes}
+                className="flex-1 py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-gray-200 border border-white/10 transition flex items-center justify-center gap-1.5"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                {codesCopied ? 'Copied!' : 'Copy All'}
+              </button>
+              <button
+                type="button"
+                onClick={downloadBackupCodes}
+                className="flex-1 py-2 px-3 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-xs font-semibold text-cyan-400 border border-cyan-500/30 transition flex items-center justify-center gap-1.5"
+              >
+                Download (.txt)
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                onSuccess();
+                onClose();
+              }}
+              className="w-full py-2.5 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm transition shadow-lg shadow-cyan-500/20"
+            >
+              I Have Saved My Backup Codes
+            </button>
+          </div>
+        ) : isEnabled ? (
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center gap-3">
               <CheckCircle2 className="w-6 h-6 shrink-0" />
@@ -124,6 +210,15 @@ export const TwoFactorModal: FC<TwoFactorModalProps> = ({
                 <p className="text-xs opacity-80">Your account is secured with Authy / TOTP Authenticator.</p>
               </div>
             </div>
+
+            <button
+              onClick={handleRegenerateCodes}
+              disabled={loading}
+              className="w-full py-2.5 px-4 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-sm font-semibold transition"
+            >
+              {loading ? 'Generating...' : 'Regenerate Backup Recovery Codes'}
+            </button>
+
             <button
               onClick={handleDisable}
               disabled={loading}

@@ -55,6 +55,8 @@ const Login = () => {
   const [twoFALoading, setTwoFALoading] = useState(false);
   const [emailCodeSent, setEmailCodeSent] = useState(false);
   const [emailCodeLoading, setEmailCodeLoading] = useState(false);
+  const [useBackupCode, setUseBackupCode] = useState(false);
+  const [backupCodeInput, setBackupCodeInput] = useState('');
   const [secretCopied, setSecretCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState(30);
   const [serverDrift, setServerDrift] = useState<number | null>(null);
@@ -187,8 +189,13 @@ const Login = () => {
   };
 
   const handleTwoFASubmit = async () => {
-    const code = twoFACode.join('');
-    if (code.length !== 6) {
+    const code = useBackupCode ? backupCodeInput.trim() : twoFACode.join('');
+    if (useBackupCode) {
+      if (!code) {
+        setTwoFAError('Please enter your 8-character backup recovery code');
+        return;
+      }
+    } else if (code.length !== 6) {
       setTwoFAError('Enter all 6 digits');
       return;
     }
@@ -206,8 +213,10 @@ const Login = () => {
           ? `${message} — Server time is ${new Date(data.serverTime).toLocaleTimeString()}. Make sure your phone clock is set to Automatic (Network time).`
           : message
       );
-      setTwoFACode(['', '', '', '', '', '']);
-      codeInputRefs.current[0]?.focus();
+      if (!useBackupCode) {
+        setTwoFACode(['', '', '', '', '', '']);
+        codeInputRefs.current[0]?.focus();
+      }
     } finally {
       setTwoFALoading(false);
     }
@@ -409,22 +418,53 @@ const Login = () => {
               </div>
             )}
 
-            <div className="flex justify-center gap-2 sm:gap-3 mb-6">
-              {twoFACode.map((digit, i) => (
+            {!useBackupCode ? (
+              <>
+                <div className="flex justify-center gap-2 sm:gap-3 mb-6">
+                  {twoFACode.map((digit, i) => (
+                    <input
+                      key={i}
+                      ref={(el) => { codeInputRefs.current[i] = el; }}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleCodeChange(i, e.target.value)}
+                      onKeyDown={(e) => handleCodeKeyDown(i, e)}
+                      onPaste={handleCodePaste}
+                      className="w-9 sm:w-12 h-12 sm:h-14 text-center text-xl font-bold input-neon rounded-xl"
+                    />
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                  <span className="text-xs text-gray-400">
+                    Code refreshes in <span className="text-cyan-300 font-bold">{timeLeft}s</span> — open your Authy app for the current code
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="mb-6">
+                <label className="block text-xs font-semibold text-cyan-300 mb-2">
+                  Emergency Backup Recovery Code:
+                </label>
                 <input
-                  key={i}
-                  ref={(el) => { codeInputRefs.current[i] = el; }}
                   type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleCodeChange(i, e.target.value)}
-                  onKeyDown={(e) => handleCodeKeyDown(i, e)}
-                  onPaste={handleCodePaste}
-                  className="w-9 sm:w-12 h-12 sm:h-14 text-center text-xl font-bold input-neon rounded-xl"
+                  placeholder="e.g. A4B7-K92P"
+                  value={backupCodeInput}
+                  onChange={(e) => {
+                    setBackupCodeInput(e.target.value.toUpperCase());
+                    setTwoFAError('');
+                  }}
+                  className="input-neon w-full py-3 px-4 text-center font-mono font-bold tracking-widest text-lg"
+                  maxLength={9}
                 />
-              ))}
-            </div>
+                <p className="text-[11px] text-gray-400 mt-1.5 text-center">
+                  Use one of the 8-character backup recovery codes generated during 2FA setup.
+                </p>
+              </div>
+            )}
 
             {twoFAError && (
               <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl px-4 py-3 mb-4">
@@ -432,14 +472,7 @@ const Login = () => {
               </div>
             )}
 
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              <span className="text-xs text-gray-400">
-                Code refreshes in <span className="text-cyan-300 font-bold">{timeLeft}s</span> — open your Authy app for the current code
-              </span>
-            </div>
-
-            {serverDrift !== null && (
+            {serverDrift !== null && !useBackupCode && (
               <div
                 className={`mb-4 p-3 rounded-xl border text-xs text-center ${
                   Math.abs(serverDrift) > 60000
@@ -453,15 +486,13 @@ const Login = () => {
                     <strong>{Math.abs(Math.round(serverDrift / 1000))} seconds</strong>{' '}
                     {serverDrift > 0 ? 'ahead of' : 'behind'} the server — this is why codes are
                     rejected. On your phone: <strong>Settings → Date &amp; Time → enable "Set
-                    automatically" (Network time)</strong> and confirm the timezone is correct
-                    (Indian Standard Time is fine — timezone doesn't affect codes, clock accuracy does).
+                    automatically" (Network time)</strong>.
                   </>
                 ) : (
                   <>
                     🕐 Server time:{' '}
                     <strong>{new Date(Date.now() - serverDrift).toLocaleTimeString()}</strong> — this
-                    PC is in sync. If your phone shows the same time, a fresh code from Authy will
-                    verify.
+                    PC is in sync.
                   </>
                 )}
               </div>
@@ -469,25 +500,40 @@ const Login = () => {
 
             <button
               onClick={handleTwoFASubmit}
-              disabled={twoFALoading || twoFACode.join('').length !== 6}
+              disabled={twoFALoading || (!useBackupCode && twoFACode.join('').length !== 6) || (useBackupCode && !backupCodeInput.trim())}
               className="btn-neon w-full py-3 px-4 text-center disabled:opacity-50 disabled:cursor-not-allowed font-semibold rounded-xl mb-3"
             >
-              {twoFALoading ? 'Verifying...' : 'Verify Code'}
+              {twoFALoading ? 'Verifying...' : useBackupCode ? 'Verify Backup Recovery Code' : 'Verify Code'}
             </button>
 
-            {emailCodeSent ? (
-              <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs text-center">
-                ✅ A 6-digit code was sent to your email (demo mode: it's printed in the server console). Enter it above.
-              </div>
-            ) : (
+            <div className="space-y-2 mb-4">
               <button
-                onClick={handleSendEmailCode}
-                disabled={emailCodeLoading}
-                className="w-full py-2 mb-4 text-xs font-semibold text-cyan-400 hover:text-cyan-300 border border-cyan-500/30 rounded-xl hover:bg-cyan-500/10 transition disabled:opacity-50"
+                type="button"
+                onClick={() => {
+                  setUseBackupCode(!useBackupCode);
+                  setTwoFAError('');
+                }}
+                className="w-full py-1.5 text-xs text-cyan-400 hover:text-cyan-300 transition"
               >
-                {emailCodeLoading ? 'Sending...' : '📧 Authy code not working? Email me a code instead'}
+                {useBackupCode ? '← Use 6-Digit Authenticator / Email Code' : '🔑 Lost phone? Use Backup Recovery Code'}
               </button>
-            )}
+
+              {!useBackupCode && (
+                emailCodeSent ? (
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs text-center">
+                    ✅ A 6-digit code was sent to your email (demo: in server console).
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleSendEmailCode}
+                    disabled={emailCodeLoading}
+                    className="w-full py-1.5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 border border-cyan-500/30 rounded-xl hover:bg-cyan-500/10 transition disabled:opacity-50"
+                  >
+                    {emailCodeLoading ? 'Sending...' : '📧 Authy code not working? Email me a code'}
+                  </button>
+                )
+              )}
+            </div>
 
             <button
               onClick={handleTwoFABack}

@@ -109,9 +109,13 @@ const Payment = () => {
     try {
       const res = await bookingApi.getMyBookings('pending');
       if (res.success && Array.isArray(res.bookings)) {
-        const pBookings = (res.bookings as BookingData[]).filter(
-          (b) => b.status === 'pending' && b.paymentStatus !== 'paid'
-        );
+        const pBookings = (res.bookings as BookingData[])
+          .filter((b) => b.status === 'pending' && b.paymentStatus !== 'paid')
+          .sort((a, b) => {
+            const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+            const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+            return tB - tA;
+          });
         setPendingBookings(pBookings);
 
         const targetId = forcedTargetId || searchParams.get('bookingId') || stateBooking?._id || stateBooking?.id;

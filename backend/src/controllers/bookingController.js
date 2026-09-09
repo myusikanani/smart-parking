@@ -18,7 +18,7 @@ exports.createBooking = async (req, res) => {
     }
 
     let validStartTime = startTime ? new Date(startTime) : new Date(Date.now() + 5 * 60 * 1000);
-    if (isNaN(validStartTime.getTime()) || validStartTime.getTime() <= Date.now()) {
+    if (isNaN(validStartTime.getTime())) {
       validStartTime = new Date(Date.now() + 5 * 60 * 1000);
     }
 

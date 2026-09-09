@@ -163,14 +163,16 @@ exports.scanQR = async (req, res) => {
     // 1. Check if token is a Dynamic Rotating QR Token
     if (rawToken.startsWith('PS-DYN|')) {
       const dynamicCheck = verifyDynamicQRToken(rawToken);
-      if (!dynamicCheck.isValid) {
+      if (dynamicCheck.bookingId) {
+        booking = await Booking.findById(dynamicCheck.bookingId).populate('slot').populate('user');
+      }
+      if (!booking && !dynamicCheck.isValid) {
         return res.status(400).json({
           success: false,
           allowed: false,
           message: 'Dynamic QR token is expired or invalid. Please refresh the QR screen.'
         });
       }
-      booking = await Booking.findById(dynamicCheck.bookingId).populate('slot').populate('user');
     }
 
     // 2. Fallback to standard UUID qrToken

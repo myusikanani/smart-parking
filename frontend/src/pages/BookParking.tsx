@@ -214,18 +214,18 @@ const BookParking = () => {
     setConfirmError('');
 
     try {
-      const startTimeStr = `${date}T${selectedTime}:00`;
-      const startDateObj = new Date(startTimeStr);
+      const [year, month, day] = date.split('-').map(Number);
+      const [hours, minutes] = selectedTime.split(':').map(Number);
+      const startDateObj = new Date(year, month - 1, day, hours, minutes, 0, 0);
       const endDateObj = new Date(startDateObj.getTime() + selectedHours * 60 * 60 * 1000);
-      const endTimeStr = endDateObj.toISOString().slice(0, 16) + ':00';
 
       const slotIdToSend = String(selectedSlot.id || (selectedSlot as unknown as Record<string, unknown>)._id || selectedSlot.number || '');
 
       const res = await bookingApi.create({
         slotId: slotIdToSend,
         vehicleNumber: vehicleNumber.trim().toUpperCase(),
-        startTime: startTimeStr,
-        endTime: endTimeStr,
+        startTime: startDateObj.toISOString(),
+        endTime: endDateObj.toISOString(),
         category,
         amount: Number(totalPrice),
       });

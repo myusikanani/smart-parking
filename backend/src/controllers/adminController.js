@@ -408,6 +408,75 @@ const getWaitingList = async (req, res) => {
   }
 };
 
+const { runFullSystemRecovery, getRecoveryDiagnostics } = require('../services/recoveryService');
+
+const triggerSystemRecovery = async (req, res) => {
+  try {
+    const result = await runFullSystemRecovery(req);
+    await logAudit(req, {
+      action: 'Manual Recovery Sweep',
+      details: `Admin triggered recovery sweep: ${result.recoveredOrphanedSlots} orphaned slots recovered, ${result.recoveredPending} expired holds freed`,
+      actionType: 'security',
+    });
+    res.status(200).json({ success: true, message: 'Recovery sweep executed successfully', ...result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getRecoveryStatus = async (req, res) => {
+  try {
+    const diagnostics = await getRecoveryDiagnostics();
+    res.status(200).json({ success: true, diagnostics });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const exportBackupSnapshot = async (req, res) => {
+  try {
+    const [users, slots, bookings, auditLogs, notifications] = await Promise.all([
+      User.find().select('-password -twoFactorSecret -twoFactorTempSecret').lean(),
+      ParkingSlot.find().lean(),
+      Booking.find().lean(),
+      AuditLog.find().sort({ createdAt: -1 }).limit(1000).lean(),
+      Notification.find().sort({ createdAt: -1 }).limit(500).lean()
+    ]);
+
+    const backupData = {
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      system: 'ParkSmart',
+      metadata: {
+        usersCount: users.length,
+        slotsCount: slots.length,
+        bookingsCount: bookings.length,
+        auditLogsCount: auditLogs.length,
+        notificationsCount: notifications.length
+      },
+      data: {
+        users,
+        slots,
+        bookings,
+        auditLogs,
+        notifications
+      }
+    };
+
+    await logAudit(req, {
+      action: 'Database Backup Export',
+      details: `Admin exported database snapshot (${users.length} users, ${slots.length} slots, ${bookings.length} bookings)`,
+      actionType: 'security',
+    });
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename=parksmart-backup-${Date.now()}.json`);
+    res.status(200).send(JSON.stringify(backupData, null, 2));
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getAllBookings,
@@ -421,5 +490,9 @@ module.exports = {
   getOverstayReport,
   updatePricing,
   getAuditLogs,
-  getWaitingList
+  getWaitingList,
+  triggerSystemRecovery,
+  getRecoveryStatus,
+  exportBackupSnapshot
 };
+

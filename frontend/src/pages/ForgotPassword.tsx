@@ -63,20 +63,25 @@ const ForgotPassword = () => {
             </div>
             <h1 className="text-3xl font-bold neon-text-cyan">Check your email</h1>
             <p className="text-gray-400 mt-3 max-w-sm mx-auto">
-              We've sent a password reset link to{' '}
+              We've sent a 6-digit password reset code and direct link to{' '}
               <span className="font-medium text-white">{email}</span>
             </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Didn't receive the email?{' '}
+            <div className="mt-6 flex flex-col gap-3 max-w-xs mx-auto">
+              <Link
+                to={`/reset-password?email=${encodeURIComponent(email)}`}
+                className="btn-neon w-full py-2.5 px-4 text-center font-semibold rounded-xl text-sm"
+              >
+                Enter 6-Digit Code Now
+              </Link>
               <button
                 type="button"
                 onClick={() => setSent(false)}
-                className="font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
+                className="text-xs text-gray-400 hover:text-cyan-300 transition-colors"
               >
-                Try again
+                Didn't receive email? Try again
               </button>
-            </p>
-            <div className="mt-8">
+            </div>
+            <div className="mt-6">
               <Link
                 to="/login"
                 className="text-sm font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
@@ -96,7 +101,7 @@ const ForgotPassword = () => {
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold neon-text">Forgot Password?</h1>
               <p className="text-gray-400 mt-2">
-                Enter your email and we'll send you a reset link
+                Enter your email to receive a recovery code & reset link
               </p>
             </div>
 
@@ -123,18 +128,28 @@ const ForgotPassword = () => {
                 disabled={loading}
                 className="btn-neon w-full py-3 px-4 text-center disabled:opacity-50 disabled:cursor-not-allowed font-semibold rounded-xl"
               >
-                {loading ? 'Sending...' : 'Send Reset Link'}
+                {loading ? 'Sending...' : 'Send Reset Code'}
               </button>
             </form>
 
-            <p className="mt-6 text-center">
-              <Link
-                to="/login"
-                className="text-sm font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
-              >
-                Back to sign in
-              </Link>
-            </p>
+            <div className="mt-6 text-center space-y-2">
+              <p>
+                <Link
+                  to={`/reset-password${email ? `?email=${encodeURIComponent(email)}` : ''}`}
+                  className="text-xs text-gray-400 hover:text-cyan-300 transition-colors"
+                >
+                  Already have a reset code? Reset here
+                </Link>
+              </p>
+              <p>
+                <Link
+                  to="/login"
+                  className="text-sm font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
+                >
+                  Back to sign in
+                </Link>
+              </p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
