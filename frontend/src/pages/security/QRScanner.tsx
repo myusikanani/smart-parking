@@ -129,7 +129,6 @@ const QRScanner = () => {
   // OCR Pipeline States & Refs
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const ocrWorkerRef = useRef<Worker | null>(null);
   const ocrLoopActiveRef = useRef(false);
   const [ocrTelemetry, setOcrTelemetry] = useState<{ text: string; confidence: number; isProcessing: boolean }>({
@@ -379,30 +378,7 @@ const QRScanner = () => {
     }
   };
 
-  // Handle Photo / Image Upload for License Plate OCR
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    setCameraPermissionError('');
-    setOcrTelemetry({ text: 'Analyzing image file...', confidence: 0, isProcessing: true });
-
-    const img = new Image();
-    const objectUrl = URL.createObjectURL(file);
-    img.onload = async () => {
-      URL.revokeObjectURL(objectUrl);
-      const found = await processImageForPlateOCR(img, img.naturalWidth || img.width, img.naturalHeight || img.height);
-      if (!found) {
-        setCameraPermissionError('Could not clearly read a license plate from the uploaded image. Please try a clearer photo or enter manually.');
-      }
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      setCameraPermissionError('Failed to load image file. Please try another picture.');
-    };
-    img.src = objectUrl;
-    e.target.value = '';
-  };
 
   // Manual Frame Capture
   const handleCaptureFrame = async () => {
@@ -784,33 +760,14 @@ const QRScanner = () => {
                   : 'Camera is currently in standby mode'}
               </p>
 
-              {/* HIDDEN FILE INPUT FOR UPLOADS */}
-              <input
-                type="file"
-                ref={fileInputRef}
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-
               <div className="w-full max-w-md flex flex-col sm:flex-row gap-3">
                 {!scannerActive ? (
-                  <>
-                    <button
-                      onClick={startScanner}
-                      className="flex-1 py-3 px-5 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-600 via-indigo-600 to-emerald-600 hover:opacity-90 text-white shadow-xl flex items-center justify-center gap-2"
-                    >
-                      <HiOutlineCamera className="w-5 h-5" /> Start {scannerType === 'qr' ? 'QR Pass Scanner' : 'AI Plate Scanner'}
-                    </button>
-                    {scannerType === 'plate_ocr' && (
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="py-3 px-5 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 shadow-lg flex items-center justify-center gap-2"
-                      >
-                        <HiOutlinePhoto className="w-5 h-5" /> Upload Plate Image
-                      </button>
-                    )}
-                  </>
+                  <button
+                    onClick={startScanner}
+                    className="flex-1 py-3 px-5 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-600 via-indigo-600 to-emerald-600 hover:opacity-90 text-white shadow-xl flex items-center justify-center gap-2"
+                  >
+                    <HiOutlineCamera className="w-5 h-5" /> Start {scannerType === 'qr' ? 'QR Pass Scanner' : 'AI Plate Scanner'}
+                  </button>
                 ) : (
                   <>
                     <button

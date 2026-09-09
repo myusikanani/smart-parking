@@ -48,8 +48,8 @@ exports.getTodayLogs = async (req, res) => {
       .populate('user', 'name vehicleNumber phone')
       .sort({ updatedAt: -1 });
 
-    const entries = logs.filter(log => log.status === 'active').length;
-    const exits = logs.filter(log => log.status === 'completed' && log.exitTime >= startOfDay && log.exitTime <= endOfDay).length;
+    const entries = logs.filter(log => log.entryTime && new Date(log.entryTime) >= startOfDay && new Date(log.entryTime) <= endOfDay).length;
+    const exits = logs.filter(log => log.exitTime && new Date(log.exitTime) >= startOfDay && new Date(log.exitTime) <= endOfDay).length;
 
     res.status(200).json({
       success: true,
@@ -95,8 +95,18 @@ exports.getDashboardStats = async (req, res) => {
       openIncidentsCount,
       recentActivity
     ] = await Promise.all([
-      Booking.countDocuments({ entryTime: { $gte: startOfDay, $lte: endOfDay } }),
-      Booking.countDocuments({ status: 'completed', exitTime: { $gte: startOfDay, $lte: endOfDay } }),
+      Booking.countDocuments({
+        $or: [
+          { entryTime: { $gte: startOfDay, $lte: endOfDay } },
+          { status: { $in: ['active', 'completed'] }, updatedAt: { $gte: startOfDay, $lte: endOfDay } }
+        ]
+      }),
+      Booking.countDocuments({
+        $or: [
+          { exitTime: { $gte: startOfDay, $lte: endOfDay } },
+          { status: 'completed', updatedAt: { $gte: startOfDay, $lte: endOfDay } }
+        ]
+      }),
       Booking.countDocuments({ status: 'confirmed', startTime: { $gte: startOfDay, $lte: endOfDay } }),
       Blacklist.countDocuments({ isActive: true }),
       IncidentReport.countDocuments({ status: { $in: ['open', 'investigating'] } }),
