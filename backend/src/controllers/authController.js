@@ -8,7 +8,7 @@ const { send2FAEmailCode, sendResetPasswordEmail } = require('../utils/emailServ
 const { logAudit } = require('../utils/auditLogger');
 
 const registerUser = async (req, res) => {
-  const { name, email, phone, password } = req.body;
+  const { name, email, phone, password, vehicleNumber } = req.body;
 
   // Admin accounts can only be created/promoted by an existing admin
   // through Manage Users — never via public registration.
@@ -26,21 +26,47 @@ const registerUser = async (req, res) => {
     }
 
     const userRole = req.body.role === 'security' ? 'security' : 'user';
+    const cleanPlate = vehicleNumber ? String(vehicleNumber).trim().toUpperCase() : '';
+
+    if (userRole === 'user' && !cleanPlate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vehicle license plate number is required for user registration.'
+      });
+    }
+
+    // VEHICLE UNIQUENESS CHECK: Ensure no other user has registered this license plate
+    if (cleanPlate) {
+      const existingVehicle = await User.findOne({
+        $or: [
+          { vehicleNumber: cleanPlate },
+          { vehicles: cleanPlate }
+        ]
+      });
+      if (existingVehicle) {
+        return res.status(400).json({
+          success: false,
+          message: `Vehicle license plate "${cleanPlate}" is already registered with another account. Each vehicle must have a unique owner.`
+        });
+      }
+    }
 
     const user = await User.create({
       name,
       email,
       phone,
       password,
-      role: userRole
+      role: userRole,
+      vehicleNumber: cleanPlate,
+      vehicles: cleanPlate ? [cleanPlate] : []
     });
 
     const token = user.generateAuthToken();
 
     await Notification.create({
       user: user._id,
-      title: 'Welcome',
-      message: 'Welcome to Smart Parking System',
+      title: 'Welcome to ParkSmart',
+      message: `Welcome ${user.name}! Your primary vehicle ${cleanPlate || 'plate'} has been verified.`,
       type: 'info'
     });
 
@@ -52,12 +78,15 @@ const registerUser = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role: user.role
+        role: user.role,
+        vehicleNumber: user.vehicleNumber,
+        vehicles: user.vehicles || []
       }
     });
   } catch (error) {
     console.warn('DB Register Error (using demo fallback):', error.message);
     const userRole = req.body.role === 'admin' || req.body.role === 'security' ? req.body.role : 'user';
+    const cleanPlate = vehicleNumber ? String(vehicleNumber).trim().toUpperCase() : 'MH-12-AB-3456';
     return res.status(201).json({
       success: true,
       token: `demo-token-${Date.now()}`,
@@ -66,7 +95,9 @@ const registerUser = async (req, res) => {
         name: name || 'Registered User',
         email: email,
         phone: phone || '9876543210',
-        role: userRole
+        role: userRole,
+        vehicleNumber: cleanPlate,
+        vehicles: [cleanPlate]
       }
     });
   }
@@ -166,6 +197,8 @@ const loginUser = async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        vehicleNumber: user.vehicleNumber || '',
+        vehicles: user.vehicles || (user.vehicleNumber ? [user.vehicleNumber] : []),
         twoFactorEnabled: user.twoFactorEnabled
       }
     });
@@ -182,6 +215,8 @@ const loginUser = async (req, res) => {
         email: email || 'user@example.com',
         phone: '9876543210',
         role: userRole,
+        vehicleNumber: 'MH-12-AB-3456',
+        vehicles: ['MH-12-AB-3456'],
         twoFactorEnabled: false
       }
     });
@@ -533,15 +568,48 @@ const getMe = async (req, res) => {
 };
 
 const updateProfile = async (req, res) => {
-  const { name, email, phone } = req.body;
+  const { name, email, phone, vehicleNumber, addVehicle } = req.body;
 
-  const user = await User.findByIdAndUpdate(
-    req.user.id,
-    { name, email, phone },
-    { new: true, runValidators: true }
-  );
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
 
-  res.status(200).json({ success: true, user });
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (phone) user.phone = phone;
+
+    const newPlate = (addVehicle || vehicleNumber) ? String(addVehicle || vehicleNumber).trim().toUpperCase() : '';
+    if (newPlate) {
+      const existingVehicle = await User.findOne({
+        _id: { $ne: user._id },
+        $or: [
+          { vehicleNumber: newPlate },
+          { vehicles: newPlate }
+        ]
+      });
+      if (existingVehicle) {
+        return res.status(400).json({
+          success: false,
+          message: `Vehicle license plate "${newPlate}" is already registered with another account. Each vehicle must have a unique owner.`
+        });
+      }
+
+      if (!user.vehicles) user.vehicles = [];
+      if (!user.vehicles.includes(newPlate)) {
+        user.vehicles.push(newPlate);
+      }
+      if (!user.vehicleNumber) {
+        user.vehicleNumber = newPlate;
+      }
+    }
+
+    await user.save();
+    res.status(200).json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 };
 
 const changePassword = async (req, res) => {

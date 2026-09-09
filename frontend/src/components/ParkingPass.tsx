@@ -46,9 +46,6 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
   const rawBooking = booking as unknown as Record<string, unknown>;
   const bookingId = String(booking.id || rawBooking._id || rawBooking.id || '');
 
-  const [dynamicQrUrl, setDynamicQrUrl] = useState<string>(booking.qrCode || '');
-  const [secondsLeft, setSecondsLeft] = useState<number>(30);
-  const [isRotating, setIsRotating] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
   // Keep live time updated for real-time grace window state changes
@@ -58,48 +55,6 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
     }, 1000);
     return () => clearInterval(clockTimer);
   }, []);
-
-  // Dynamic rotating QR fetcher
-  useEffect(() => {
-    let timer: ReturnType<typeof setInterval>;
-    let isMounted = true;
-
-    const fetchDynamicQR = async () => {
-      if (!bookingId) return;
-
-      try {
-        setIsRotating(true);
-        const res = await bookingApi.getDynamicQR(bookingId);
-        if (isMounted && res.success && res.dynamicQrCode) {
-          setDynamicQrUrl(res.dynamicQrCode);
-          setSecondsLeft(res.expiresIn || 30);
-        }
-      } catch {
-        if (isMounted && booking.qrCode) {
-          setDynamicQrUrl(booking.qrCode);
-        }
-      } finally {
-        if (isMounted) setIsRotating(false);
-      }
-    };
-
-    fetchDynamicQR();
-
-    timer = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          fetchDynamicQR();
-          return 30;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(timer);
-    };
-  }, [bookingId, booking.qrCode]);
 
   // Extract display values
   const slotObj = (rawBooking.slot as Record<string, unknown>) || {};
@@ -138,7 +93,11 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
   const earlyTimeStr = formatTime(new Date(earlyArrivalMs));
   const graceExpiryTimeStr = formatTime(new Date(graceExpiryMs));
 
-  const progressPercent = (secondsLeft / 30) * 100;
+  const qrImageUrl =
+    booking.qrCode ||
+    `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
+      booking.qrToken || booking.id || 'PARKSMART-PASS'
+    )}`;
 
   return (
     <div className="rounded-2xl overflow-hidden neon-border-glow shadow-2xl">
@@ -256,16 +215,15 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
           </div>
         )}
 
-        {/* Dynamic Anti-Screenshot Badge (Only shown when QR is active) */}
+        {/* Fixed Verified Pass Badge */}
         {!isGraceExpired && (
-          <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-800/80 border border-white/10 text-xs">
+          <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-800/90 border border-cyan-500/30 text-xs">
             <span className="flex items-center gap-1.5 font-semibold text-emerald-400">
               <HiOutlineShieldCheck className="w-4 h-4" />
-              Dynamic Anti-Fraud Protection
+              Verified Entry &amp; Exit Pass
             </span>
-            <span className="flex items-center gap-1 font-mono text-[11px] text-slate-300">
-              <HiOutlineArrowPath className={`w-3.5 h-3.5 ${isRotating ? 'animate-spin text-cyan-400' : ''}`} />
-              {secondsLeft}s
+            <span className="text-[11px] font-mono text-cyan-300 font-bold">
+              ONE-PASS GATE KEY
             </span>
           </div>
         )}
@@ -273,34 +231,25 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
         {/* QR Code Display OR Grace Expiry Suggestion Card */}
         {!isGraceExpired ? (
           <div className="flex flex-col items-center justify-center">
-            <div className="relative p-3 bg-white rounded-2xl shadow-[0_0_25px_rgba(6,182,212,0.35)] overflow-hidden">
+            <div className="relative p-3.5 bg-white rounded-2xl shadow-[0_0_25px_rgba(6,182,212,0.35)] overflow-hidden border-2 border-cyan-400/40">
               <motion.div
-                animate={{ y: [0, 120, 0] }}
+                animate={{ y: [0, 140, 0] }}
                 transition={{ repeat: Infinity, duration: 2.5, ease: 'linear' }}
                 className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-500 to-transparent pointer-events-none z-10"
               />
               <img
-                src={
-                  dynamicQrUrl ||
-                  booking.qrCode ||
-                  `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
-                    booking.qrToken || booking.id || 'PARKSMART-PASS'
-                  )}`
-                }
-                alt="Dynamic Entry Pass QR Code"
-                className="w-36 h-36 object-contain"
+                src={qrImageUrl}
+                alt="Digital Gate Pass QR Code"
+                className="w-40 h-40 object-contain"
               />
             </div>
 
-            <div className="w-36 mt-2 h-1 bg-slate-800 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400"
-                style={{ width: `${progressPercent}%` }}
-                transition={{ ease: 'linear', duration: 1 }}
-              />
-            </div>
-            <p className="text-[10px] text-slate-400 mt-1">
-              QR rotates every 30s • Scan at boom barrier camera
+            <p className="text-xs font-semibold text-cyan-300 mt-2.5 flex items-center gap-1">
+              <HiOutlineCheckCircle className="w-4 h-4 text-emerald-400" />
+              Scan at Boom Barrier for Entry &amp; Exit
+            </p>
+            <p className="text-[10px] text-gray-400 mt-0.5">
+              Unique Booking Key &bull; Barrier Auto-Gate Access
             </p>
           </div>
         ) : (
@@ -365,7 +314,7 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
         {/* Footer Summary */}
         <div className="flex items-center justify-between pt-3 border-t border-white/10">
           <p className="text-xs font-semibold text-gray-400 tracking-wider font-mono">
-            PASS ID: {(bookingId || 'BK-LIVE').slice(0, 8).toUpperCase()}
+            PASS ID: #{(bookingId || 'BK-LIVE').slice(-8).toUpperCase()}
           </p>
           <Badge variant={paymentVariant[booking.paymentStatus] || 'success'}>
             {(booking.paymentStatus || 'paid').toUpperCase()}

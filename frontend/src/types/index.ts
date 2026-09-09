@@ -4,7 +4,10 @@ export interface User {
   email: string;
   phone: string;
   role: 'user' | 'admin' | 'security';
+  vehicleNumber?: string;
+  vehicles?: string[];
   avatar?: string;
+  twoFactorEnabled?: boolean;
   createdAt: string;
 }
 

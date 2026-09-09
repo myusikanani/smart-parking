@@ -100,8 +100,8 @@ export const authApi = {
   verifyTwoFactor: (userId: string, code: string) =>
     api.post<{ success: boolean; token: string; user: Record<string, unknown> }>('/auth/verify-2fa', { userId, code }),
 
-  register: (name: string, email: string, phone: string, password: string, role?: string) =>
-    api.post<{ success: boolean; token?: string; user?: Record<string, unknown>; requiresTwoFactorSetup?: boolean; qrCodeUrl?: string; secret?: string; userId?: string; message?: string }>('/auth/register', { name, email, phone, password, role }),
+  register: (name: string, email: string, phone: string, password: string, role?: string, vehicleNumber?: string) =>
+    api.post<{ success: boolean; token?: string; user?: Record<string, unknown>; requiresTwoFactorSetup?: boolean; qrCodeUrl?: string; secret?: string; userId?: string; message?: string }>('/auth/register', { name, email, phone, password, role, vehicleNumber }),
 
   getMe: () =>
     api.get<{ success: boolean; user: Record<string, unknown> }>('/auth/me'),

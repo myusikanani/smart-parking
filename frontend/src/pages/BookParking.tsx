@@ -90,8 +90,14 @@ const BookParking = () => {
   const [selectedTime, setSelectedTime] = useState(initialSlot.time);
   const [category, setCategory] = useState('four-wheeler');
   const [selectedHours, setSelectedHours] = useState(2);
-  const [vehicleNumber, setVehicleNumber] = useState('MH-12-AB-3456');
+  const [vehicleNumber, setVehicleNumber] = useState(user?.vehicleNumber || 'MH-12-AB-3456');
   const [selectedSlotId, setSelectedSlotId] = useState<string>('');
+
+  useEffect(() => {
+    if (user?.vehicleNumber) {
+      setVehicleNumber(user.vehicleNumber);
+    }
+  }, [user?.vehicleNumber]);
 
   // Modal & Auth Check State
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -477,16 +483,44 @@ const BookParking = () => {
                 </div>
               </div>
 
-              {/* VEHICLE LICENSE PLATE INPUT */}
+              {/* VEHICLE LICENSE PLATE INPUT & SAVED VEHICLE SELECTOR */}
               <div>
-                <label className="block text-xs font-semibold text-gray-400 mb-1.5">
-                  Vehicle License Plate Number
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-400">
+                    Vehicle License Plate Number
+                  </label>
+                  {user?.vehicles && user.vehicles.length > 0 && (
+                    <span className="text-[10px] text-cyan-400 font-medium">
+                      Registered to {user.name}
+                    </span>
+                  )}
+                </div>
+
+                {/* Quick select chips for user's vehicles */}
+                {user?.vehicles && user.vehicles.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {user.vehicles.map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setVehicleNumber(v)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold border transition-all ${
+                          vehicleNumber === v
+                            ? 'bg-cyan-500/20 border-cyan-400 text-cyan-200 shadow-[0_0_10px_rgba(6,182,212,0.3)]'
+                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                        }`}
+                      >
+                        🚗 {v}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 <input
                   type="text"
                   value={vehicleNumber}
                   onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
-                  placeholder="e.g. MH-12-AB-3456"
+                  placeholder="e.g. GJ-01-AB-1234"
                   className="input-neon w-full px-4 py-2.5 text-sm font-mono tracking-wider rounded-xl uppercase"
                 />
               </div>

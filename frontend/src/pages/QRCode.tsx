@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { HiOutlineArrowDownTray, HiOutlineEnvelope, HiOutlineHome, HiOutlineExclamationTriangle } from 'react-icons/hi2';
 import { bookingApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import ParkingPass from '../components/ParkingPass';
 import { CarSedan } from '../components/vehicles';
 import type { Booking } from '../types';
@@ -10,6 +11,7 @@ import type { Booking } from '../types';
 const QRCode = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [noPass, setNoPass] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -95,9 +97,9 @@ const QRCode = () => {
         .replace('-', ' ')
         .replace(/\b\w/g, (c) => c.toUpperCase());
       const userObj = typeof raw.user === 'object' && raw.user !== null ? (raw.user as Record<string, unknown>) : null;
-      const driverName = String(booking.userName || userObj?.name || 'Registered Driver');
-      const vehicleNum = String(booking.vehicleNumber || 'MH-12-AB-3456');
-      const passId = String(booking.id || raw._id || raw.id || 'GATE').slice(0, 8).toUpperCase();
+      const driverName = String(booking.userName || userObj?.name || user?.name || 'Registered Driver');
+      const vehicleNum = String(booking.vehicleNumber || user?.vehicleNumber || 'MH-12-AB-3456');
+      const passId = String(booking.id || raw._id || raw.id || 'GATE').slice(-8).toUpperCase();
 
       const startDate = new Date(booking.startTime);
       const endDate = new Date(booking.endTime);

@@ -34,6 +34,16 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  vehicleNumber: {
+    type: String,
+    trim: true,
+    uppercase: true,
+    default: ''
+  },
+  vehicles: {
+    type: [String],
+    default: []
+  },
   isActive: {
     type: Boolean,
     default: true
