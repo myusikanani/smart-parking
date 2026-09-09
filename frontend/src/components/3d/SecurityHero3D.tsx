@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Html } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { RealisticVehicle } from './RealisticVehicle';
 
@@ -44,19 +44,6 @@ function SecuritySceneContent() {
       {/* VEHICLE CURRENTLY UNDER ANPR SCANNING */}
       <group position={[0, 0.05, 1]}>
         <RealisticVehicle type="tesla" color="#06b6d4" headlightsOn={true} />
-
-        {/* 3D TARGET LOCK RECOGNITION HUD */}
-        <Html position={[0, 1.8, 1.8]} center distanceFactor={16}>
-          <div className="bg-slate-900/95 border-2 border-cyan-400 p-2.5 rounded-2xl shadow-2xl backdrop-blur-xl flex flex-col items-center gap-1 text-center font-mono animate-pulse">
-            <span className="text-[9px] font-extrabold text-cyan-400 uppercase tracking-widest">
-              🎯 ALPR SCANNER ACTIVE
-            </span>
-            <span className="text-sm font-extrabold text-white bg-slate-950 px-2 py-0.5 rounded-md border border-cyan-500/40">
-              MH-12-AB-3456
-            </span>
-            <span className="text-[9px] text-emerald-400 font-bold">MATCH CONFIRMED 99.9%</span>
-          </div>
-        </Html>
       </group>
 
       {/* 3D HIGH-TECH CCTV SURVEILLANCE CAMERA MODEL */}
@@ -92,19 +79,6 @@ function SecuritySceneContent() {
             <meshBasicMaterial color="#06b6d4" transparent opacity={0.18} wireframe />
           </mesh>
         </group>
-      </group>
-
-      {/* 3D SECURITY SHIELD BADGE MODEL */}
-      <group position={[5, 4.2, -3]}>
-        <mesh>
-          <boxGeometry args={[1.5, 1.8, 0.2]} />
-          <meshStandardMaterial color="#10b981" metalness={0.9} roughness={0.1} />
-        </mesh>
-        <Html center distanceFactor={18}>
-          <div className="bg-emerald-500 text-slate-950 font-mono font-extrabold text-[10px] px-2.5 py-1 rounded-xl shadow-lg whitespace-nowrap">
-            🛡️ ENCRYPTION LOCK ACTIVE
-          </div>
-        </Html>
       </group>
 
       <OrbitControls
