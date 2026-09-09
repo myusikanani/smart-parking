@@ -125,8 +125,8 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
   const endTimeStr = formatTime(endTimeObj);
   const dateStr = formatDate(startTimeObj);
 
-  // 15-Minute Grace Period Timing Logic
-  const earlyArrivalMs = startTimeObj.getTime() - 15 * 60 * 1000;
+  // Timing Logic: Valid 10 minutes BEFORE start time to 15 minutes AFTER start time
+  const earlyArrivalMs = startTimeObj.getTime() - 10 * 60 * 1000;
   const graceExpiryMs = startTimeObj.getTime() + 15 * 60 * 1000;
   const nowMs = currentTime.getTime();
 
@@ -230,7 +230,7 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
           </div>
         )}
 
-        {/* State B: Before 15m Early Entry Window (e.g. 7:10 AM for 8:00 AM slot) */}
+        {/* State B: Before 10m Early Entry Window */}
         {isBeforeEarlyWindow && (
           <div className="p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs space-y-1">
             <div className="flex items-center gap-2 font-bold text-cyan-200">
@@ -238,12 +238,12 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
               Scheduled Slot: {startTimeStr}
             </div>
             <p className="text-[11px] text-gray-300 leading-relaxed">
-              Your digital entry pass will activate at <strong>{earlyTimeStr}</strong> (15 minutes early access enabled). You can enter anytime between <strong>{earlyTimeStr}</strong> and <strong>{graceExpiryTimeStr}</strong>.
+              Your digital entry pass activates at <strong>{earlyTimeStr}</strong> (10 minutes before your booked time). You can scan for entry between <strong>{earlyTimeStr}</strong> and <strong>{graceExpiryTimeStr}</strong>.
             </p>
           </div>
         )}
 
-        {/* State C: Inside Valid Active 15-Minute Window */}
+        {/* State C: Inside Valid Active Window (10m Before -> 15m After) */}
         {isWithinActiveWindow && !isCurrentlyParked && (
           <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
             <span className="flex items-center gap-1.5 font-bold">
@@ -251,7 +251,7 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
               Gate Entry Active
             </span>
             <span className="text-[11px] text-gray-300 font-mono">
-              Grace window ends at {graceExpiryTimeStr}
+              Valid until {graceExpiryTimeStr}
             </span>
           </div>
         )}

@@ -336,25 +336,27 @@ const processScan = async (req, res, booking, mode, blacklistMatch = null) => {
       });
     }
 
-    // Time Window check
+    // Time Window check: Valid 10 mins before startTime until 15 mins after startTime for initial entry
     const now = new Date();
     const startTime = new Date(booking.startTime);
     const endTime = new Date(booking.endTime);
+    const earlyEntryWindow = new Date(startTime.getTime() - 10 * 60 * 1000);
+    const graceExpiryWindow = new Date(startTime.getTime() + 15 * 60 * 1000);
 
-    if (now.getTime() < startTime.getTime() - 30 * 60 * 1000) {
+    if (now.getTime() < earlyEntryWindow.getTime()) {
       return res.status(400).json({
         success: false,
         allowed: false,
         type: 'entry',
-        message: `ENTRY DENIED: Too early. Booking starts at ${startTime.toLocaleTimeString()}.`
+        message: `ENTRY DENIED: Too early. QR pass activates 10 minutes before slot start time (at ${earlyEntryWindow.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}).`
       });
     }
-    if (now.getTime() > endTime.getTime()) {
+    if (now.getTime() > graceExpiryWindow.getTime() && booking.status !== 'active') {
       return res.status(400).json({
         success: false,
         allowed: false,
         type: 'entry',
-        message: 'ENTRY DENIED: Booking has expired.'
+        message: `ENTRY DENIED: 15-minute gate entry grace period expired at ${graceExpiryWindow.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Slot released.`
       });
     }
 
