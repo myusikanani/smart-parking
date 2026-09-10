@@ -40,6 +40,8 @@ interface Slot {
   pricePerHour?: number;
   pricePerDay?: number;
   pricePerMonth?: number;
+  isEmergencyBuffer?: boolean;
+  features?: string[];
 }
 
 const categories = [
@@ -284,9 +286,20 @@ const BookParking = () => {
     return () => { isMounted = false; };
   }, [category, date, selectedTime, selectedHours]);
 
+  const isEmergencySlot = (s: Slot) => {
+    return Boolean(
+      s.isEmergencyBuffer ||
+      s.number?.startsWith('BUF') ||
+      (s.features && s.features.includes('emergency_buffer'))
+    );
+  };
+
   const selectedSlot = useMemo(
-    () => slots.find((s) => s.id === selectedSlotId) || slots.find((s) => s.status === 'available'),
-    [slots, selectedSlotId]
+    () =>
+      slots.find((s) => s.id === selectedSlotId && !isEmergencySlot(s)) ||
+      slots.find((s) => s.status === 'available' && !isEmergencySlot(s) && s.category === category) ||
+      slots.find((s) => s.status === 'available' && !isEmergencySlot(s)),
+    [slots, selectedSlotId, category]
   );
 
   // Price Calculation — mirrors backend formula exactly:
@@ -835,9 +848,19 @@ const BookParking = () => {
                 floor: s.floor || 1,
                 status: s.status as ParkingSlotItem['status'],
                 pricePerHour: s.pricePerHour || 30,
+                pricePerDay: s.pricePerDay || 150,
+                isEmergencyBuffer: Boolean(s.isEmergencyBuffer || s.number?.startsWith('BUF') || s.features?.includes('emergency_buffer')),
+                features: s.features,
               }))}
               selectedSlotId={selectedSlotId}
               onSelectSlot={(slot) => {
+                if (slot.isEmergencyBuffer || slot.number?.startsWith('BUF')) {
+                  toast(
+                    `🛡️ Bay ${slot.number} is a System Reserved Emergency Buffer Slot. It is automatically assigned by the Smart Conflict Engine in overstay emergencies (₹0 fee).`,
+                    'info'
+                  );
+                  return;
+                }
                 setSelectedSlotId(slot._id);
                 if (slot.category) {
                   setCategory(slot.category);

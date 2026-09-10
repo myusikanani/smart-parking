@@ -167,26 +167,28 @@ function ParkingGarageEnvironment({ targetSlot }: { targetSlot: string }) {
 
   // Parking Bays layout
   const bays = useMemo(() => {
-    const list: { id: string; pos: [number, number, number]; isTarget: boolean; type: 'standard' | 'ev' | 'vip' }[] = [];
+    const list: { id: string; pos: [number, number, number]; isTarget: boolean; type: 'standard' | 'ev' | 'vip' | 'buffer' }[] = [];
     // West bays
     for (let z = -14; z <= 14; z += 4) {
+      const isBuffer = z === 14;
       const isEv = z === -2 || z === 2;
-      const bayName = isEv ? `EV-0${Math.abs(z)}` : `A-0${Math.abs(z)}`;
+      const bayName = isBuffer ? 'BUF-01' : isEv ? `EV-0${Math.abs(z)}` : `A-0${Math.abs(z)}`;
       list.push({
         id: bayName,
         pos: [-12, 0.02, z],
         isTarget: bayName === targetSlot || bayName === 'A-04',
-        type: isEv ? 'ev' : 'standard'
+        type: isBuffer ? 'buffer' : isEv ? 'ev' : 'standard'
       });
     }
     // East bays
     for (let z = -14; z <= 14; z += 4) {
-      const bayName = `B-0${Math.abs(z)}`;
+      const isBuffer = z === 14;
+      const bayName = isBuffer ? 'BUF-02' : `B-0${Math.abs(z)}`;
       list.push({
         id: bayName,
         pos: [12, 0.02, z],
         isTarget: bayName === targetSlot,
-        type: 'standard'
+        type: isBuffer ? 'buffer' : 'standard'
       });
     }
     return list;
@@ -222,52 +224,69 @@ function ParkingGarageEnvironment({ targetSlot }: { targetSlot: string }) {
       ))}
 
       {/* Parking Bays */}
-      {bays.map((bay) => (
-        <group key={bay.id} position={bay.pos}>
-          {/* Bay Ground Rect */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[4.5, 2.8]} />
-            <meshBasicMaterial
-              color={bay.isTarget ? '#10b981' : bay.type === 'ev' ? '#06b6d4' : '#334155'}
-              transparent
-              opacity={bay.isTarget ? 0.45 : 0.15}
-            />
-          </mesh>
-          {/* Bay Border Outline */}
-          <lineSegments rotation={[-Math.PI / 2, 0, 0]}>
-            <edgesGeometry args={[new THREE.PlaneGeometry(4.5, 2.8)]} />
-            <lineBasicMaterial
-              color={bay.isTarget ? '#34d399' : bay.type === 'ev' ? '#06b6d4' : '#64748b'}
-              linewidth={bay.isTarget ? 3 : 1}
-            />
-          </lineSegments>
+      {bays.map((bay) => {
+        const isBuf = bay.type === 'buffer';
+        const groundColor = bay.isTarget ? '#10b981' : isBuf ? '#f59e0b' : bay.type === 'ev' ? '#06b6d4' : '#334155';
+        const borderColor = bay.isTarget ? '#34d399' : isBuf ? '#fbbf24' : bay.type === 'ev' ? '#06b6d4' : '#64748b';
+        return (
+          <group key={bay.id} position={bay.pos}>
+            {/* Bay Ground Rect */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[4.5, 2.8]} />
+              <meshBasicMaterial
+                color={groundColor}
+                transparent
+                opacity={bay.isTarget ? 0.45 : isBuf ? 0.35 : 0.15}
+              />
+            </mesh>
+            {/* Bay Border Outline */}
+            <lineSegments rotation={[-Math.PI / 2, 0, 0]}>
+              <edgesGeometry args={[new THREE.PlaneGeometry(4.5, 2.8)]} />
+              <lineBasicMaterial
+                color={borderColor}
+                linewidth={bay.isTarget || isBuf ? 3 : 1}
+              />
+            </lineSegments>
 
-          {/* Slot Number Text on Floor */}
-          <Text
-            position={[0, 0.04, 0]}
-            rotation={[-Math.PI / 2, 0, 0]}
-            fontSize={0.6}
-            color={bay.isTarget ? '#10b981' : bay.type === 'ev' ? '#38bdf8' : '#94a3b8'}
-            anchorX="center"
-            anchorY="middle"
-          >
-            {bay.id}
-          </Text>
+            {/* Slot Number Text on Floor */}
+            <Text
+              position={[0, 0.04, 0]}
+              rotation={[-Math.PI / 2, 0, 0]}
+              fontSize={isBuf ? 0.45 : 0.6}
+              color={bay.isTarget ? '#10b981' : isBuf ? '#fbbf24' : bay.type === 'ev' ? '#38bdf8' : '#94a3b8'}
+              anchorX="center"
+              anchorY="middle"
+            >
+              {isBuf ? `🛡️ ${bay.id} BUFFER` : bay.id}
+            </Text>
 
-          {/* Target Slot Beacon Glow */}
-          {bay.isTarget && (
-            <group position={[0, 2.5, 0]}>
-              <mesh>
-                <cylinderGeometry args={[0.05, 1.8, 4, 16, 1, true]} />
-                <meshBasicMaterial color="#10b981" transparent opacity={0.3} side={THREE.DoubleSide} />
-              </mesh>
-              <Text position={[0, 2.2, 0]} fontSize={0.7} color="#10b981" anchorX="center" anchorY="middle">
-                ★ RESERVED BAY ★
-              </Text>
-            </group>
-          )}
-        </group>
-      ))}
+            {/* Target Slot Beacon Glow */}
+            {bay.isTarget && (
+              <group position={[0, 2.5, 0]}>
+                <mesh>
+                  <cylinderGeometry args={[0.05, 1.8, 4, 16, 1, true]} />
+                  <meshBasicMaterial color="#10b981" transparent opacity={0.3} side={THREE.DoubleSide} />
+                </mesh>
+                <Text position={[0, 2.2, 0]} fontSize={0.7} color="#10b981" anchorX="center" anchorY="middle">
+                  ★ RESERVED BAY ★
+                </Text>
+              </group>
+            )}
+
+            {/* Emergency Buffer Floating Shield Beacon */}
+            {isBuf && (
+              <group position={[0, 2.0, 0]}>
+                <Text position={[0, 0.4, 0]} fontSize={0.4} color="#fbbf24" anchorX="center" anchorY="middle">
+                  🛡️ VIP / EMERGENCY BUFFER 🛡️
+                </Text>
+                <Text position={[0, -0.1, 0]} fontSize={0.25} color="#fed7aa" anchorX="center" anchorY="middle">
+                  (System Auto-Reassignment Only)
+                </Text>
+              </group>
+            )}
+          </group>
+        );
+      })}
 
       {/* Entry Gate Barrier */}
       <group position={[0, 1.5, 21]}>

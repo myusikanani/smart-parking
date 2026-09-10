@@ -52,6 +52,10 @@ const parkingSlotSchema = new mongoose.Schema({
     default: 0
   },
   features: [String],
+  isEmergencyBuffer: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now

@@ -95,6 +95,30 @@ const seedData = async () => {
           slotCounter++;
         }
       }
+
+      // Dedicated Emergency Overstay Buffer & VIP Standby Slots (System Reserved)
+      slotsData.push({
+        number: `BUF-${floor}A`,
+        category: 'four-wheeler',
+        floor,
+        status: 'available',
+        pricePerHour: 30,
+        pricePerDay: 150,
+        pricePerMonth: 3000,
+        isEmergencyBuffer: true,
+        features: ['emergency_buffer', 'vip_standby', 'cctv', 'priority_access']
+      });
+      slotsData.push({
+        number: `BUF-${floor}B`,
+        category: 'ev',
+        floor,
+        status: 'available',
+        pricePerHour: 40,
+        pricePerDay: 160,
+        pricePerMonth: 3500,
+        isEmergencyBuffer: true,
+        features: ['emergency_buffer', 'vip_standby', 'cctv', 'ev-charging']
+      });
     }
 
     const slots = await ParkingSlot.insertMany(slotsData);

@@ -38,6 +38,14 @@ exports.createBooking = async (req, res) => {
         return res.status(404).json({ success: false, message: 'Selected parking slot does not exist.' });
       }
 
+      // 0. EMERGENCY BUFFER PROTECTION: Buffer bays cannot be directly reserved by regular users
+      if (slot.isEmergencyBuffer) {
+        return res.status(403).json({
+          success: false,
+          message: `Slot ${slot.number} is a dedicated Emergency Standby / VIP Buffer Bay reserved for overstay conflict resolution and emergency reassignment. It cannot be booked directly.`
+        });
+      }
+
       // 1. TIME-WINDOW OVERLAP CHECK: a slot is only blocked for windows that
       // genuinely overlap a live booking — never for the whole day.
       // Unpaid pending holds stop blocking once their 10-min reservation expires.

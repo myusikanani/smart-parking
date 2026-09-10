@@ -427,14 +427,34 @@ const processScan = async (req, res, booking, mode, blacklistMatch = null) => {
         }
 
         // 2. Emergency Buffer / VIP Slot Auto-Reassignment for Driver B (Arriving User)
-        const preferredCategory = assignedSlot.category || 'four-wheeler';
+        // PRIORITY 1: Dedicated Emergency Buffer Bay on the same floor
         let alternateSlot = await ParkingSlot.findOne({
           status: 'available',
-          category: preferredCategory,
+          isEmergencyBuffer: true,
+          floor: assignedSlot.floor || 1,
           _id: { $ne: assignedSlotId }
         });
 
-        // If exact category not found, upgrade to any available slot (VIP, Standard, Accessible)
+        // PRIORITY 2: Dedicated Emergency Buffer Bay on any floor
+        if (!alternateSlot) {
+          alternateSlot = await ParkingSlot.findOne({
+            status: 'available',
+            isEmergencyBuffer: true,
+            _id: { $ne: assignedSlotId }
+          });
+        }
+
+        // PRIORITY 3: Available standard slot of matching category
+        const preferredCategory = assignedSlot.category || 'four-wheeler';
+        if (!alternateSlot) {
+          alternateSlot = await ParkingSlot.findOne({
+            status: 'available',
+            category: preferredCategory,
+            _id: { $ne: assignedSlotId }
+          });
+        }
+
+        // PRIORITY 4: Any available slot in the entire facility (free upgrade)
         if (!alternateSlot) {
           alternateSlot = await ParkingSlot.findOne({
             status: 'available',
