@@ -40,21 +40,27 @@ interface NavNotif {
   icon: typeof HiOutlineBell;
 }
 
-const userSidebarItems = [
-  { to: '/', label: 'Home Website', icon: HiOutlineSparkles },
-  { to: '/dashboard', label: 'Dashboard', icon: HiOutlineHome },
-  { to: '/dashboard/book-parking', label: 'Book Parking', icon: HiOutlineCalendarDays },
+const parkingNavItems = [
+  { to: '/dashboard/book-parking', label: 'Book Parking', icon: HiOutlineCalendarDays, highlight: true },
+  { to: '/available-parking', label: 'Available Slots', icon: HiOutlineRectangleStack },
+  { to: '/dashboard/smart-search', label: 'Smart Search', icon: HiOutlineMagnifyingGlass },
+];
+
+const accountNavItems = [
+  { to: '/booking-history', label: 'My Bookings', icon: HiOutlineListBullet },
   { to: '/dashboard/subscriptions', label: 'Monthly Passes', icon: HiOutlineCreditCard },
+  { to: '/dashboard/payments', label: 'Payment', icon: HiOutlineBanknotes },
+  { to: '/profile', label: 'My Profile & Garage', icon: HiOutlineUser },
+];
+
+const moreNavItems = [
   { to: '/dashboard/navigation', label: '3D/AR Navigation', icon: HiOutlineMapPin },
   { to: '/dashboard/live-map', label: 'Live 3D Map', icon: HiOutlineRectangleStack },
-  { to: '/dashboard/smart-search', label: 'Smart Search', icon: HiOutlineMagnifyingGlass },
-  { to: '/available-parking', label: 'Available Slots', icon: HiOutlineRectangleStack },
-  { to: '/booking-history', label: 'My Bookings', icon: HiOutlineListBullet },
-  { to: '/dashboard/payments', label: 'Payment', icon: HiOutlineBanknotes },
   { to: '/qr-code', label: 'Digital QR Pass', icon: HiOutlineQrCode },
   { to: '/waiting-list', label: 'Waiting List', icon: HiOutlineQueueList },
   { to: '/notifications', label: 'Notifications', icon: HiOutlineBell },
-  { to: '/profile', label: 'My Profile', icon: HiOutlineUser },
+  { to: '/dashboard', label: 'Dashboard Home', icon: HiOutlineHome },
+  { to: '/', label: 'Home Website', icon: HiOutlineSparkles },
 ];
 
 const UserLayout = () => {
@@ -68,6 +74,16 @@ const UserLayout = () => {
   const [userOpen, setUserOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [navNotifs, setNavNotifs] = useState<NavNotif[]>([]);
+
+  // Automatically expand More if user is on a route belonging to More
+  const isMoreRouteActive = moreNavItems.some((item) => location.pathname === item.to);
+  const [moreOpen, setMoreOpen] = useState(isMoreRouteActive);
+
+  useEffect(() => {
+    if (isMoreRouteActive) {
+      setMoreOpen(true);
+    }
+  }, [isMoreRouteActive]);
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
@@ -138,18 +154,21 @@ const UserLayout = () => {
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
-      if (userRef.current && !userRef.current.contains(e.target as Node)) setUserOpen(false);
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
+      if (userRef.current && !userRef.current.contains(e.target as Node)) {
+        setUserOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const handleSearchSubmit = (e: FormEvent) => {
+  const handleSearch = (e: FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/booking-history?search=${encodeURIComponent(searchQuery.trim())}`);
-    }
+    if (!searchQuery.trim()) return;
+    navigate(`/dashboard/smart-search?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
   const handleLogout = () => {
@@ -158,8 +177,8 @@ const UserLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] font-inter flex flex-col">
-      {/* MOBILE BACKDROP OVERLAY */}
+    <div className="min-h-screen bg-[#070b14] text-gray-100 flex flex-col font-sans">
+      {/* MOBILE BACKDROP */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -172,79 +191,168 @@ const UserLayout = () => {
         )}
       </AnimatePresence>
 
-      {/* LEFT SIDEBAR NAVIGATION MENU (MATCHING ADMIN INFRASTRUCTURE) */}
+      {/* LEFT SIDEBAR NAVIGATION MENU */}
       <aside
         className={`glass-sidebar fixed top-0 left-0 z-50 h-full transition-all duration-300 ${
           collapsed ? 'w-16' : 'w-64'
-        } ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        } ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} flex flex-col justify-between`}
       >
-        <div className="flex items-center justify-between h-16 px-4 border-b border-white/5">
-          {!collapsed && (
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-cyan-500/30 relative overflow-hidden">
-                <span className="text-white font-bold text-xs">P</span>
-                <motion.div
-                  initial={{ x: -8 }}
-                  animate={{ x: 8 }}
-                  transition={{ repeat: Infinity, duration: 2, ease: 'linear', repeatType: 'reverse' }}
-                  className="absolute bottom-0 opacity-30"
-                >
-                  <CarSedan className="w-3 h-auto" color="#ffffff" />
-                </motion.div>
-              </div>
-              <span className="text-lg font-bold neon-text truncate">ParkEase</span>
-              <span className="badge-neon text-[10px] font-mono px-1.5 py-0.2">User</span>
-            </Link>
-          )}
-
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors ml-auto"
-            title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-          >
-            {collapsed ? (
-              <HiOutlineChevronDoubleRight className="w-4 h-4" />
-            ) : (
-              <HiOutlineChevronDoubleLeft className="w-4 h-4" />
+        <div>
+          {/* LOGO BAR */}
+          <div className="flex items-center justify-between h-16 px-4 border-b border-white/5">
+            {!collapsed && (
+              <Link to="/" className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-cyan-500/30 relative overflow-hidden">
+                  <span className="text-white font-bold text-xs">P</span>
+                  <motion.div
+                    initial={{ x: -8 }}
+                    animate={{ x: 8 }}
+                    transition={{ repeat: Infinity, duration: 2, ease: 'linear', repeatType: 'reverse' }}
+                    className="absolute bottom-0 opacity-30"
+                  >
+                    <CarSedan className="w-3 h-auto" color="#ffffff" />
+                  </motion.div>
+                </div>
+                <span className="text-lg font-bold neon-text truncate">ParkEase</span>
+                <span className="badge-neon text-[10px] font-mono px-1.5 py-0.2">User</span>
+              </Link>
             )}
-          </button>
+
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors ml-auto"
+              title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+            >
+              {collapsed ? (
+                <HiOutlineChevronDoubleRight className="w-4 h-4" />
+              ) : (
+                <HiOutlineChevronDoubleLeft className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+
+          {/* GROUPED SIDEBAR NAVIGATION ITEMS */}
+          <nav className="p-3 space-y-4 overflow-y-auto max-h-[calc(100vh-10rem)] scrollbar-thin">
+            {/* 1. PARKING SECTION */}
+            <div className="space-y-1">
+              {!collapsed && (
+                <p className="px-3 text-[10px] font-mono uppercase tracking-wider text-cyan-400/70 font-bold mb-1.5">
+                  PARKING
+                </p>
+              )}
+              {parkingNavItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.to;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 ${
+                      isActive
+                        ? 'bg-cyan-500/20 text-cyan-300 font-semibold border-l-4 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                        : 'text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/5'
+                    }`}
+                    title={collapsed ? item.label : undefined}
+                  >
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-cyan-400' : ''}`} />
+                    {!collapsed && <span className="truncate">{item.label}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* 2. ACCOUNT SECTION */}
+            <div className="space-y-1 pt-2 border-t border-white/5">
+              {!collapsed && (
+                <p className="px-3 text-[10px] font-mono uppercase tracking-wider text-gray-400/80 font-bold mb-1.5">
+                  ACCOUNT
+                </p>
+              )}
+              {accountNavItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.to;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 ${
+                      isActive
+                        ? 'bg-cyan-500/20 text-cyan-300 font-semibold border-l-4 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                        : 'text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/5'
+                    }`}
+                    title={collapsed ? item.label : undefined}
+                  >
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-cyan-400' : ''}`} />
+                    {!collapsed && <span className="truncate">{item.label}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* 3. MORE FEATURES (COLLAPSIBLE SECTION) */}
+            <div className="space-y-1 pt-2 border-t border-white/5">
+              {!collapsed ? (
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen(!moreOpen)}
+                  className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-pink-400/80 hover:text-pink-300 font-bold rounded-lg hover:bg-white/5 transition"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span>MORE FEATURES</span>
+                    {isMoreRouteActive && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />}
+                  </span>
+                  <HiOutlineChevronDown
+                    className={`w-3.5 h-3.5 transition-transform duration-200 ${moreOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+              ) : (
+                <div className="h-px bg-white/10 my-1" />
+              )}
+
+              {(moreOpen || collapsed) && (
+                <motion.div
+                  initial={collapsed ? false : { opacity: 0, height: 0 }}
+                  animate={collapsed ? false : { opacity: 1, height: 'auto' }}
+                  className="space-y-1"
+                >
+                  {moreNavItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.to;
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setMobileOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 ${
+                          isActive
+                            ? 'bg-pink-500/20 text-pink-300 font-semibold border-l-4 border-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.2)]'
+                            : 'text-gray-400 hover:text-pink-300 hover:bg-pink-500/5'
+                        }`}
+                        title={collapsed ? item.label : undefined}
+                      >
+                        <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-pink-400' : ''}`} />
+                        {!collapsed && <span className="truncate">{item.label}</span>}
+                      </Link>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </div>
+          </nav>
         </div>
 
-        {/* SIDEBAR NAVIGATION ITEMS */}
-        <nav className="p-3 space-y-1.5 overflow-y-auto max-h-[calc(100vh-8rem)]">
-          {userSidebarItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.to;
-
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? 'bg-cyan-500/15 text-cyan-300 font-semibold border-l-4 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
-                    : 'text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/5'
-                }`}
-                title={collapsed ? item.label : undefined}
-              >
-                <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-cyan-400' : ''}`} />
-                {!collapsed && <span className="truncate">{item.label}</span>}
-              </Link>
-            );
-          })}
-        </nav>
-
         {/* LOGOUT BUTTON AT SIDEBAR BOTTOM */}
-        <div className="absolute bottom-4 left-0 right-0 px-3">
+        <div className="p-3 border-t border-white/5">
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-pink-400 hover:bg-pink-500/10 border border-pink-500/20 transition-all ${
+            className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-pink-400 hover:bg-pink-500/10 border border-pink-500/20 transition-all ${
               collapsed ? 'px-0' : ''
             }`}
             title={collapsed ? 'Logout' : undefined}
           >
-            <HiOutlineArrowRightOnRectangle className="w-5 h-5 flex-shrink-0" />
+            <HiOutlineArrowRightOnRectangle className="w-4 h-4 flex-shrink-0" />
             {!collapsed && <span>Logout</span>}
           </button>
         </div>
@@ -264,17 +372,19 @@ const UserLayout = () => {
             {mobileOpen ? <HiOutlineXMark className="w-6 h-6" /> : <HiOutlineBars3 className="w-6 h-6" />}
           </button>
 
-          {/* QUICK SEARCH INPUT */}
-          <form onSubmit={handleSearchSubmit} className="hidden sm:flex items-center relative w-64 lg:w-80">
-            <HiOutlineMagnifyingGlass className="absolute left-3 w-4 h-4 text-cyan-400" />
-            <input
-              type="text"
-              placeholder="Search slot number or vehicle plate..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input-neon w-full pl-9 pr-4 py-1.5 text-xs rounded-xl"
-            />
-          </form>
+          {/* QUICK SEARCH INPUT (HIDDEN ON BOOKING PAGE FOR MAXIMUM FOCUS) */}
+          {!location.pathname.includes('/book-parking') && (
+            <form onSubmit={handleSearch} className="hidden sm:flex items-center relative w-64 lg:w-80">
+              <HiOutlineMagnifyingGlass className="absolute left-3 w-4 h-4 text-cyan-400" />
+              <input
+                type="text"
+                placeholder="Search slot number or vehicle plate..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="input-neon w-full pl-9 pr-4 py-1.5 text-xs rounded-xl"
+              />
+            </form>
+          )}
         </div>
 
         {/* HEADER ACTIONS */}

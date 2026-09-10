@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   HiOutlineCalendarDays,
@@ -8,7 +8,6 @@ import {
   HiOutlineShoppingCart,
   HiOutlineBolt,
   HiOutlineUser,
-  HiOutlineCheckCircle,
   HiOutlineSparkles,
   HiOutlineQrCode,
   HiOutlineArrowRightOnRectangle,
@@ -16,9 +15,12 @@ import {
   HiOutlineCheck,
   HiOutlineBanknotes,
   HiOutlineLockClosed,
-  HiOutlineUserPlus,
   HiOutlineCreditCard,
   HiOutlineMicrophone,
+  HiOutlineChevronDown,
+  HiOutlineArrowLeft,
+  HiOutlineArrowRight,
+  HiOutlineMapPin,
 } from 'react-icons/hi2';
 import { slotApi, bookingApi, authApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -28,7 +30,6 @@ import Modal from '../components/ui/Modal';
 import { useToast } from '../components/ui/Toast';
 import InteractiveFloorMap from '../components/InteractiveFloorMap';
 import type { ParkingSlotItem } from '../components/InteractiveFloorMap';
-import ThreeDTicketPass from '../components/ThreeDTicketPass';
 import AIVoiceBookingModal from '../components/AIVoiceBookingModal';
 
 interface Slot {
@@ -64,21 +65,14 @@ const timeSlots = [
   '18:00', '19:00', '20:00', '21:00',
 ];
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-};
-
 const BookParking = () => {
   const navigate = useNavigate();
   const { user, token, updateUser } = useAuth();
   const { toast } = useToast();
   const isLoggedIn = Boolean(user && token);
+
+  // 3-STEP WIZARD STATE (Step 1: Vehicle & Schedule -> Step 2: Bay Selection -> Step 3: Review & Pay)
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
   // Form State
   const fmtLocal = (d: Date) =>
@@ -99,7 +93,8 @@ const BookParking = () => {
   const [selectedSlotId, setSelectedSlotId] = useState<string>('');
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
 
-  // Garage Multi-Vehicle State
+  // Collapsed Vehicle Garage State
+  const [garageOpen, setGarageOpen] = useState(false);
   const [newPlateInput, setNewPlateInput] = useState('');
   const [addingVehicleLoading, setAddingVehicleLoading] = useState(false);
   const [addVehicleMsg, setAddVehicleMsg] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null);
@@ -329,7 +324,6 @@ const BookParking = () => {
   );
 
   // Price Calculation — mirrors backend formula exactly:
-  // duration >= 24h → pricePerDay × ceil(duration/24), else pricePerHour × duration
   const hourlyRate = useMemo(() => {
     if (selectedSlot?.pricePerHour) return selectedSlot.pricePerHour;
     switch (category) {
@@ -366,7 +360,7 @@ const BookParking = () => {
     }
 
     if (!selectedSlot) {
-      setConfirmError('Please select an available parking slot from the grid.');
+      setConfirmError('Please select an available parking bay from Step 2.');
       return;
     }
     if (!vehicleNumber.trim()) {
@@ -384,7 +378,6 @@ const BookParking = () => {
       const endDateObj = new Date(startDateObj.getTime() + selectedHours * 60 * 60 * 1000);
 
       const slotIdToSend = String(selectedSlot.id || (selectedSlot as unknown as Record<string, unknown>)._id || selectedSlot.number || '');
-
       const cleanVehiclePlate = vehicleNumber.trim().toUpperCase();
 
       const res = await bookingApi.create({
@@ -424,184 +417,305 @@ const BookParking = () => {
     }
   };
 
-  const renderVehicleIllustration = () => {
-    switch (category) {
-      case 'two-wheeler':
-        return <BikeScooter className="w-20 h-auto" color="#ec4899" />;
-      case 'ev':
-        return <ElectricCar className="w-20 h-auto" color="#06b6d4" />;
-      case 'disabled':
-        return <AccessibleCar className="w-20 h-auto" color="#a855f7" />;
-      default:
-        return <CarSedan className="w-20 h-auto" color="#06b6d4" />;
-    }
-  };
-
-  if (!isLoggedIn) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-8 sm:p-12 rounded-3xl border border-cyan-500/30 text-center space-y-8 relative overflow-hidden shadow-2xl"
-        >
-          {/* Ambient Glows */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-cyan-500/15 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute bottom-0 right-10 w-64 h-64 bg-pink-500/15 rounded-full blur-[80px] pointer-events-none" />
-
-          {/* Cute 3D Gate Lock & Keycard Visual */}
-          <div className="relative w-48 h-48 mx-auto flex items-center justify-center">
-            {/* Pulsing Back Rings */}
-            <motion.div
-              animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
-              transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-              className="absolute inset-0 rounded-full border-2 border-dashed border-cyan-400/40"
-            />
-            <motion.div
-              animate={{ rotate: [0, 360] }}
-              transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
-              className="absolute inset-2 rounded-full border border-cyan-500/20"
-            />
-
-            {/* Cute Keycard Drop-Card */}
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
-              className="relative w-36 h-28 bg-gradient-to-br from-cyan-500 to-pink-500 rounded-2xl p-3 shadow-[0_15px_30px_rgba(6,182,212,0.4)] flex flex-col justify-between text-slate-950 border border-white/40 z-10 rotate-6"
-            >
-              <div className="flex items-center justify-between text-[10px] font-extrabold font-mono uppercase">
-                <span>PARK PASS</span>
-                <HiOutlineQrCode className="w-5 h-5" />
-              </div>
-              <div className="text-center py-1">
-                <CarSedan className="w-16 h-auto mx-auto drop-shadow-md" color="#ffffff" />
-              </div>
-              <div className="flex items-center justify-between text-[9px] font-bold">
-                <span>VIP DRIVER</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-300 animate-ping" />
-              </div>
-            </motion.div>
-
-            {/* Floating Lock Badge */}
-            <div className="absolute -bottom-2 -left-2 w-12 h-12 rounded-2xl bg-white/90 border border-cyan-500/40 flex items-center justify-center text-cyan-600 shadow-xl z-20">
-              <HiOutlineLockClosed className="w-6 h-6" />
-            </div>
-          </div>
-
-          {/* Heading & Subtitle */}
-          <div className="max-w-xl mx-auto space-y-3 relative z-10">
-            <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-xs font-bold text-cyan-400">
-              <HiOutlineSparkles className="w-4 h-4" /> Driver Access Required
-            </span>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-[var(--text)]">
-              Unlock Your <span className="neon-text">Reserved Bay</span>
-            </h1>
-            <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              Please sign in or create an account to pick your exact slot on the map, generate your digital QR entry pass, and complete your reservation!
-            </p>
-          </div>
-
-          {/* CTA Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2 max-w-md mx-auto relative z-10">
-            <button
-              onClick={() => navigate('/login', { state: { from: '/book-parking' } })}
-              className="btn-neon w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-cyan-500/25"
-            >
-              <HiOutlineArrowRightOnRectangle className="w-5 h-5" />
-              Sign In to Reserve
-            </button>
-            <button
-              onClick={() => navigate('/register')}
-              className="btn-outline w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2"
-            >
-              <HiOutlineUserPlus className="w-5 h-5 text-pink-400" />
-              Create Account
-            </button>
-          </div>
-
-          <div className="pt-4 border-t border-[var(--border)] max-w-xs mx-auto">
-            <button
-              onClick={() => navigate('/available-slots')}
-              className="text-xs font-bold text-cyan-400 hover:text-cyan-300 transition flex items-center justify-center gap-1 mx-auto"
-            >
-              Or Browse Live Available Slots First →
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-        {/* 1. HEADER */}
-        <motion.div variants={itemVariants} className="glass-card p-6 rounded-3xl relative overflow-hidden">
-          <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20 hidden md:block">
-            {renderVehicleIllustration()}
-          </div>
-          <div className="relative z-10 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-xs font-semibold text-cyan-300 mb-2">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6">
+      {/* 1. COMPACT HERO BANNER & AI VOICE COMMAND */}
+      <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-slate-900/90 via-cyan-950/40 to-slate-900 border border-cyan-500/30 shadow-xl">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="badge-neon text-[10px] font-mono px-2 py-0.5">Instant Pass Access</span>
+            <span className="text-xs text-cyan-400 font-medium flex items-center gap-1">
               <HiOutlineSparkles className="w-3.5 h-3.5" />
-              <span>Interactive Parking Bay Reservation</span>
-            </div>
-            <h1 className="text-3xl font-extrabold text-white">
-              Reserve Your <span className="neon-text">Parking Slot</span>
-            </h1>
-            <p className="text-sm text-gray-400 mt-1">
-              Pick your date, time duration, vehicle type, and select your preferred bay from the live 2D parking layout.
-            </p>
-            <div className="pt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setVoiceModalOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 hover:from-pink-600 hover:to-cyan-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-pink-500/25 transition-all transform hover:scale-[1.02]"
-              >
-                <HiOutlineMicrophone className="w-4 h-4 animate-pulse" />
-                <span>AI Voice Command Booking 🎙️</span>
-              </button>
-            </div>
+              ANPR Barrier Whitelisted
+            </span>
           </div>
-        </motion.div>
+          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+            <span>🅿️</span>
+            <span>Reserve Your Parking Bay</span>
+          </h1>
+          <p className="text-xs text-gray-400 max-w-xl">
+            Streamlined 3-step reservation with smart slot conflict resolution and 1-click garage car switching.
+          </p>
+        </div>
 
-        {/* 2. MAIN 2-COLUMN BOOKING WORKSTATION */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT COLUMN: FILTERS & 2D PARKING GRID */}
-          <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
+        {/* AI Voice Command Assistant Pill CTA */}
+        <button
+          type="button"
+          onClick={() => setVoiceModalOpen(true)}
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-pink-500/20 to-purple-600/20 hover:from-pink-500/30 hover:to-purple-600/30 border border-pink-500/40 text-pink-300 hover:text-pink-200 font-bold text-xs uppercase tracking-wider shadow-lg transition-all"
+        >
+          <HiOutlineMicrophone className="w-4 h-4 text-pink-400 animate-pulse" />
+          <span>AI Voice Booking 🎙️</span>
+        </button>
+      </div>
+
+      {/* 2. PROGRESS STEP INDICATOR (DECLUTTERED WIZARD NAVIGATION) */}
+      <div className="glass-card p-3 sm:p-4 rounded-2xl">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs font-semibold">
+          {/* Step 1 Pill */}
+          <button
+            type="button"
+            onClick={() => setCurrentStep(1)}
+            className={`flex items-center justify-center sm:justify-start gap-2 p-2 sm:px-4 sm:py-2.5 rounded-xl transition-all ${
+              currentStep === 1
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.25)] font-bold'
+                : currentStep > 1
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20'
+                : 'text-gray-500 bg-white/5 border border-transparent'
+            }`}
+          >
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold ${
+              currentStep === 1 ? 'bg-cyan-400 text-slate-950' : currentStep > 1 ? 'bg-emerald-400 text-slate-950' : 'bg-gray-700 text-gray-300'
+            }`}>
+              {currentStep > 1 ? '✓' : '1'}
+            </span>
+            <span className="hidden sm:inline">1. Vehicle & Schedule</span>
+            <span className="sm:hidden">1. Details</span>
+          </button>
+
+          {/* Step 2 Pill */}
+          <button
+            type="button"
+            onClick={() => setCurrentStep(2)}
+            className={`flex items-center justify-center sm:justify-start gap-2 p-2 sm:px-4 sm:py-2.5 rounded-xl transition-all ${
+              currentStep === 2
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.25)] font-bold'
+                : currentStep > 2
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20'
+                : 'text-gray-500 bg-white/5 border border-transparent'
+            }`}
+          >
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold ${
+              currentStep === 2 ? 'bg-cyan-400 text-slate-950' : currentStep > 2 ? 'bg-emerald-400 text-slate-950' : 'bg-gray-700 text-gray-300'
+            }`}>
+              {currentStep > 2 ? '✓' : '2'}
+            </span>
+            <span className="hidden sm:inline">2. Choose Bay on Map</span>
+            <span className="sm:hidden">2. Select Bay</span>
+          </button>
+
+          {/* Step 3 Pill */}
+          <button
+            type="button"
+            onClick={() => {
+              if (selectedSlot) setCurrentStep(3);
+              else toast('Please select an available parking bay first', 'info');
+            }}
+            className={`flex items-center justify-center sm:justify-start gap-2 p-2 sm:px-4 sm:py-2.5 rounded-xl transition-all ${
+              currentStep === 3
+                ? 'bg-pink-500/20 text-pink-300 border border-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.25)] font-bold'
+                : 'text-gray-500 bg-white/5 border border-transparent'
+            }`}
+          >
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold ${
+              currentStep === 3 ? 'bg-pink-400 text-slate-950' : 'bg-gray-700 text-gray-300'
+            }`}>
+              3
+            </span>
+            <span className="hidden sm:inline">3. Review & Pay</span>
+            <span className="sm:hidden">3. Confirm</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 3. STEP CONTENT SWITCHER */}
+      <AnimatePresence mode="wait">
+        {/* ========================================================================= */}
+        {/* STEP 1: VEHICLE TYPE, COMPACT GARAGE & SCHEDULE */}
+        {/* ========================================================================= */}
+        {currentStep === 1 && (
+          <motion.div
+            key="step-1"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            className="space-y-6"
+          >
             {/* CATEGORY SELECTION CARDS */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {categories.map((cat) => {
-                const Icon = cat.icon;
-                const isSelected = category === cat.id;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => setCategory(cat.id)}
-                    className={`p-4 rounded-2xl border text-left transition-all duration-300 ${
-                      isSelected
-                        ? 'glass-card-glow border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]'
-                        : 'glass hover:border-white/20'
-                    }`}
-                  >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2.5 ${
-                      isSelected ? 'bg-cyan-500 text-white' : 'bg-white/5 text-cyan-400'
-                    }`}>
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <p className="font-bold text-sm text-white">{cat.label}</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">{cat.price}</p>
-                  </button>
-                );
-              })}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">
+                Select Vehicle Category:
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {categories.map((cat) => {
+                  const Icon = cat.icon;
+                  const isSelected = category === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setCategory(cat.id)}
+                      className={`p-4 rounded-2xl border text-left transition-all duration-300 ${
+                        isSelected
+                          ? 'glass-card-glow border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]'
+                          : 'glass hover:border-white/20'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2.5 ${
+                        isSelected ? 'bg-cyan-500 text-white' : 'bg-white/5 text-cyan-400'
+                      }`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <p className="font-bold text-sm text-white">{cat.label}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">{cat.price}</p>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* DATE & DURATION PICKER BOX */}
+            {/* COMPACT & COLLAPSIBLE VEHICLE GARAGE SELECTOR */}
+            <div className="glass-card p-4 sm:p-5 rounded-2xl space-y-3 border border-cyan-500/25">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🚗</span>
+                  <span className="text-xs font-bold text-gray-200">Selected Vehicle for Booking:</span>
+                  <span className="font-mono font-extrabold text-xs text-cyan-300 bg-cyan-950/90 px-2.5 py-1 rounded-lg border border-cyan-500/40">
+                    {vehicleNumber}
+                  </span>
+                  {vehicleNumber === primaryPlate && (
+                    <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded font-mono font-bold">
+                      ⭐ Primary
+                    </span>
+                  )}
+                  {garageVehicles.includes(vehicleNumber) && (
+                    <span className="text-[10px] bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded font-mono font-bold">
+                      🚗 Garage Car
+                    </span>
+                  )}
+                </div>
+
+                {isLoggedIn && (
+                  <button
+                    type="button"
+                    onClick={() => setGarageOpen(!garageOpen)}
+                    className="text-xs font-bold text-pink-400 hover:text-pink-300 bg-pink-500/10 hover:bg-pink-500/20 px-3 py-1.5 rounded-xl border border-pink-500/30 transition flex items-center gap-1.5"
+                  >
+                    <span>{garageOpen ? 'Close Garage ▲' : 'Change Car / + Add Car ▾'}</span>
+                    <span className="text-[10px] text-gray-400">({1 + garageVehicles.length} saved)</span>
+                  </button>
+                )}
+              </div>
+
+              {/* EXPANDABLE GARAGE CAR SELECTION & ADD CAR */}
+              {garageOpen && isLoggedIn && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="pt-3 border-t border-white/10 space-y-3"
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {/* Primary Car Card */}
+                    <div
+                      onClick={() => setVehicleNumber(primaryPlate)}
+                      className={`cursor-pointer p-3 rounded-xl border transition-all ${
+                        vehicleNumber === primaryPlate
+                          ? 'bg-cyan-950/90 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
+                          : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[10px] font-mono font-bold text-cyan-300 uppercase">⭐ Primary Car</span>
+                        {vehicleNumber === primaryPlate && <span className="text-cyan-400 font-bold">✓ Selected</span>}
+                      </div>
+                      <p className="font-mono font-bold text-white text-sm mt-1">{primaryPlate}</p>
+                    </div>
+
+                    {/* Garage Cars Cards */}
+                    {garageVehicles.map((v, idx) => {
+                      const isSelected = vehicleNumber === v;
+                      return (
+                        <div
+                          key={v}
+                          onClick={() => setVehicleNumber(v)}
+                          className={`cursor-pointer p-3 rounded-xl border transition-all ${
+                            isSelected
+                              ? 'bg-pink-950/90 border-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.3)] ring-1 ring-pink-400'
+                              : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-[10px] font-mono font-bold text-pink-300 uppercase">🚗 Garage Car #{idx + 2}</span>
+                            <div className="flex items-center gap-1.5">
+                              {isSelected && <span className="text-pink-400 font-bold">✓ Selected</span>}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveGarageVehicle(v);
+                                }}
+                                className="text-gray-500 hover:text-red-400 text-xs ml-1"
+                                title="Remove vehicle"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                          <p className="font-mono font-bold text-white text-sm mt-1">{v}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Add New Car Input */}
+                  <div className="flex gap-2 pt-2">
+                    <input
+                      type="text"
+                      value={newPlateInput}
+                      onChange={(e) => {
+                        setNewPlateInput(e.target.value.toUpperCase());
+                        setAddVehicleMsg(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddNewVehicle();
+                        }
+                      }}
+                      placeholder="e.g. MH-12-AB-3406 or GJ-01-XY-9999"
+                      className="input-neon flex-1 px-3.5 py-2 text-xs font-mono uppercase rounded-xl tracking-wider"
+                    />
+                    <button
+                      type="button"
+                      disabled={addingVehicleLoading || !newPlateInput.trim()}
+                      onClick={handleAddNewVehicle}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-cyan-500 text-white font-bold text-xs shadow-md transition disabled:opacity-50"
+                    >
+                      {addingVehicleLoading ? 'Saving...' : '+ Add & Select'}
+                    </button>
+                  </div>
+
+                  {addVehicleMsg && (
+                    <p className={`text-xs p-2 rounded-lg ${
+                      addVehicleMsg.type === 'error' ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/20 text-emerald-300'
+                    }`}>
+                      {addVehicleMsg.text}
+                    </p>
+                  )}
+                </motion.div>
+              )}
+
+              {!isLoggedIn && (
+                <div className="pt-2">
+                  <label className="block text-[11px] text-gray-400 mb-1">Enter License Plate:</label>
+                  <input
+                    type="text"
+                    value={vehicleNumber}
+                    onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
+                    placeholder="e.g. MH-12-AB-3456"
+                    className="input-neon w-full px-3.5 py-2 text-xs font-mono uppercase rounded-xl tracking-wider"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* DATE, TIME & DURATION CARD */}
             <div className="glass-card p-5 rounded-2xl space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5 flex items-center gap-1.5">
                     <HiOutlineCalendarDays className="w-4 h-4 text-cyan-400" />
-                    Select Date
+                    Select Arrival Date
                   </label>
                   <input
                     type="date"
@@ -631,7 +745,7 @@ const BookParking = () => {
                 </div>
               </div>
 
-              {/* DURATION PRESET CHIPS */}
+              {/* Duration Presets */}
               <div>
                 <label className="block text-xs font-semibold text-gray-400 mb-2">
                   Select Parking Duration:
@@ -640,6 +754,7 @@ const BookParking = () => {
                   {durationPresets.map((dp) => (
                     <button
                       key={dp.hours}
+                      type="button"
                       onClick={() => setSelectedHours(dp.hours)}
                       className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
                         selectedHours === dp.hours
@@ -652,7 +767,7 @@ const BookParking = () => {
                   ))}
                 </div>
 
-                {/* LIVE DYNAMIC VALIDITY TIME WINDOW BANNER */}
+                {/* Dynamic Pass Validity Banner */}
                 <div className="mt-3 p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs flex flex-wrap items-center justify-between gap-2 text-cyan-300">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
@@ -666,211 +781,49 @@ const BookParking = () => {
                   </span>
                 </div>
               </div>
+            </div>
 
-              {/* MULTI-VEHICLE GARAGE CONTROL (PRIMARY CAR + GARAGE VEHICLES + INSTANT ADD) */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-cyan-500/30 space-y-4 shadow-xl relative overflow-hidden">
-                {/* Header */}
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <span>🚗</span>
-                      <span>Vehicle Garage & Multi-Car Management</span>
-                    </h3>
-                  </div>
-                  {user?.name && (
-                    <span className="text-xs text-cyan-400 font-medium bg-cyan-500/10 px-2.5 py-1 rounded-full border border-cyan-500/30">
-                      Driver: <span className="text-white font-bold">{user.name}</span>
-                    </span>
-                  )}
-                </div>
+            {/* STEP 1 CTA: ADVANCE TO STEP 2 */}
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setCurrentStep(2)}
+                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-slate-950 font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-cyan-500/30 transition-all flex items-center justify-center gap-2"
+              >
+                <span>Continue to Bay Selection (Map)</span>
+                <HiOutlineArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
 
-                {/* TIER 1: ALL REGISTERED VEHICLES (PRIMARY + ALL GARAGE CARS) */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-300 flex items-center gap-1.5">
-                      <span>🚘</span>
-                      <span>Choose Vehicle for Booking ({1 + garageVehicles.length} Registered in Account):</span>
-                    </span>
-                    <span className="text-[10px] text-cyan-400/80 font-mono">1-Click Switch</span>
-                  </div>
+        {/* ========================================================================= */}
+        {/* STEP 2: INTERACTIVE 2D FLOOR MAP BAY SELECTION */}
+        {/* ========================================================================= */}
+        {currentStep === 2 && (
+          <motion.div
+            key="step-2"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            className="space-y-6"
+          >
+            {/* Top Navigation Bar for Step 2 */}
+            <div className="flex items-center justify-between pb-2">
+              <button
+                type="button"
+                onClick={() => setCurrentStep(1)}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-400 hover:text-cyan-400 bg-white/5 px-3 py-1.5 rounded-xl transition"
+              >
+                <HiOutlineArrowLeft className="w-4 h-4" />
+                <span>← Back to Vehicle & Time</span>
+              </button>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {/* Primary Vehicle Card */}
-                    <div
-                      onClick={() => setVehicleNumber(primaryPlate)}
-                      className={`cursor-pointer p-3 rounded-xl border transition-all duration-200 relative ${
-                        vehicleNumber === primaryPlate
-                          ? 'bg-gradient-to-br from-cyan-950/90 to-slate-900 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.35)] ring-1 ring-cyan-400'
-                          : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-cyan-500/40 text-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-mono text-[10px] font-extrabold uppercase tracking-wider border border-cyan-400/40 flex items-center gap-1">
-                          <span>⭐</span>
-                          <span>Primary Vehicle</span>
-                        </span>
-                        {vehicleNumber === primaryPlate ? (
-                          <span className="text-[11px] font-bold text-cyan-400 flex items-center gap-1 bg-cyan-500/20 px-2 py-0.5 rounded-full border border-cyan-400/50">
-                            <HiOutlineCheck className="w-3.5 h-3.5 stroke-[3]" /> Active Pass
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-gray-400 hover:text-cyan-300 underline font-semibold">Click to Select</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">🚗</span>
-                        <span className="font-mono font-extrabold text-sm sm:text-base text-white tracking-wider">
-                          {primaryPlate}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Secondary Garage Vehicles Cards */}
-                    {garageVehicles.map((v, idx) => {
-                      const isSelected = vehicleNumber === v;
-                      return (
-                        <div
-                          key={v}
-                          onClick={() => setVehicleNumber(v)}
-                          className={`cursor-pointer p-3 rounded-xl border transition-all duration-200 relative ${
-                            isSelected
-                              ? 'bg-gradient-to-br from-pink-950/90 to-slate-900 border-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.35)] ring-1 ring-pink-400'
-                              : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-pink-500/40 text-gray-300'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="px-2 py-0.5 rounded-md bg-pink-500/20 text-pink-300 font-mono text-[10px] font-extrabold uppercase tracking-wider border border-pink-400/40 flex items-center gap-1">
-                              <span>🚗</span>
-                              <span>Garage Car #{idx + 2}</span>
-                            </span>
-                            <div className="flex items-center gap-1.5">
-                              {isSelected ? (
-                                <span className="text-[11px] font-bold text-pink-400 flex items-center gap-1 bg-pink-500/20 px-2 py-0.5 rounded-full border border-pink-400/50">
-                                  <HiOutlineCheck className="w-3.5 h-3.5 stroke-[3]" /> Active Pass
-                                </span>
-                              ) : (
-                                <span className="text-[10px] text-gray-400 hover:text-pink-300 underline font-semibold">Click to Select</span>
-                              )}
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRemoveGarageVehicle(v);
-                                }}
-                                title={`Remove ${v} from garage`}
-                                className="w-5 h-5 rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-400 flex items-center justify-center text-xs transition ml-1"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-base">🏎️</span>
-                            <span className="font-mono font-extrabold text-sm sm:text-base text-white tracking-wider">
-                              {v}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* TIER 2: ADD / QUICK-REGISTER NEW VEHICLE (UNIFIED, ALWAYS VISIBLE & INTUITIVE) */}
-                {isLoggedIn ? (
-                  <div className="pt-2 border-t border-white/10 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-pink-300 flex items-center gap-1.5">
-                        <span>+</span>
-                        <span>Add New Vehicle to Garage (2nd / 3rd Car):</span>
-                      </label>
-                      <span className="text-[10px] text-gray-400">Permanently saved to your account</span>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={newPlateInput}
-                        onChange={(e) => {
-                          setNewPlateInput(e.target.value.toUpperCase());
-                          setAddVehicleMsg(null);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleAddNewVehicle();
-                          }
-                        }}
-                        placeholder="e.g. MH-12-AB-3406 or GJ-01-XY-9999"
-                        className="input-neon flex-1 px-3.5 py-2.5 text-xs font-mono uppercase rounded-xl tracking-wider placeholder:normal-case placeholder:font-sans"
-                      />
-                      <button
-                        type="button"
-                        disabled={addingVehicleLoading || !newPlateInput.trim()}
-                        onClick={handleAddNewVehicle}
-                        className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-cyan-500 hover:from-pink-600 hover:to-cyan-600 text-white font-bold text-xs shadow-lg shadow-pink-500/20 transition disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap"
-                      >
-                        {addingVehicleLoading ? (
-                          <span>Saving...</span>
-                        ) : (
-                          <>
-                            <span>+ Add & Select Car</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-
-                    {addVehicleMsg && (
-                      <div
-                        className={`p-2.5 rounded-xl text-xs flex items-center gap-2 ${
-                          addVehicleMsg.type === 'error'
-                            ? 'bg-red-500/20 border border-red-500/40 text-red-300'
-                            : addVehicleMsg.type === 'info'
-                            ? 'bg-cyan-500/20 border border-cyan-500/40 text-cyan-300'
-                            : 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
-                        }`}
-                      >
-                        <span>{addVehicleMsg.type === 'error' ? '⚠️' : addVehicleMsg.type === 'info' ? 'ℹ️' : '✓'}</span>
-                        <span>{addVehicleMsg.text}</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="pt-2 border-t border-white/10 space-y-2">
-                    <label className="text-xs font-bold text-gray-300">Vehicle License Plate Number:</label>
-                    <input
-                      type="text"
-                      value={vehicleNumber}
-                      onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
-                      placeholder="e.g. MH-12-AB-3456"
-                      className="input-neon w-full px-3.5 py-2.5 text-xs font-mono uppercase rounded-xl tracking-wider"
-                    />
-                    <p className="text-[11px] text-cyan-400">
-                      💡 Log in to register and save multiple cars in your personal Garage with 1-click booking!
-                    </p>
-                  </div>
-                )}
-
-                {/* TIER 3: CURRENTLY ACTIVE SELECTION BANNER */}
-                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
-                  <span className="text-gray-400 font-medium">Selected Plate for this Reservation:</span>
-                  <div className="flex items-center gap-2">
-                    {vehicleNumber === primaryPlate && (
-                      <span className="text-[10px] text-cyan-300 font-sans font-bold bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-400/40">
-                        ⭐ Primary Car
-                      </span>
-                    )}
-                    {garageVehicles.includes(vehicleNumber) && (
-                      <span className="text-[10px] text-pink-300 font-sans font-bold bg-pink-500/20 px-2 py-0.5 rounded border border-pink-400/40">
-                        🚗 Garage Car
-                      </span>
-                    )}
-                    <span className="font-mono font-black text-cyan-300 bg-cyan-950/90 px-3 py-1 rounded-lg border border-cyan-500/50 shadow-sm text-sm tracking-wider">
-                      🚗 {vehicleNumber || 'NO PLATE SPECIFIED'}
-                    </span>
-                  </div>
-                </div>
+              <div className="text-right">
+                <span className="text-xs text-gray-400 font-medium">Selected Slot: </span>
+                <span className="font-mono font-bold text-cyan-300">
+                  {selectedSlot ? `Bay #${selectedSlot.number} (Floor ${selectedSlot.floor || 1})` : 'None Selected'}
+                </span>
               </div>
             </div>
 
@@ -902,73 +855,140 @@ const BookParking = () => {
                 }
               }}
             />
+
+            {/* STEP 2 BOTTOM BAR: CONFIRM SELECTION & ADVANCE TO STEP 3 */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-cyan-950/50 to-slate-900 border border-cyan-500/30 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+              <div>
+                <span className="text-xs text-gray-400 block">Bay Selected for Booking:</span>
+                <p className="text-base font-bold text-white flex items-center gap-2">
+                  <span className="text-cyan-400">🅿️ Bay #{selectedSlot?.number || 'C1A'}</span>
+                  <span className="text-gray-400 font-normal text-xs">
+                    (Floor {selectedSlot?.floor || 1}) &bull; ₹{hourlyRate}/hr &bull; Total: <span className="text-emerald-400 font-bold">₹{totalPrice}</span>
+                  </span>
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(1)}
+                  className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-bold transition"
+                >
+                  Change Time
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(3)}
+                  disabled={!selectedSlot}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-pink-500/30 disabled:opacity-50 transition flex items-center gap-2"
+                >
+                  <span>Confirm Bay & Review Summary ➔</span>
+                </button>
+              </div>
+            </div>
           </motion.div>
+        )}
 
-          {/* RIGHT COLUMN: STICKY LIVE RECEIPT & 3D PASS PREVIEW */}
-          <motion.div variants={itemVariants} className="space-y-6">
-            {/* CUTE 3D DIGITAL TICKET PASS PREVIEW */}
-            <ThreeDTicketPass
-              slotNumber={selectedSlot ? `BAY ${selectedSlot.number}` : 'BAY A-01'}
-              floor={selectedSlot?.floor || 1}
-              category={category}
-              vehicleNumber={vehicleNumber}
-              date={date}
-              startTime={selectedTime}
-              hours={selectedHours}
-              totalPrice={totalPrice}
-            />
+        {/* ========================================================================= */}
+        {/* STEP 3: CONSOLIDATED REVIEW & INSTANT PAYMENT */}
+        {/* ========================================================================= */}
+        {currentStep === 3 && (
+          <motion.div
+            key="step-3"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            className="max-w-2xl mx-auto space-y-6"
+          >
+            {/* Top Back Action */}
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setCurrentStep(2)}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-400 hover:text-cyan-400 bg-white/5 px-3 py-1.5 rounded-xl transition"
+              >
+                <HiOutlineArrowLeft className="w-4 h-4" />
+                <span>← Back to Bay Selection</span>
+              </button>
+              <span className="badge-neon text-xs">Step 3 of 3</span>
+            </div>
 
-            {/* LIVE SUMMARY RECEIPT CARD */}
-            <div className="glass-card-glow p-6 rounded-3xl space-y-4 border border-cyan-500/30 relative">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <HiOutlineBanknotes className="w-5 h-5 text-emerald-400" />
-                  Booking Summary
-                </h2>
-                <span className="badge-neon text-xs">Live Rate</span>
+            {/* CONSOLIDATED BOOKING SUMMARY CARD */}
+            <div className="glass-card-glow p-6 sm:p-8 rounded-3xl space-y-5 border border-cyan-500/40 relative shadow-2xl">
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                    <HiOutlineBanknotes className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-white">Booking Summary & Verification</h2>
+                    <p className="text-xs text-gray-400">Review all details before initiating instant gate pass</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+                  Ready to Confirm
+                </span>
               </div>
 
               {!isLoggedIn && (
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2">
+                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2">
                   <HiOutlineLockClosed className="w-4 h-4 flex-shrink-0 text-amber-400" />
-                  <span>Log in required before completing slot reservation.</span>
+                  <span>Log in required to complete reservation and generate your gate QR key.</span>
                 </div>
               )}
 
+              {/* Itemized Review List */}
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between py-1 border-b border-white/5">
-                  <span className="text-gray-400">Reserved Slot</span>
-                  <span className="font-bold text-cyan-300">
-                    {selectedSlot ? `Slot #${selectedSlot.number} (Floor ${selectedSlot.floor || 1})` : 'None Selected'}
+                <div className="flex justify-between py-2 border-b border-white/5">
+                  <span className="text-gray-400 flex items-center gap-1.5">
+                    <HiOutlineMapPin className="w-4 h-4 text-cyan-400" /> Reserved Bay
+                  </span>
+                  <span className="font-extrabold text-cyan-300 font-mono">
+                    {selectedSlot ? `Bay #${selectedSlot.number} (Floor ${selectedSlot.floor || 1})` : 'None Selected'}
                   </span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-white/5">
-                  <span className="text-gray-400">Date & Time</span>
+
+                <div className="flex justify-between py-2 border-b border-white/5">
+                  <span className="text-gray-400">Vehicle Category</span>
+                  <span className="font-semibold text-white capitalize">
+                    {category.replace('-', ' ')}
+                  </span>
+                </div>
+
+                <div className="flex justify-between py-2 border-b border-white/5">
+                  <span className="text-gray-400">Vehicle License Plate</span>
+                  <span className="font-mono text-cyan-300 font-bold bg-cyan-950/80 px-2.5 py-0.5 rounded border border-cyan-500/30">
+                    🚗 {vehicleNumber || 'MH-12-AB-3456'}
+                  </span>
+                </div>
+
+                <div className="flex justify-between py-2 border-b border-white/5">
+                  <span className="text-gray-400">Date & Start Time</span>
                   <span className="font-semibold text-white">
                     {date} @ {selectedTime}
                   </span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-white/5">
-                  <span className="text-gray-400">Duration</span>
-                  <span className="font-semibold text-white">{selectedHours} Hours</span>
+
+                <div className="flex justify-between py-2 border-b border-white/5">
+                  <span className="text-gray-400">Duration & Validity</span>
+                  <span className="font-semibold text-white">
+                    {selectedHours} Hours ({selectedTime} ➔ {calculatedEndTime})
+                  </span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-white/5">
+
+                <div className="flex justify-between py-2 border-b border-white/5">
                   <span className="text-gray-400">Hourly Rate</span>
                   <span className="font-mono text-gray-200">₹{hourlyRate.toFixed(2)} / hr</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-white/5">
-                  <span className="text-gray-400">Vehicle Plate</span>
-                  <span className="font-mono text-cyan-300 font-bold">{vehicleNumber || 'MH-12-AB-3456'}</span>
-                </div>
 
-                {/* TOTAL ESTIMATION */}
-                <div className="flex items-center justify-between pt-2">
+                {/* Total Calculation */}
+                <div className="flex items-center justify-between pt-3">
                   <div>
-                    <p className="text-xs text-gray-400">Total Payable</p>
-                    <p className="text-2xl font-extrabold neon-text-cyan">₹{totalPrice}</p>
+                    <p className="text-xs text-gray-400">Total Payable Amount</p>
+                    <p className="text-3xl font-black neon-text-cyan">₹{totalPrice}</p>
                   </div>
                   <div className="text-right">
-                    <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400">
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/30">
                       <HiOutlineCheck className="w-3.5 h-3.5" />
                       Instant Entry Pass
                     </span>
@@ -983,10 +1003,11 @@ const BookParking = () => {
                 </div>
               )}
 
+              {/* PAYMENT ACTION BUTTON */}
               <button
                 onClick={handleBookingSubmit}
                 disabled={confirmLoading || !selectedSlot}
-                className="w-full btn-neon-pink py-4 rounded-xl font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-pink-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+                className="w-full btn-neon-pink py-4 rounded-2xl font-extrabold text-sm uppercase tracking-wider shadow-xl shadow-pink-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
               >
                 {confirmLoading ? (
                   <>
@@ -996,7 +1017,7 @@ const BookParking = () => {
                 ) : !isLoggedIn ? (
                   <>
                     <HiOutlineLockClosed className="w-5 h-5" />
-                    Log In to Reserve Slot
+                    Log In to Complete Reservation
                   </>
                 ) : (
                   <>
@@ -1005,37 +1026,20 @@ const BookParking = () => {
                   </>
                 )}
               </button>
-            </div>
 
-            {/* DIGITAL TICKET LIVE PREVIEW TILE */}
-            <div className="glass-card p-5 rounded-2xl space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-400 flex items-center gap-1.5 uppercase tracking-wider">
-                  <HiOutlineQrCode className="w-4 h-4 text-cyan-400" />
-                  Generated Ticket Preview
-                </span>
-                <span className="text-[10px] text-emerald-400 font-semibold">Auto-Generated</span>
-              </div>
-
-              <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-950/40 via-slate-900 to-pink-950/30 border border-cyan-500/20 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-extrabold text-white">ParkEase Pass</span>
-                  <span className="font-mono text-cyan-400">
-                    {selectedSlot ? `#${selectedSlot.number}` : '#A-04'}
-                  </span>
-                </div>
-                <p className="text-[11px] text-gray-400">
-                  Driver: {user?.name || 'Guest Driver'} &middot; {vehicleNumber || 'MH-12-AB-3456'}
-                </p>
-                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px]">
-                  <span className="text-gray-400">QR Gate Key Ready</span>
-                  <span className="text-emerald-400 font-bold">Confirmed</span>
-                </div>
+              <div className="flex justify-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(1)}
+                  className="text-xs text-gray-400 hover:text-cyan-400 underline"
+                >
+                  Edit Vehicle or Schedule details
+                </button>
               </div>
             </div>
           </motion.div>
-        </div>
-      </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* LOGIN REQUIRED MODAL POPUP */}
       <Modal
