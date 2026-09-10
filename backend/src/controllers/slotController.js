@@ -4,12 +4,59 @@ const { seedAll } = require('../utils/seeder');
 
 const allowedStatuses = ['available', 'occupied', 'reserved', 'maintenance'];
 
+const ensureBufferSlots = async () => {
+  try {
+    const bufferCount = await ParkingSlot.countDocuments({
+      $or: [
+        { isEmergencyBuffer: true },
+        { number: { $regex: /^BUF/i } }
+      ]
+    });
+    if (bufferCount < 6) {
+      for (const floor of [1, 2, 3]) {
+        const existingA = await ParkingSlot.findOne({ number: `BUF-${floor}A` });
+        if (!existingA) {
+          await ParkingSlot.create({
+            number: `BUF-${floor}A`,
+            category: 'four-wheeler',
+            floor,
+            status: 'available',
+            pricePerHour: 30,
+            pricePerDay: 150,
+            pricePerMonth: 3000,
+            isEmergencyBuffer: true,
+            features: ['emergency_buffer', 'vip_standby', 'cctv', 'priority_access']
+          });
+        }
+        const existingB = await ParkingSlot.findOne({ number: `BUF-${floor}B` });
+        if (!existingB) {
+          await ParkingSlot.create({
+            number: `BUF-${floor}B`,
+            category: 'ev',
+            floor,
+            status: 'available',
+            pricePerHour: 40,
+            pricePerDay: 160,
+            pricePerMonth: 3500,
+            isEmergencyBuffer: true,
+            features: ['emergency_buffer', 'vip_standby', 'cctv', 'ev-charging']
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.error('ensureBufferSlots error:', err.message);
+  }
+};
+
 exports.getSlots = async (req, res) => {
   try {
     const totalSlots = await ParkingSlot.countDocuments();
     if (totalSlots === 0) {
       console.log('Database empty, auto-seeding initial data...');
       await seedAll();
+    } else {
+      await ensureBufferSlots();
     }
 
     const filter = {};
@@ -84,6 +131,7 @@ exports.deleteSlot = async (req, res) => {
 
 exports.getAvailableSlots = async (req, res) => {
   try {
+    await ensureBufferSlots();
     const filter = {};
     if (req.query.category) filter.category = req.query.category;
     if (req.query.floor) filter.floor = req.query.floor;

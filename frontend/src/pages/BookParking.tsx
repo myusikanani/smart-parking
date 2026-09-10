@@ -287,6 +287,8 @@ const BookParking = () => {
           pricePerHour: Number(s.pricePerHour) || 30,
           pricePerDay: Number(s.pricePerDay) || 150,
           pricePerMonth: Number(s.pricePerMonth) || 3000,
+          isEmergencyBuffer: Boolean(s.isEmergencyBuffer || String(s.number || '').startsWith('BUF') || (Array.isArray(s.features) && s.features.includes('emergency_buffer'))),
+          features: Array.isArray(s.features) ? (s.features as string[]) : [],
         }));
         setSlots(fetchedSlots);
 

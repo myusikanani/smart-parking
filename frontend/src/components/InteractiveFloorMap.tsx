@@ -1,4 +1,4 @@
-import { useState, useEffect, type FC } from 'react';
+import { useState, useEffect, useMemo, type FC } from 'react';
 import { Zap, Accessibility, Car, Bike, Check, RefreshCw, Sparkles, Layers, ShieldAlert, AlertTriangle } from 'lucide-react';
 import { socketService } from '../services/socketService';
 
@@ -52,16 +52,52 @@ export const InteractiveFloorMap: FC<InteractiveFloorMapProps> = ({
   const isBufferSlot = (slot: ParkingSlotItem) => {
     return Boolean(
       slot.isEmergencyBuffer ||
-      slot.number.startsWith('BUF') ||
-      (slot.features && slot.features.includes('emergency_buffer'))
+      String(slot.number || '').startsWith('BUF') ||
+      (Array.isArray(slot.features) && slot.features.includes('emergency_buffer'))
     );
   };
 
-  const floorSlots = liveSlots.filter(
+  // Ensure every floor has its dedicated emergency buffer bays ready and visible
+  const allFloorSlots = useMemo(() => {
+    const floorList = liveSlots.filter((s) => s.floor === activeFloor);
+    const hasBufA = floorList.some((s) => s.number === `BUF-${activeFloor}A` || (isBufferSlot(s) && s.number.endsWith('A')));
+    const hasBufB = floorList.some((s) => s.number === `BUF-${activeFloor}B` || (isBufferSlot(s) && s.number.endsWith('B')));
+
+    const fallbackBufferSlots: ParkingSlotItem[] = [];
+    if (!hasBufA) {
+      fallbackBufferSlots.push({
+        _id: `buf-${activeFloor}a-fallback`,
+        number: `BUF-${activeFloor}A`,
+        category: 'four-wheeler',
+        floor: activeFloor,
+        status: 'available',
+        pricePerHour: 30,
+        pricePerDay: 150,
+        isEmergencyBuffer: true,
+        features: ['emergency_buffer', 'vip_standby'],
+      });
+    }
+    if (!hasBufB) {
+      fallbackBufferSlots.push({
+        _id: `buf-${activeFloor}b-fallback`,
+        number: `BUF-${activeFloor}B`,
+        category: 'ev',
+        floor: activeFloor,
+        status: 'available',
+        pricePerHour: 40,
+        pricePerDay: 160,
+        isEmergencyBuffer: true,
+        features: ['emergency_buffer', 'vip_standby', 'ev-charging'],
+      });
+    }
+
+    return [...floorList, ...fallbackBufferSlots];
+  }, [liveSlots, activeFloor]);
+
+  const floorSlots = allFloorSlots.filter(
     (s) =>
-      s.floor === activeFloor &&
-      (filterCategory === 'all' ||
-        (filterCategory === 'buffer' ? isBufferSlot(s) : s.category === filterCategory && !isBufferSlot(s)))
+      filterCategory === 'all' ||
+      (filterCategory === 'buffer' ? isBufferSlot(s) : s.category === filterCategory && !isBufferSlot(s))
   );
 
   const getSlotIcon = (slot: ParkingSlotItem) => {
