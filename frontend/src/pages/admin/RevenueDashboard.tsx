@@ -42,15 +42,21 @@ const RevenueDashboard = () => {
     let mounted = true;
     setLoading(true);
     adminApi.getRevenue()
-      .then((res) => {
+      .then((rawRes) => {
         if (!mounted) return;
-        const d = res.revenue || {};
-        setTotalRevenue(Number(d.totalRevenue ?? d.total ?? 0));
-        setMonthlyRevenue(Number(d.monthlyRevenue ?? d.monthly ?? 0));
-        setTodayRevenue(Number(d.todayRevenue ?? d.today ?? 0));
-        setMonthlyData((d.monthlyData as Record<string, unknown>[]) || []);
-        setCategoryData((d.categoryData as Record<string, unknown>[]) || []);
-        setPaymentData((d.paymentData as Record<string, unknown>[]) || []);
+        const res = rawRes as Record<string, unknown>;
+        const d = (res.revenue && typeof res.revenue === 'object' && !Array.isArray(res.revenue))
+          ? (res.revenue as Record<string, unknown>)
+          : res;
+        const total = Number(d.totalRevenue ?? res.totalRevenue ?? d.total ?? 0);
+        const monthly = Number(d.monthlyRevenue ?? res.monthlyRevenue ?? d.monthly ?? total);
+        const today = Number(d.todayRevenue ?? res.todayRevenue ?? d.today ?? 0);
+        setTotalRevenue(total);
+        setMonthlyRevenue(monthly);
+        setTodayRevenue(today);
+        setMonthlyData((d.monthlyData as Record<string, unknown>[]) || (res.monthlyData as Record<string, unknown>[]) || (Array.isArray(res.revenue) ? (res.revenue as Record<string, unknown>[]) : []) || []);
+        setCategoryData((d.categoryData as Record<string, unknown>[]) || (res.categoryData as Record<string, unknown>[]) || []);
+        setPaymentData((d.paymentData as Record<string, unknown>[]) || (res.dailyData as Record<string, unknown>[]) || []);
       })
       .catch(() => { if (mounted) {} })
       .finally(() => { if (mounted) setLoading(false); });

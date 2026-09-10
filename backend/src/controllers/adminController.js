@@ -10,6 +10,10 @@ const getDashboardStats = async (req, res) => {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
     const [totalSlots, occupiedSlots, availableSlots, reservedSlots, maintenanceSlots] =
       await Promise.all([
         ParkingSlot.countDocuments(),
@@ -33,11 +37,165 @@ const getDashboardStats = async (req, res) => {
 
     const overstayCount = await Booking.countDocuments({ overstayDuration: { $gt: 0 } });
 
-    const recentBookings = await Booking.find()
+    // 1. Revenue data for past 7 days (day-by-day continuous mapping)
+    const rawRevenue7Days = await Booking.aggregate([
+      { $match: { paymentStatus: 'paid', createdAt: { $gte: sevenDaysAgo } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          revenue: { $sum: '$amount' },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const revenueMap = new Map();
+    rawRevenue7Days.forEach((r) => revenueMap.set(r._id, r.revenue));
+
+    let revenueData = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+      const dayLabel = `${dayNames[d.getDay()]} (${d.getDate()} ${monthNames[d.getMonth()]})`;
+      const rev = revenueMap.get(dateStr) || 0;
+      revenueData.push({
+        date: dateStr,
+        month: dayLabel,
+        revenue: rev,
+        amount: rev
+      });
+    }
+
+    // Fallback: If past 7 days are zero but previous paid bookings exist, show recent paid days
+    if (revenueData.every((d) => d.revenue === 0)) {
+      const allTimeRevenue = await Booking.aggregate([
+        { $match: { paymentStatus: 'paid' } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            revenue: { $sum: '$amount' },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: -1 } },
+        { $limit: 7 }
+      ]);
+      if (allTimeRevenue.length > 0) {
+        revenueData = allTimeRevenue.reverse().map((r) => {
+          const parsed = new Date(r._id);
+          const label = !isNaN(parsed.getTime())
+            ? `${dayNames[parsed.getDay()]} (${parsed.getDate()} ${monthNames[parsed.getMonth()]})`
+            : r._id;
+          return {
+            date: r._id,
+            month: label,
+            revenue: r.revenue,
+            amount: r.revenue
+          };
+        });
+      }
+    }
+
+    // 2. Usage / Category distribution
+    const slotCategoryCounts = await ParkingSlot.aggregate([
+      { $group: { _id: '$category', count: { $sum: 1 } } }
+    ]);
+    const categoryColors = {
+      'four-wheeler': '#06b6d4',
+      'two-wheeler': '#ec4899',
+      'ev': '#10b981',
+      'disabled': '#f97316',
+      'vip': '#a855f7'
+    };
+    const categoryLabels = {
+      'four-wheeler': '4-Wheeler',
+      'two-wheeler': '2-Wheeler',
+      'ev': 'EV Charging',
+      'disabled': 'Accessible',
+      'vip': 'VIP'
+    };
+
+    const usageData = slotCategoryCounts.map((sc, idx) => ({
+      name: categoryLabels[sc._id] || sc._id,
+      category: sc._id,
+      value: sc.count,
+      count: sc.count,
+      color: categoryColors[sc._id] || ['#06b6d4', '#ec4899', '#10b981', '#f97316'][idx % 4]
+    }));
+
+    // 3. Peak hours distribution
+    const rawPeakHours = await Booking.aggregate([
+      {
+        $project: {
+          hour: {
+            $hour: {
+              $ifNull: ['$entryTime', '$startTime', '$createdAt']
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: '$hour',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    const peakMap = new Map();
+    rawPeakHours.forEach((p) => peakMap.set(p._id, p.count));
+
+    const standardHours = [6, 8, 10, 12, 14, 16, 18, 20, 22];
+    const peakHoursData = standardHours.map((hr) => {
+      const label = hr < 12 ? `${hr} AM` : hr === 12 ? '12 PM' : `${hr - 12} PM`;
+      return {
+        hour: label,
+        bookings: peakMap.get(hr) || 0,
+        count: peakMap.get(hr) || 0
+      };
+    });
+
+    // 4. Recent Activity
+    const recentBookingsRaw = await Booking.find()
       .sort({ createdAt: -1 })
-      .limit(5)
-      .populate('user', 'name')
-      .populate('slot', 'number');
+      .limit(6)
+      .populate('user', 'name email')
+      .populate('slot', 'number category floor');
+
+    const recentActivity = recentBookingsRaw.map((b) => {
+      const userName = b.user?.name || b.user?.email || b.vehicleNumber || 'Guest Driver';
+      const slotNum = b.slot?.number ? `Slot ${b.slot.number}` : 'Parking Bay';
+      let action = 'New booking created';
+      if (b.status === 'completed') action = `Completed parking at ${slotNum}`;
+      else if (b.status === 'active') action = `Vehicle parked in ${slotNum}`;
+      else if (b.status === 'cancelled') action = `Booking cancelled for ${slotNum}`;
+      else if (b.status === 'expired') action = `Booking expired (no-show)`;
+
+      const timeDiffMs = Date.now() - new Date(b.createdAt).getTime();
+      const mins = Math.floor(timeDiffMs / (1000 * 60));
+      const hours = Math.floor(mins / 60);
+      const days = Math.floor(hours / 24);
+      let timeStr = 'Just now';
+      if (days > 0) timeStr = `${days}d ago`;
+      else if (hours > 0) timeStr = `${hours}h ago`;
+      else if (mins > 0) timeStr = `${mins}m ago`;
+
+      return {
+        id: String(b._id),
+        action,
+        user: userName,
+        vehicleNumber: b.vehicleNumber || '—',
+        time: timeStr,
+        timestamp: b.createdAt,
+        type: (b.status || 'Active').toUpperCase(),
+        amount: b.amount || 0
+      };
+    });
 
     res.status(200).json({
       success: true,
@@ -47,11 +205,19 @@ const getDashboardStats = async (req, res) => {
         availableSlots,
         reservedSlots,
         maintenanceSlots,
+        // Frontend compatibility aliases:
+        occupied: occupiedSlots,
+        available: availableSlots,
+        reserved: reservedSlots,
         todayBookings,
         todayRevenue,
         noShowCount,
         overstayCount,
-        recentBookings
+        recentBookings: recentBookingsRaw,
+        revenueData,
+        usageData,
+        peakHoursData,
+        recentActivity
       }
     });
   } catch (error) {
@@ -172,19 +338,73 @@ const getRevenueReport = async (req, res) => {
       { $project: { _id: 0, date: '$_id', amount: 1, count: 1 } }
     ]);
 
+    const categoryData = await Booking.aggregate([
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: 'parkingslots',
+          localField: 'slot',
+          foreignField: '_id',
+          as: 'slotInfo'
+        }
+      },
+      { $unwind: '$slotInfo' },
+      {
+        $group: {
+          _id: '$slotInfo.category',
+          amount: { $sum: '$amount' },
+          count: { $sum: 1 }
+        }
+      },
+      { $project: { _id: 0, name: '$_id', category: '$_id', value: '$amount', amount: '$amount', count: 1 } }
+    ]);
+
     const totalRevenue = dailyData.reduce((sum, d) => sum + d.amount, 0);
     const averageDaily = dailyData.length > 0 ? totalRevenue / dailyData.length : 0;
     const highestDay = dailyData.length > 0
       ? dailyData.reduce((max, d) => d.amount > max.amount ? d : max)
       : null;
 
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const todayRevenueResult = await Booking.aggregate([
+      { $match: { paymentStatus: 'paid', createdAt: { $gte: startOfToday } } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const todayRevenue = todayRevenueResult[0]?.total || 0;
+
+    const monthlyData = dailyData.map((d) => ({
+      month: d.date,
+      date: d.date,
+      amount: d.amount,
+      revenue: d.amount,
+      count: d.count
+    }));
+
     res.status(200).json({
       success: true,
-      revenue: dailyData,
+      revenue: {
+        totalRevenue,
+        monthlyRevenue: totalRevenue,
+        todayRevenue,
+        total: totalRevenue,
+        monthly: totalRevenue,
+        today: todayRevenue,
+        averageDaily,
+        highestDay,
+        dailyData,
+        monthlyData,
+        categoryData,
+        paymentData: dailyData
+      },
       totalRevenue,
+      monthlyRevenue: totalRevenue,
+      todayRevenue,
       averageDaily,
       highestDay,
-      dailyData
+      dailyData,
+      monthlyData,
+      categoryData
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -200,12 +420,31 @@ const getAnalytics = async (req, res) => {
 
     const matchStage = Object.keys(dateFilter).length ? { createdAt: dateFilter } : {};
 
-    const peakHours = await Booking.aggregate([
-      { $match: { ...matchStage, entryTime: { $ne: null } } },
-      { $group: { _id: { $hour: '$entryTime' }, count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $project: { _id: 0, hour: '$_id', count: 1 } }
+    const rawPeakHours = await Booking.aggregate([
+      { $match: matchStage },
+      {
+        $project: {
+          hour: {
+            $hour: {
+              $ifNull: ['$entryTime', '$startTime', '$createdAt']
+            }
+          }
+        }
+      },
+      { $group: { _id: '$hour', count: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
     ]);
+
+    const peakHours = rawPeakHours.map((p) => {
+      const hr = p._id;
+      const label = hr < 12 ? `${hr} AM` : hr === 12 ? '12 PM' : `${hr - 12} PM`;
+      return {
+        hour: label,
+        rawHour: hr,
+        count: p.count,
+        bookings: p.count
+      };
+    });
 
     const categoryDistribution = await Booking.aggregate([
       { $match: matchStage },
@@ -219,7 +458,7 @@ const getAnalytics = async (req, res) => {
       },
       { $unwind: '$slotInfo' },
       { $group: { _id: '$slotInfo.category', count: { $sum: 1 } } },
-      { $project: { _id: 0, category: '$_id', count: 1 } }
+      { $project: { _id: 0, name: '$_id', category: '$_id', count: 1, value: '$count' } }
     ]);
 
     const bookingTrend = await Booking.aggregate([
@@ -249,8 +488,10 @@ const getAnalytics = async (req, res) => {
       analytics: {
         peakHours,
         categoryDistribution,
+        vehicleDistribution: categoryDistribution,
         bookingTrend,
         avgDuration,
+        averageDuration: categoryDistribution.map(c => ({ category: c.name || c.category, duration: avgDuration || 2 })),
         noShowRate
       }
     });

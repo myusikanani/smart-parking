@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -11,6 +11,7 @@ import {
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import ThreeDParkingCanvas from '../../components/ThreeDParkingCanvas';
 import type { ThreeDSlotData } from '../../components/ThreeDParkingCanvas';
+import { slotApi, layoutApi } from '../../services/api';
 
 const weeklyData = [
   { day: 'Mon', occupancy: 65, revenue: 1450 },
@@ -33,20 +34,55 @@ const peakHoursData = [
 ];
 
 export const AIAnalyticsDashboard: FC = () => {
-  const [activeFloor] = useState<number>(1);
+  const [activeFloor, setActiveFloor] = useState<number>(1);
   const [heatmapMode, setHeatmapMode] = useState(true);
+  const [slots, setSlots] = useState<ThreeDSlotData[]>([]);
 
-  // Mock 3D slots for heatmap simulation
-  const sampleSlots: ThreeDSlotData[] = [
-    { id: '1', number: 'A-01', category: 'four-wheeler', status: 'occupied', floor: activeFloor, x: -10, z: -5 },
-    { id: '2', number: 'A-02', category: 'four-wheeler', status: 'occupied', floor: activeFloor, x: -6, z: -5 },
-    { id: '3', number: 'A-03', category: 'ev', status: 'available', floor: activeFloor, x: -2, z: -5 },
-    { id: '4', number: 'A-04', category: 'vip', status: 'reserved', floor: activeFloor, x: 2, z: -5 },
-    { id: '5', number: 'A-05', category: 'disabled', status: 'occupied', floor: activeFloor, x: 6, z: -5 },
-    { id: '6', number: 'B-01', category: 'four-wheeler', status: 'available', floor: activeFloor, x: -10, z: 5 },
-    { id: '7', number: 'B-02', category: 'four-wheeler', status: 'occupied', floor: activeFloor, x: -6, z: 5 },
-    { id: '8', number: 'B-03', category: 'two-wheeler', status: 'available', floor: activeFloor, x: -2, z: 5 },
-  ];
+  useEffect(() => {
+    let mounted = true;
+    // 1. Try to fetch custom layout for floor
+    layoutApi.getByFloor(activeFloor)
+      .then((res) => {
+        if (!mounted) return;
+        if (res.layout && Array.isArray(res.layout.items) && res.layout.items.length > 0) {
+          const lSlots: ThreeDSlotData[] = res.layout.items
+            .filter((it: Record<string, unknown>) => it.type === 'slot')
+            .map((it: Record<string, unknown>) => ({
+              id: String(it.id || it.slotNumber),
+              number: String(it.slotNumber || 'BAY'),
+              category: String(it.category || 'four-wheeler'),
+              status: 'available',
+              floor: activeFloor,
+              x: Number(it.x || 0),
+              z: Number(it.z || 0),
+              rotation: Number(it.rotation || 0),
+            }));
+          if (lSlots.length > 0) {
+            setSlots(lSlots);
+            return;
+          }
+        }
+        // Fallback: Fetch from database slots
+        return slotApi.getAll({ floor: String(activeFloor) }).then((slotRes) => {
+          if (!mounted) return;
+          if (slotRes.slots && Array.isArray(slotRes.slots)) {
+            const mapped: ThreeDSlotData[] = slotRes.slots.map((s: Record<string, unknown>, idx: number) => ({
+              id: String(s._id || s.id || `slot-${idx}`),
+              number: String(s.number || `A-0${idx + 1}`),
+              category: String(s.category || 'four-wheeler'),
+              status: String(s.status || 'available'),
+              floor: Number(s.floor || activeFloor),
+              x: typeof s.x === 'number' ? s.x : ((idx % 6) * 4 - 10),
+              z: typeof s.z === 'number' ? s.z : (Math.floor(idx / 6) * 6 - 6),
+              rotation: typeof s.rotation === 'number' ? s.rotation : 0,
+            }));
+            setSlots(mapped);
+          }
+        });
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, [activeFloor]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-4 sm:p-6">
@@ -64,7 +100,22 @@ export const AIAnalyticsDashboard: FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Floor Switcher */}
+          <div className="flex items-center gap-1 bg-[var(--bg-elevated)] p-1 rounded-xl border border-[var(--border)]">
+            {[1, 2, 3].map((f) => (
+              <button
+                key={f}
+                onClick={() => setActiveFloor(f)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                  activeFloor === f ? 'bg-cyan-500 text-slate-950 shadow-md' : 'text-[var(--text-secondary)]'
+                }`}
+              >
+                Floor {f}
+              </button>
+            ))}
+          </div>
+
           <button
             onClick={() => setHeatmapMode(!heatmapMode)}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 border ${
@@ -109,7 +160,7 @@ export const AIAnalyticsDashboard: FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-base font-bold text-[var(--text)] flex items-center gap-2">
             <HiOutlineSquares2X2 className="w-5 h-5 text-cyan-400" />
-            Live 3D Occupancy Heatmap Visualizer
+            Live 3D Occupancy Heatmap Visualizer (Floor {activeFloor})
           </h3>
           <div className="hidden sm:flex items-center gap-3 text-xs font-mono text-[var(--text-secondary)]">
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-emerald-500" /> Low Usage (&lt;40%)</span>
@@ -119,7 +170,7 @@ export const AIAnalyticsDashboard: FC = () => {
         </div>
 
         <ThreeDParkingCanvas
-          slots={sampleSlots}
+          slots={slots}
           activeFloor={activeFloor}
           heatmapMode={heatmapMode}
         />

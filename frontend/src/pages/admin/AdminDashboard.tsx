@@ -40,7 +40,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-const COLORS = ['#06b6d4', '#ec4899', '#f97316', '#10b981'];
+const COLORS = ['#06b6d4', '#ec4899', '#f97316', '#10b981', '#a855f7'];
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -72,17 +72,26 @@ const AdminDashboard = () => {
   }, []);
 
   const s = stats || {};
+  const totalSlotsVal = Number(s.totalSlots ?? 0);
+  const occupiedVal = Number(s.occupied ?? s.occupiedSlots ?? 0);
+  const availableVal = Number(s.available ?? s.availableSlots ?? 0);
+  const reservedVal = Number(s.reserved ?? s.reservedSlots ?? 0);
+
   const statCards = [
-    { icon: <HiOutlineSquare2Stack className="w-5 h-5" />, title: 'Total Slots', value: Number(s.totalSlots) || 0, change: '0', changeType: 'increase' as const, glow: 'rgba(6,182,212,0.3)', route: '/admin/slots' },
-    { icon: <HiOutlineTruck className="w-5 h-5" />, title: 'Occupied', value: Number(s.occupied) || 0, change: '+3', changeType: 'increase' as const, glow: 'rgba(236,72,153,0.3)', route: '/admin/slots?status=occupied' },
-    { icon: <HiOutlineCheckCircle className="w-5 h-5" />, title: 'Available', value: Number(s.available) || 0, change: '-2', changeType: 'decrease' as const, glow: 'rgba(16,185,129,0.3)', route: '/admin/slots?status=available' },
-    { icon: <HiOutlineBookmarkSquare className="w-5 h-5" />, title: 'Reserved', value: Number(s.reserved) || 0, change: '+5', changeType: 'increase' as const, glow: 'rgba(6,182,212,0.3)', route: '/admin/slots?status=reserved' },
+    { icon: <HiOutlineSquare2Stack className="w-5 h-5" />, title: 'Total Slots', value: totalSlotsVal, change: 'Capacity', changeType: 'increase' as const, glow: 'rgba(6,182,212,0.3)', route: '/admin/slots' },
+    { icon: <HiOutlineTruck className="w-5 h-5" />, title: 'Occupied', value: occupiedVal, change: `${Math.round((occupiedVal / (totalSlotsVal || 1)) * 100)}% load`, changeType: 'increase' as const, glow: 'rgba(236,72,153,0.3)', route: '/admin/slots?status=occupied' },
+    { icon: <HiOutlineCheckCircle className="w-5 h-5" />, title: 'Available', value: availableVal, change: `${availableVal} free`, changeType: 'decrease' as const, glow: 'rgba(16,185,129,0.3)', route: '/admin/slots?status=available' },
+    { icon: <HiOutlineBookmarkSquare className="w-5 h-5" />, title: 'Reserved', value: reservedVal, change: `${reservedVal} active`, changeType: 'increase' as const, glow: 'rgba(6,182,212,0.3)', route: '/admin/slots?status=reserved' },
   ];
 
   const usageWithColors = usageData.map((d, i) => ({
     ...d,
-    color: (d as { color?: string }).color || COLORS[i] || '#6B7280',
+    color: (d as { color?: string }).color || COLORS[i % COLORS.length] || '#6B7280',
   }));
+
+  const hasRevenueData = revenueData.length > 0 && revenueData.some((d: Record<string, unknown>) => Number(d.revenue ?? d.amount ?? 0) > 0);
+  const hasUsageData = usageWithColors.length > 0 && usageWithColors.some((d: Record<string, unknown>) => Number(d.value ?? d.count ?? 0) > 0);
+  const hasPeakData = peakHoursData.length > 0 && peakHoursData.some((d: Record<string, unknown>) => Number(d.bookings ?? d.count ?? 0) > 0);
 
   const quickActionItems = [
     { label: '3D Layout Designer', icon: HiOutlineCube, route: '/admin/layout-designer', highlight: true },
@@ -147,7 +156,7 @@ const AdminDashboard = () => {
                       <div>
                         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{sc.title}</p>
                         <p className="text-lg font-bold" style={{ color: 'var(--text)' }}>{sc.value}</p>
-                        <p className={`text-xs font-medium ${sc.changeType === 'increase' ? 'text-green-400' : 'text-red-400'}`}>{sc.change}</p>
+                        <p className={`text-xs font-medium ${sc.changeType === 'increase' ? 'text-green-400' : 'text-cyan-400'}`}>{sc.change}</p>
                       </div>
                     </div>
                     <HiOutlineArrowRight className="w-4 h-4 text-gray-500 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
@@ -171,7 +180,7 @@ const AdminDashboard = () => {
               </div>
               {loading ? (
                 <div className="h-[300px] glass animate-pulse rounded-lg" />
-              ) : (
+              ) : hasRevenueData ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={revenueData as Record<string, unknown>[]}>
                     <defs>
@@ -181,12 +190,26 @@ const AdminDashboard = () => {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.25)" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748b' }} stroke="rgba(148,163,184,0.35)" />
-                    <YAxis tick={{ fontSize: 12, fill: '#64748b' }} stroke="rgba(148,163,184,0.35)" />
-                    <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid rgba(203,213,225,0.8)', background: '#ffffff', color: '#1e293b' }} />
-                    <Line type="monotone" dataKey="revenue" stroke="#06b6d4" strokeWidth={2} fill="url(#revenueFill)" dot={{ r: 4, fill: '#06b6d4' }} activeDot={{ r: 6, fill: '#ec4899' }} />
+                    <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} stroke="rgba(148,163,184,0.35)" />
+                    <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} stroke="rgba(148,163,184,0.35)" />
+                    <Tooltip
+                      contentStyle={{ borderRadius: 12, border: '1px solid rgba(6,182,212,0.4)', background: '#0f172a', color: '#f8fafc' }}
+                      formatter={(val: unknown) => [`₹${Number(val || 0).toLocaleString()}`, 'Revenue']}
+                    />
+                    <Line type="monotone" dataKey="revenue" stroke="#06b6d4" strokeWidth={2.5} fill="url(#revenueFill)" dot={{ r: 4, fill: '#06b6d4' }} activeDot={{ r: 6, fill: '#ec4899' }} />
                   </LineChart>
                 </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex flex-col items-center justify-center text-center p-6 rounded-2xl border border-dashed border-white/10 bg-white/[0.02]">
+                  <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-3">
+                    <HiOutlineBanknotes className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-semibold text-gray-200">No Revenue Data in Past 7 Days</p>
+                  <p className="text-xs text-gray-400 mt-1 max-w-xs">New paid bookings and extensions will automatically generate the live revenue graph here.</p>
+                  <button onClick={() => navigate('/admin/payments')} className="mt-3 text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+                    View Payments Ledger &rarr;
+                  </button>
+                </div>
               )}
             </div>
           </motion.div>
@@ -204,7 +227,7 @@ const AdminDashboard = () => {
               </div>
               {loading ? (
                 <div className="h-[300px] glass animate-pulse rounded-lg" />
-              ) : (
+              ) : hasUsageData ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie data={usageWithColors} cx="50%" cy="50%" innerRadius={70} outerRadius={110} paddingAngle={3} dataKey="value">
@@ -212,10 +235,21 @@ const AdminDashboard = () => {
                         <Cell key={i} fill={(entry as { color: string }).color} stroke="rgba(10,10,15,0.8)" />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid rgba(203,213,225,0.8)', background: '#ffffff', color: '#1e293b' }} />
-                    <Legend wrapperStyle={{ color: '#64748b' }} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: 12, border: '1px solid rgba(6,182,212,0.4)', background: '#0f172a', color: '#f8fafc' }}
+                      formatter={(val: unknown) => [`${Number(val || 0)} Slots`, 'Count']}
+                    />
+                    <Legend wrapperStyle={{ color: '#94a3b8' }} />
                   </PieChart>
                 </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex flex-col items-center justify-center text-center p-6 rounded-2xl border border-dashed border-white/10 bg-white/[0.02]">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-3">
+                    <HiOutlineChartBar className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-semibold text-gray-200">No Category Breakdown Available</p>
+                  <p className="text-xs text-gray-400 mt-1 max-w-xs">Add slots or categories in Slot Manager to populate vehicle distribution.</p>
+                </div>
               )}
             </div>
           </motion.div>
@@ -235,20 +269,20 @@ const AdminDashboard = () => {
               </div>
               {loading ? (
                 <div className="h-[300px] glass animate-pulse rounded-lg" />
-              ) : (
+              ) : recentActivity.length > 0 ? (
                 <div className="space-y-3">
                   {recentActivity.map((a) => (
                     <div
                       key={String(a.id)}
-                      onClick={() => navigate('/admin/audit-logs')}
+                      onClick={() => navigate('/admin/bookings')}
                       className="flex items-center justify-between py-2.5 px-3.5 rounded-xl border-l-2 border-cyan-500 cursor-pointer hover:bg-cyan-500/10 transition-colors"
                       style={{ backgroundColor: 'var(--glass-bg)' }}
                     >
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 pr-2">
                         <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{String(a.action)}</p>
                         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{String(a.user)} &middot; {String(a.time)}</p>
                       </div>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold badge-neon`}>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold badge-neon">
                         {String(a.type)}
                       </span>
                     </div>
@@ -258,6 +292,14 @@ const AdminDashboard = () => {
                       <ElectricCar className="w-8 h-auto" color="#06b6d4" />
                     </motion.div>
                   </div>
+                </div>
+              ) : (
+                <div className="h-[300px] flex flex-col items-center justify-center text-center p-6 rounded-2xl border border-dashed border-white/10 bg-white/[0.02]">
+                  <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-3">
+                    <HiOutlineClipboardDocumentList className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-semibold text-gray-200">No Recent Activity Logged</p>
+                  <p className="text-xs text-gray-400 mt-1 max-w-xs">Live entries, check-ins, and reservations will appear here in real-time.</p>
                 </div>
               )}
             </div>
@@ -276,16 +318,27 @@ const AdminDashboard = () => {
               </div>
               {loading ? (
                 <div className="h-[300px] glass animate-pulse rounded-lg" />
-              ) : (
+              ) : hasPeakData ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={peakHoursData as Record<string, unknown>[]}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.25)" />
-                    <XAxis dataKey="hour" tick={{ fontSize: 10, fill: '#64748b' }} stroke="rgba(148,163,184,0.35)" interval={0} angle={-45} textAnchor="end" />
-                    <YAxis tick={{ fontSize: 12, fill: '#64748b' }} stroke="rgba(148,163,184,0.35)" />
-                    <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid rgba(203,213,225,0.8)', background: '#ffffff', color: '#1e293b' }} />
+                    <XAxis dataKey="hour" tick={{ fontSize: 10, fill: '#94a3b8' }} stroke="rgba(148,163,184,0.35)" interval={0} angle={-45} textAnchor="end" />
+                    <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} stroke="rgba(148,163,184,0.35)" allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: 12, border: '1px solid rgba(6,182,212,0.4)', background: '#0f172a', color: '#f8fafc' }}
+                      formatter={(val: unknown) => [`${Number(val || 0)} Bookings`, 'Traffic']}
+                    />
                     <Bar dataKey="bookings" fill="#06b6d4" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex flex-col items-center justify-center text-center p-6 rounded-2xl border border-dashed border-white/10 bg-white/[0.02]">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-3">
+                    <HiOutlineClock className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-semibold text-gray-200">No Peak Hour Traffic Recorded</p>
+                  <p className="text-xs text-gray-400 mt-1 max-w-xs">Hourly traffic patterns will build dynamically as drivers book and check in.</p>
+                </div>
               )}
             </div>
           </motion.div>
