@@ -56,7 +56,7 @@ export const AdminLayoutDesigner: FC = () => {
   // Add New Slot
   const handleAddSlot = (category: string = 'four-wheeler') => {
     const slotCount = items.filter((it) => it.type === 'slot').length + 1;
-    const prefix = category === 'ev' ? 'E' : category === 'vip' ? 'V' : category === 'disabled' ? 'H' : 'A';
+    const prefix = category === 'ev' ? `E${activeFloor}` : category === 'disabled' ? `D${activeFloor}` : `P${activeFloor}`;
     const newItem: LayoutItem = {
       id: `slot-${Date.now()}`,
       type: 'slot',
@@ -105,33 +105,15 @@ export const AdminLayoutDesigner: FC = () => {
     setSaving(true);
     setMessage('');
     try {
-      // 1. Save 3D Layout structure
-      await layoutApi.save({
+      // 1. Save 3D Layout structure and auto-sync ParkingSlot in MongoDB
+      const res = await layoutApi.save({
         floor: activeFloor,
         items: items as unknown as Array<Record<string, unknown>>,
         name: `Campus Parking Floor ${activeFloor}`,
       });
 
-      // 2. Auto-sync designed slots into system slots database
-      const slotItems = items.filter((it) => it.type === 'slot');
-      for (const sItem of slotItems) {
-        const cat = sItem.category || 'four-wheeler';
-        const price = cat === 'two-wheeler' ? 15 : cat === 'ev' ? 40 : cat === 'vip' ? 50 : cat === 'disabled' ? 20 : 30;
-        await slotApi.create({
-          number: sItem.slotNumber || 'BAY',
-          category: cat,
-          floor: activeFloor,
-          pricePerHour: price,
-          status: 'available',
-          x: sItem.x,
-          z: sItem.z,
-          rotation: sItem.rotation || 0,
-        }).catch(() => {
-          // If already exists, ignore or update gracefully
-        });
-      }
-
-      setMessage(`✅ Floor ${activeFloor} layout & ${slotItems.length} slots synced live across all dashboards!`);
+      const slotCount = items.filter((it) => it.type === 'slot').length;
+      setMessage(`✅ ${res.message || `Floor ${activeFloor} layout & ${slotCount} slots synced live across all dashboards!`}`);
     } catch (err) {
       setMessage('Failed to save layout.');
     } finally {
