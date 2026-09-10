@@ -19,8 +19,9 @@ import {
   HiOutlineUserPlus,
   HiOutlineCreditCard,
 } from 'react-icons/hi2';
-import { slotApi, bookingApi } from '../services/api';
+import { slotApi, bookingApi, authApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import type { User } from '../context/AuthContext';
 import { CarSedan, ElectricCar, BikeScooter, AccessibleCar } from '../components/vehicles';
 import Modal from '../components/ui/Modal';
 import InteractiveFloorMap from '../components/InteractiveFloorMap';
@@ -70,7 +71,7 @@ const itemVariants = {
 
 const BookParking = () => {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user, token, updateUser } = useAuth();
   const isLoggedIn = Boolean(user && token);
 
   // Form State
@@ -93,11 +94,56 @@ const BookParking = () => {
   const [vehicleNumber, setVehicleNumber] = useState(user?.vehicleNumber || 'MH-12-AB-3456');
   const [selectedSlotId, setSelectedSlotId] = useState<string>('');
 
+  // Garage Multi-Vehicle State
+  const [showAddVehicle, setShowAddVehicle] = useState(false);
+  const [newPlateInput, setNewPlateInput] = useState('');
+  const [addingVehicleLoading, setAddingVehicleLoading] = useState(false);
+  const [addVehicleMsg, setAddVehicleMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  const userVehiclesList = useMemo(() => {
+    const list = user?.vehicles && user.vehicles.length > 0 ? [...user.vehicles] : [];
+    if (user?.vehicleNumber && !list.includes(user.vehicleNumber)) {
+      list.unshift(user.vehicleNumber);
+    }
+    if (list.length === 0) {
+      list.push(user?.vehicleNumber || 'MH-12-AB-3456');
+    }
+    return Array.from(new Set(list));
+  }, [user?.vehicles, user?.vehicleNumber]);
+
   useEffect(() => {
-    if (user?.vehicleNumber) {
+    if (user?.vehicleNumber && !vehicleNumber) {
       setVehicleNumber(user.vehicleNumber);
     }
-  }, [user?.vehicleNumber]);
+  }, [user?.vehicleNumber, vehicleNumber]);
+
+  const handleAddNewVehicle = async () => {
+    const cleanPlate = newPlateInput.trim().toUpperCase();
+    if (!cleanPlate) {
+      setAddVehicleMsg({ type: 'error', text: 'Please enter a valid license plate.' });
+      return;
+    }
+    setAddingVehicleLoading(true);
+    setAddVehicleMsg(null);
+    try {
+      const res = await authApi.updateProfile({ addVehicle: cleanPlate });
+      if (res.user) {
+        updateUser(res.user as unknown as Partial<User>);
+      }
+      setVehicleNumber(cleanPlate);
+      setNewPlateInput('');
+      setShowAddVehicle(false);
+      setAddVehicleMsg({ type: 'success', text: `Vehicle ${cleanPlate} added to your garage!` });
+    } catch {
+      const updatedVehicles = Array.from(new Set([...userVehiclesList, cleanPlate]));
+      updateUser({ vehicles: updatedVehicles });
+      setVehicleNumber(cleanPlate);
+      setNewPlateInput('');
+      setShowAddVehicle(false);
+    } finally {
+      setAddingVehicleLoading(false);
+    }
+  };
 
   // Modal & Auth Check State
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -483,46 +529,151 @@ const BookParking = () => {
                 </div>
               </div>
 
-              {/* VEHICLE LICENSE PLATE INPUT & SAVED VEHICLE SELECTOR */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-gray-400">
-                    Vehicle License Plate Number
+              {/* MULTI-VEHICLE GARAGE MANAGEMENT (PRIMARY CAR + MULTI-CAR SELECTOR + ADD CAR) */}
+              <div className="p-4 rounded-2xl bg-slate-900/70 border border-cyan-500/20 space-y-3.5 shadow-inner">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="text-xs font-bold text-gray-200 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
+                    Vehicle Garage & Multi-Car Management
                   </label>
-                  {user?.vehicles && user.vehicles.length > 0 && (
-                    <span className="text-[10px] text-cyan-400 font-medium">
-                      Registered to {user.name}
+                  {user?.name && (
+                    <span className="text-[11px] text-cyan-400 font-medium">
+                      Driver: <span className="text-white font-bold">{user.name}</span>
                     </span>
                   )}
                 </div>
 
-                {/* Quick select chips for user's vehicles */}
-                {user?.vehicles && user.vehicles.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {user.vehicles.map((v) => (
-                      <button
-                        key={v}
-                        type="button"
-                        onClick={() => setVehicleNumber(v)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold border transition-all ${
-                          vehicleNumber === v
-                            ? 'bg-cyan-500/20 border-cyan-400 text-cyan-200 shadow-[0_0_10px_rgba(6,182,212,0.3)]'
-                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
-                        }`}
-                      >
-                        🚗 {v}
-                      </button>
-                    ))}
+                {/* LINE 1: PRIMARY REGISTERED VEHICLE (Permanent Default) */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30">
+                  <div className="flex items-center gap-2.5">
+                    <span className="px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-mono text-[10px] font-extrabold uppercase tracking-wider border border-cyan-400/40">
+                      ⭐ Primary Car
+                    </span>
+                    <span className="font-mono font-bold text-sm text-white tracking-wide">
+                      {user?.vehicleNumber || 'MH-12-AB-3456'}
+                    </span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setVehicleNumber(user?.vehicleNumber || 'MH-12-AB-3456')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                      vehicleNumber === (user?.vehicleNumber || 'MH-12-AB-3456')
+                        ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
+                        : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {vehicleNumber === (user?.vehicleNumber || 'MH-12-AB-3456') ? '✓ Active Selected' : 'Select Primary'}
+                  </button>
+                </div>
+
+                {/* LINE 2: MULTI-VEHICLE SWITCHER & ADD ANOTHER CAR */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-semibold text-gray-400">
+                      Select Another Vehicle from Your Garage ({userVehiclesList.length} saved)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddVehicle(!showAddVehicle)}
+                      className="text-[11px] font-bold text-pink-400 hover:text-pink-300 transition flex items-center gap-1 bg-pink-500/10 px-2 py-0.5 rounded-md border border-pink-500/30"
+                    >
+                      {showAddVehicle ? '✕ Close Form' : '+ Add Another Car (2nd/3rd Car)'}
+                    </button>
+                  </div>
+
+                  {/* Quick Select Chips */}
+                  <div className="flex flex-wrap gap-2">
+                    {userVehiclesList.map((v) => {
+                      const isSelected = vehicleNumber === v;
+                      const isPrimary = v === user?.vehicleNumber;
+                      return (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setVehicleNumber(v)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-mono font-bold border transition-all ${
+                            isSelected
+                              ? 'bg-gradient-to-r from-cyan-500/20 to-pink-500/20 border-cyan-400 text-cyan-100 shadow-[0_0_15px_rgba(6,182,212,0.3)] scale-[1.02]'
+                              : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          <span>🚗</span>
+                          <span>{v}</span>
+                          {isPrimary ? (
+                            <span className="text-[9px] px-1.5 py-0.2 bg-cyan-500/30 text-cyan-300 rounded font-sans font-semibold">
+                              Primary
+                            </span>
+                          ) : (
+                            <span className="text-[9px] px-1.5 py-0.2 bg-pink-500/20 text-pink-300 rounded font-sans font-semibold">
+                              Garage
+                            </span>
+                          )}
+                          {isSelected && <span className="text-cyan-400">●</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* INLINE ADD ANOTHER VEHICLE FORM */}
+                {showAddVehicle && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 rounded-xl bg-pink-500/10 border border-pink-500/30 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-pink-300">
+                        Add New Vehicle Plate to Your Profile
+                      </span>
+                      <span className="text-[10px] text-gray-400">Auto-saved to your garage</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newPlateInput}
+                        onChange={(e) => setNewPlateInput(e.target.value.toUpperCase())}
+                        placeholder="e.g. GJ-01-XY-9999"
+                        className="input-neon flex-1 px-3 py-1.5 text-xs font-mono uppercase rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        disabled={addingVehicleLoading || !newPlateInput.trim()}
+                        onClick={handleAddNewVehicle}
+                        className="px-4 py-1.5 rounded-lg bg-pink-500 hover:bg-pink-600 text-white font-bold text-xs shadow-lg shadow-pink-500/25 transition disabled:opacity-50"
+                      >
+                        {addingVehicleLoading ? 'Saving...' : 'Save & Select'}
+                      </button>
+                    </div>
+                    {addVehicleMsg && (
+                      <p className={`text-[11px] ${addVehicleMsg.type === 'error' ? 'text-red-400' : 'text-emerald-400'}`}>
+                        {addVehicleMsg.text}
+                      </p>
+                    )}
+                  </motion.div>
                 )}
 
-                <input
-                  type="text"
-                  value={vehicleNumber}
-                  onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
-                  placeholder="e.g. GJ-01-AB-1234"
-                  className="input-neon w-full px-4 py-2.5 text-sm font-mono tracking-wider rounded-xl uppercase"
-                />
+                {/* MANUAL NUMBER PLATE OVERRIDE INPUT */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-gray-400 mb-1">
+                    Or Enter / Edit Custom Plate Directly:
+                  </label>
+                  <input
+                    type="text"
+                    value={vehicleNumber}
+                    onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
+                    placeholder="e.g. GJ-01-AB-1234"
+                    className="input-neon w-full px-4 py-2 text-xs font-mono tracking-wider rounded-xl uppercase"
+                  />
+                </div>
+
+                {/* ACTIVE BOOKING PLATE BADGE */}
+                <div className="pt-2 border-t border-white/5 flex items-center justify-between text-xs">
+                  <span className="text-gray-400 font-medium">Active Plate for this Booking:</span>
+                  <span className="font-mono font-extrabold text-cyan-300 bg-cyan-950/80 px-2.5 py-1 rounded-lg border border-cyan-500/40 shadow-sm">
+                    🚗 {vehicleNumber || 'NO PLATE SPECIFIED'}
+                  </span>
+                </div>
               </div>
             </div>
 

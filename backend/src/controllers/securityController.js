@@ -372,22 +372,111 @@ const processScan = async (req, res, booking, mode, blacklistMatch = null) => {
       });
     }
 
+    // =========================================================================
+    // SMART CONFLICT ENGINE: 8:00 PM Overstay Collision Auto-Resolution
+    // =========================================================================
+    let conflictResolved = false;
+    let originalSlotNum = booking.slot?.number || 'A-04';
+    let assignedSlot = booking.slot;
+
+    if (assignedSlot) {
+      const assignedSlotId = assignedSlot._id || assignedSlot;
+      
+      // Check if another driver (Driver A) is currently occupying this slot and overstaying
+      const overstayingBooking = await Booking.findOne({
+        _id: { $ne: booking._id },
+        slot: assignedSlotId,
+        status: 'active'
+      }).populate('user');
+
+      const targetSlotDoc = await ParkingSlot.findById(assignedSlotId);
+
+      if (overstayingBooking || (targetSlotDoc && targetSlotDoc.status === 'occupied')) {
+        console.warn(`[Smart Conflict Engine] Slot ${originalSlotNum} is occupied by an overstaying vehicle. Activating automatic conflict resolution.`);
+
+        if (overstayingBooking) {
+          // 1. Apply escalating 2.5x overstay penalty to Driver A (Overstayer)
+          const overstayHrs = Math.max(1, Math.ceil((now.getTime() - new Date(overstayingBooking.endTime).getTime()) / 3600000));
+          const slotRate = targetSlotDoc?.pricePerHour || 30;
+          const penaltyMultiplier = 2.5; // Escalated overstay penalty
+          const calculatedPenalty = Math.round(overstayHrs * slotRate * penaltyMultiplier);
+
+          overstayingBooking.overstayConflictFlag = true;
+          overstayingBooking.penaltyMultiplier = penaltyMultiplier;
+          overstayingBooking.overstayDuration = overstayHrs;
+          overstayingBooking.overstayPenalty = calculatedPenalty;
+          overstayingBooking.penaltyPaymentStatus = 'pending';
+          await overstayingBooking.save();
+
+          // Dispatch Critical Security Alert and Incident Log
+          await logAudit(req, {
+            action: 'Smart Conflict: Overstay Escalation Triggered',
+            details: `Driver A (${overstayingBooking.vehicleNumber}) overstayed in slot ${originalSlotNum}. Escalated 2.5x penalty applied (₹${calculatedPenalty}). Barrier exit locked until settlement.`,
+            actionType: 'security',
+            userId: overstayingBooking.user?._id
+          });
+
+          emitAlert({
+            type: 'overstay_conflict_escalation',
+            slotNumber: originalSlotNum,
+            offendingVehicle: overstayingBooking.vehicleNumber,
+            victimVehicle: booking.vehicleNumber,
+            penaltyDue: calculatedPenalty,
+            message: `SMART CONFLICT ACTIVE: Vehicle ${overstayingBooking.vehicleNumber} overstaying in Slot ${originalSlotNum}. 2.5x penalty applied. Exit locked.`
+          });
+        }
+
+        // 2. Emergency Buffer / VIP Slot Auto-Reassignment for Driver B (Arriving User)
+        const preferredCategory = assignedSlot.category || 'four-wheeler';
+        let alternateSlot = await ParkingSlot.findOne({
+          status: 'available',
+          category: preferredCategory,
+          _id: { $ne: assignedSlotId }
+        });
+
+        // If exact category not found, upgrade to any available slot (VIP, Standard, Accessible)
+        if (!alternateSlot) {
+          alternateSlot = await ParkingSlot.findOne({
+            status: 'available',
+            _id: { $ne: assignedSlotId }
+          });
+        }
+
+        if (alternateSlot) {
+          booking.reassignedFrom = originalSlotNum;
+          booking.reassignedSlotNumber = alternateSlot.number;
+          booking.reassignmentReason = `Smart Conflict Engine: Slot ${originalSlotNum} was occupied by overstaying vehicle. Auto-reassigned & upgraded to ${alternateSlot.number} at ₹0 extra fee.`;
+          booking.slot = alternateSlot._id;
+          assignedSlot = alternateSlot;
+          conflictResolved = true;
+
+          await logAudit(req, {
+            action: 'Smart Conflict: Buffer Slot Auto-Reassigned',
+            details: `Driver B (${booking.vehicleNumber}) auto-reassigned from blocked slot ${originalSlotNum} to emergency buffer/VIP slot ${alternateSlot.number} at ₹0 charge. Entry granted.`,
+            actionType: 'entry',
+            userId: booking.user?._id
+          });
+        }
+      }
+    }
+
     // Process entry
     booking.status = 'active';
     booking.entryTime = now;
     await booking.save();
 
-    if (booking.slot) {
-      await ParkingSlot.findByIdAndUpdate(booking.slot._id, { status: 'occupied' });
-      emitSlotUpdate({ slotId: booking.slot._id, status: 'occupied' });
-      emitVehicleMotion({ slotId: booking.slot._id, phase: 'entering' });
+    const finalSlotId = assignedSlot?._id || assignedSlot;
+    if (finalSlotId) {
+      await ParkingSlot.findByIdAndUpdate(finalSlotId, { status: 'occupied' });
+      emitSlotUpdate({ slotId: finalSlotId, status: 'occupied' });
+      emitVehicleMotion({ slotId: finalSlotId, phase: 'entering' });
     }
 
     emitBookingUpdate({ bookingId: booking._id, status: 'active' });
 
     await logAudit(req, {
       action: 'Vehicle Entry',
-      details: `${booking.vehicleNumber} entered slot ${booking.slot?.number || 'A-01'} (booking ${booking._id})`,
+      details: `${booking.vehicleNumber} entered slot ${assignedSlot?.number || originalSlotNum} (booking ${booking._id})`,
       actionType: 'entry',
       userId: booking.user?._id || req.user?._id
     });
@@ -396,11 +485,17 @@ const processScan = async (req, res, booking, mode, blacklistMatch = null) => {
       success: true,
       allowed: true,
       type: 'entry',
+      conflictResolved,
+      originalSlot: conflictResolved ? originalSlotNum : undefined,
+      reassignedSlot: conflictResolved ? assignedSlot?.number : undefined,
       warning: blacklistMatch ? `Vehicle flagged as warning: ${blacklistMatch.reason}` : undefined,
-      message: 'ENTRY ALLOWED',
+      message: conflictResolved
+        ? `SMART CONFLICT RESOLUTION: Slot ${originalSlotNum} occupied by overstayer. Auto-upgraded to Slot ${assignedSlot?.number} at ₹0 charge. ENTRY ALLOWED.`
+        : 'ENTRY ALLOWED',
       booking: {
         id: booking._id,
-        slotNumber: booking.slot?.number || 'A-01',
+        slotNumber: assignedSlot?.number || originalSlotNum,
+        reassignedFrom: booking.reassignedFrom,
         vehicleNumber: booking.vehicleNumber,
         userName: booking.user?.name || 'Driver',
         startTime: booking.startTime,
@@ -427,33 +522,34 @@ const processScan = async (req, res, booking, mode, blacklistMatch = null) => {
     let overstayPenalty = 0;
 
     const endTime = new Date(booking.endTime);
-    if (exitTime.getTime() > endTime.getTime()) {
-      overstayHours = Math.ceil((exitTime.getTime() - endTime.getTime()) / 3600000);
+    if (exitTime.getTime() > endTime.getTime() || booking.overstayConflictFlag) {
+      overstayHours = Math.max(1, Math.ceil((exitTime.getTime() - endTime.getTime()) / 3600000));
       const hourlyRate = booking.slot?.pricePerHour || 30;
-      const rate = parseFloat(process.env.OVERSTAY_RATE) || hourlyRate * 1.5;
-      overstayPenalty = overstayHours * rate;
+      const multiplier = booking.penaltyMultiplier || (parseFloat(process.env.OVERSTAY_RATE_MULTIPLIER) || 2.5);
+      overstayPenalty = Math.round(overstayHours * hourlyRate * multiplier);
     }
 
     booking.overstayDuration = overstayHours;
     booking.overstayPenalty = overstayPenalty;
 
-    if (overstayPenalty > 0) {
+    if (overstayPenalty > 0 && booking.penaltyPaymentStatus !== 'paid') {
       booking.penaltyPaymentStatus = 'pending';
       await booking.save();
 
       await logAudit(req, {
-        action: 'Overstay Detected at Exit',
-        details: `${booking.vehicleNumber} overstayed ${overstayHours}h — ₹${overstayPenalty} penalty due before exit (booking ${booking._id})`,
+        action: 'Overstay Penalty Barrier Lock',
+        details: `${booking.vehicleNumber} overstayed ${overstayHours}h (Conflict Multiplier: ${booking.penaltyMultiplier || 2.5}x) — ₹${overstayPenalty} penalty due. Barrier locked before exit.`,
         actionType: 'exit',
         userId: booking.user?._id || req.user?._id
       });
 
       return res.status(200).json({
         success: true,
-        allowed: true,
+        allowed: false, // Exit barrier remains LOCKED until penalty is settled
         type: 'exit',
         paymentRequired: true,
-        message: `OVERSTAY: Additional payment of ₹${overstayPenalty} required before exit.`,
+        overstayConflictFlag: booking.overstayConflictFlag,
+        message: `OVERSTAY PENALTY LOCK: Additional payment of ₹${overstayPenalty} (${booking.penaltyMultiplier || 2.5}x penalty rate) required before barrier exit opens.`,
         booking: {
           id: booking._id,
           slotNumber: booking.slot?.number || 'A-01',

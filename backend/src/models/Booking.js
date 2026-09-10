@@ -63,6 +63,23 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  penaltyMultiplier: {
+    type: Number,
+    default: 1
+  },
+  overstayConflictFlag: {
+    type: Boolean,
+    default: false
+  },
+  reassignedFrom: {
+    type: String
+  },
+  reassignedSlotNumber: {
+    type: String
+  },
+  reassignmentReason: {
+    type: String
+  },
   penaltyPaymentStatus: {
     type: String,
     enum: ['none', 'pending', 'paid', 'failed'],
