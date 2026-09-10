@@ -18,6 +18,7 @@ import {
   HiOutlineLockClosed,
   HiOutlineUserPlus,
   HiOutlineCreditCard,
+  HiOutlineMicrophone,
 } from 'react-icons/hi2';
 import { slotApi, bookingApi, authApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -27,6 +28,7 @@ import Modal from '../components/ui/Modal';
 import InteractiveFloorMap from '../components/InteractiveFloorMap';
 import type { ParkingSlotItem } from '../components/InteractiveFloorMap';
 import ThreeDTicketPass from '../components/ThreeDTicketPass';
+import AIVoiceBookingModal from '../components/AIVoiceBookingModal';
 
 interface Slot {
   id: string;
@@ -93,12 +95,21 @@ const BookParking = () => {
   const [selectedHours, setSelectedHours] = useState(2);
   const [vehicleNumber, setVehicleNumber] = useState(user?.vehicleNumber || 'MH-12-AB-3456');
   const [selectedSlotId, setSelectedSlotId] = useState<string>('');
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
 
   // Garage Multi-Vehicle State
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [newPlateInput, setNewPlateInput] = useState('');
   const [addingVehicleLoading, setAddingVehicleLoading] = useState(false);
   const [addVehicleMsg, setAddVehicleMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  const handleApplyVoiceBooking = (data: { category?: 'four-wheeler' | 'two-wheeler' | 'ev' | 'disabled'; durationHours?: number; time?: string; date?: string; vehicleNumber?: string }) => {
+    if (data.category) setCategory(data.category);
+    if (data.durationHours) setSelectedHours(data.durationHours);
+    if (data.time) setSelectedTime(data.time);
+    if (data.date) setDate(data.date);
+    if (data.vehicleNumber) setVehicleNumber(data.vehicleNumber);
+  };
 
   const userVehiclesList = useMemo(() => {
     const list = user?.vehicles && user.vehicles.length > 0 ? [...user.vehicles] : [];
@@ -423,6 +434,16 @@ const BookParking = () => {
             <p className="text-sm text-gray-400 mt-1">
               Pick your date, time duration, vehicle type, and select your preferred bay from the live 2D parking layout.
             </p>
+            <div className="pt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setVoiceModalOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 hover:from-pink-600 hover:to-cyan-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-pink-500/25 transition-all transform hover:scale-[1.02]"
+              >
+                <HiOutlineMicrophone className="w-4 h-4 animate-pulse" />
+                <span>AI Voice Command Booking 🎙️</span>
+              </button>
+            </div>
           </div>
         </motion.div>
 
@@ -863,6 +884,13 @@ const BookParking = () => {
           </div>
         </div>
       </Modal>
+
+      {/* AI Voice Command Assistant Modal */}
+      <AIVoiceBookingModal
+        isOpen={voiceModalOpen}
+        onClose={() => setVoiceModalOpen(false)}
+        onApplyBooking={handleApplyVoiceBooking}
+      />
     </div>
   );
 };

@@ -44,6 +44,7 @@ const userSidebarItems = [
   { to: '/', label: 'Home Website', icon: HiOutlineSparkles },
   { to: '/dashboard', label: 'Dashboard', icon: HiOutlineHome },
   { to: '/dashboard/book-parking', label: 'Book Parking', icon: HiOutlineCalendarDays },
+  { to: '/dashboard/subscriptions', label: 'Monthly Passes', icon: HiOutlineCreditCard },
   { to: '/dashboard/navigation', label: '3D/AR Navigation', icon: HiOutlineMapPin },
   { to: '/dashboard/live-map', label: 'Live 3D Map', icon: HiOutlineRectangleStack },
   { to: '/dashboard/smart-search', label: 'Smart Search', icon: HiOutlineMagnifyingGlass },

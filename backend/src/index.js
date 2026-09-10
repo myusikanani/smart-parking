@@ -87,6 +87,7 @@ app.use('/api/ai', require('./routes/ai'));
 app.use('/api/realtime', require('./routes/realtime'));
 app.use('/api/layout', require('./routes/layout'));
 app.use('/api/payments', require('./routes/payments'));
+app.use('/api/subscriptions', require('./routes/subscriptions'));
 
 // Direct web seed endpoint for initialization
 app.get('/api/seed', async (req, res) => {

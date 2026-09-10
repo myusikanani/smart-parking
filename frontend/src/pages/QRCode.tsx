@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { HiOutlineArrowDownTray, HiOutlineEnvelope, HiOutlineHome, HiOutlineExclamationTriangle, HiOutlineMapPin } from 'react-icons/hi2';
+import { HiOutlineArrowDownTray, HiOutlineEnvelope, HiOutlineHome, HiOutlineExclamationTriangle, HiOutlineMapPin, HiOutlineChatBubbleLeftRight, HiOutlineXMark, HiOutlineCheck } from 'react-icons/hi2';
 import { bookingApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ParkingPass from '../components/ParkingPass';
@@ -18,6 +18,13 @@ const QRCode = () => {
   const [emailing, setEmailing] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [emailError, setEmailError] = useState('');
+
+  // WhatsApp Pass State
+  const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false);
+  const [whatsAppPhone, setWhatsAppPhone] = useState(user?.phone || '9876543210');
+  const [whatsAppLoading, setWhatsAppLoading] = useState(false);
+  const [whatsAppSuccess, setWhatsAppSuccess] = useState(false);
+  const [whatsAppError, setWhatsAppError] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -317,6 +324,20 @@ const QRCode = () => {
     }
   };
 
+  const handleSendWhatsApp = async () => {
+    if (!booking) return;
+    setWhatsAppLoading(true);
+    setWhatsAppError('');
+    try {
+      await bookingApi.sendWhatsAppTicket(booking.id, whatsAppPhone);
+      setWhatsAppSuccess(true);
+    } catch (err) {
+      setWhatsAppError(err instanceof Error ? err.message : 'Could not send WhatsApp ticket.');
+    } finally {
+      setWhatsAppLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-md mx-auto p-8 glass-card text-center space-y-4 animate-pulse">
@@ -388,6 +409,7 @@ const QRCode = () => {
       </motion.div>
 
       <div className="space-y-3">
+        {/* 3D AR Navigation CTA */}
         <button
           className="w-full py-3.5 px-6 rounded-xl font-bold text-base flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 hover:from-pink-600 hover:to-cyan-600 text-white shadow-xl shadow-pink-500/25 transition-all transform hover:scale-[1.02]"
           onClick={() => navigate('/dashboard/navigation', { state: { booking } })}
@@ -395,6 +417,16 @@ const QRCode = () => {
           <HiOutlineMapPin className="w-5 h-5 animate-pulse" />
           Start 3D / AR Turn-by-Turn Navigation ➔
         </button>
+
+        {/* WhatsApp Pass Button */}
+        <button
+          className="w-full py-3.5 px-6 rounded-xl font-bold text-base flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-600/25 transition-all border border-emerald-400/40"
+          onClick={() => setWhatsAppModalOpen(true)}
+        >
+          <HiOutlineChatBubbleLeftRight className="w-5 h-5 text-emerald-200" />
+          Send Instant Ticket to WhatsApp (Bot)
+        </button>
+
         <button
           className="btn-neon w-full py-3.5 px-6 rounded-xl font-semibold text-base flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20"
           onClick={handleDownload}
@@ -422,6 +454,94 @@ const QRCode = () => {
           Back to Dashboard
         </button>
       </div>
+
+      {/* WHATSAPP TICKET PASS MODAL & LIVE BOT SIMULATOR */}
+      <AnimatePresence>
+        {whatsAppModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 max-w-md w-full shadow-2xl relative space-y-4"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400">
+                    <HiOutlineChatBubbleLeftRight className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-base">WhatsApp Instant Ticket Bot</h3>
+                    <p className="text-[11px] text-emerald-400">Meta WhatsApp Cloud &amp; Twilio API</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setWhatsAppModalOpen(false)}
+                  className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition"
+                >
+                  <HiOutlineXMark className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* WhatsApp Chat Preview Bubble */}
+              <div className="p-4 rounded-2xl bg-[#0b141a] border border-emerald-900/60 font-sans text-xs space-y-2 text-gray-200">
+                <div className="flex items-center justify-between text-[10px] text-emerald-400 font-mono">
+                  <span>ParkSmart Verified Bot</span>
+                  <span>Official Pass</span>
+                </div>
+                <div className="bg-[#1f2c34] p-3 rounded-xl border border-white/5 space-y-1.5 shadow-inner">
+                  <p className="font-bold text-emerald-300">🎟️ PARKSMART OFFICIAL DIGITAL PASS</p>
+                  <p>🚗 <strong>Vehicle:</strong> {booking.vehicleNumber}</p>
+                  <p>📍 <strong>Reserved Bay:</strong> Slot *{booking.slotNumber || 'A-04'}*</p>
+                  <p>⏰ <strong>Validity:</strong> Active Session (QR Enabled)</p>
+                  <p className="text-[10px] text-gray-400 mt-1">👉 Auto gate barrier access with TOTP security</p>
+                </div>
+              </div>
+
+              {/* Phone Input & Action */}
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">
+                    Enter WhatsApp Mobile Number (E.164 format):
+                  </label>
+                  <div className="flex gap-2">
+                    <span className="px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-mono text-gray-300 flex items-center">
+                      +91
+                    </span>
+                    <input
+                      type="tel"
+                      value={whatsAppPhone}
+                      onChange={(e) => setWhatsAppPhone(e.target.value)}
+                      placeholder="9876543210"
+                      className="input-neon flex-1 px-4 py-2 text-xs font-mono rounded-xl"
+                    />
+                  </div>
+                </div>
+
+                {whatsAppError && (
+                  <p className="text-xs text-red-400 text-center">{whatsAppError}</p>
+                )}
+
+                {whatsAppSuccess ? (
+                  <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-xs font-bold text-center flex items-center justify-center gap-2">
+                    <HiOutlineCheck className="w-4 h-4" />
+                    Ticket &amp; Directions sent to your WhatsApp!
+                  </div>
+                ) : (
+                  <button
+                    disabled={whatsAppLoading || !whatsAppPhone.trim()}
+                    onClick={handleSendWhatsApp}
+                    className="btn-neon w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 disabled:opacity-50"
+                  >
+                    {whatsAppLoading ? 'Dispatching via Meta API...' : '🚀 Send Pass to My WhatsApp'}
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

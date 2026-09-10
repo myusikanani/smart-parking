@@ -6,6 +6,7 @@ const qrcode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
 const { emitSlotUpdate, emitBookingUpdate, emitVehicleMotion } = require('../utils/socket');
 const { sendBookingEmail, sendQREmail } = require('../utils/emailService');
+const { sendWhatsAppTicket } = require('../utils/whatsappService');
 const { logAudit } = require('../utils/auditLogger');
 
 exports.createBooking = async (req, res) => {
@@ -352,6 +353,58 @@ exports.emailBookingQR = async (req, res) => {
     });
 
     res.status(200).json({ success: true, message: `QR pass emailed to ${userEmail}.` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// POST /api/bookings/:id/send-whatsapp — send the paid booking's QR pass to the user's WhatsApp
+exports.sendBookingWhatsApp = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id)
+      .populate('slot', 'number floor category')
+      .populate('user', 'name phone email');
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    const bookingUserId = String(booking.user?._id || booking.user);
+    if (bookingUserId !== String(req.user.id || req.user._id) && !['admin', 'security'].includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'Not authorized to send WhatsApp pass for this booking' });
+    }
+
+    if (!booking.qrCode || !booking.qrToken) {
+      return res.status(400).json({ success: false, message: 'QR pass is not available yet. Complete the payment first.' });
+    }
+
+    const targetPhone = req.body.phone || booking.user?.phone || req.user?.phone;
+    if (!targetPhone) {
+      return res.status(400).json({ success: false, message: 'No phone number provided or on file.' });
+    }
+
+    const result = await sendWhatsAppTicket({
+      to: targetPhone,
+      booking,
+      qrUrl: booking.qrCode
+    });
+
+    if (!result.success) {
+      return res.status(400).json({ success: false, message: result.message || 'Failed to dispatch WhatsApp ticket.' });
+    }
+
+    await logAudit(req, {
+      action: 'QR Pass Sent via WhatsApp',
+      details: `WhatsApp pass for booking ${booking._id} dispatched to ${result.formattedPhone || targetPhone} (${result.provider})`,
+      actionType: 'booking_whatsapp',
+      userId: req.user._id
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `WhatsApp ticket pass dispatched to ${result.formattedPhone || targetPhone}!`,
+      deliveryDetails: result
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

@@ -185,6 +185,9 @@ export const bookingApi = {
   emailQR: (id: string) =>
     api.post<{ success: boolean; message: string }>(`/bookings/${id}/email-qr`, {}),
 
+  sendWhatsAppTicket: (id: string, phone?: string) =>
+    api.post<{ success: boolean; message: string; deliveryDetails?: Record<string, unknown> }>(`/bookings/${id}/send-whatsapp`, { phone }),
+
   cancel: (id: string, reason?: string) =>
     api.put<{ success: boolean; booking: Record<string, unknown> }>(`/bookings/${id}/cancel`, { cancellationReason: reason }),
 
@@ -200,6 +203,20 @@ export const bookingApi = {
       rotationInterval: number;
       booking: Record<string, unknown>;
     }>(`/bookings/${id}/dynamic-qr`),
+};
+
+export const subscriptionApi = {
+  getMy: () =>
+    api.get<{ success: boolean; count: number; subscriptions: Record<string, unknown>[]; availablePlans: Record<string, unknown> }>('/subscriptions/my'),
+
+  create: (data: { planType: string; vehicleNumbers?: string[]; billingCycle?: string }) =>
+    api.post<{ success: boolean; message: string; subscription: Record<string, unknown> }>('/subscriptions', data),
+
+  cancel: (id: string) =>
+    api.put<{ success: boolean; message: string; subscription: Record<string, unknown> }>(`/subscriptions/${id}/cancel`, {}),
+
+  getAll: () =>
+    api.get<{ success: boolean; count: number; subscriptions: Record<string, unknown>[] }>('/subscriptions/admin'),
 };
 
 export const adminApi = {

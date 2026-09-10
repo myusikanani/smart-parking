@@ -12,7 +12,8 @@ const {
   checkExpiredBookings,
   getWaitingList,
   joinWaitingList,
-  emailBookingQR
+  emailBookingQR,
+  sendBookingWhatsApp
 } = require('../controllers/bookingController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -27,6 +28,7 @@ router.get('/:id', protect, getBookingById);
 router.post('/:id/entry', protect, authorize('admin', 'security'), markEntry);
 router.post('/:id/exit', protect, authorize('admin', 'security'), markExit);
 router.post('/:id/email-qr', protect, emailBookingQR);
+router.post('/:id/send-whatsapp', protect, sendBookingWhatsApp);
 router.put('/:id/cancel', protect, cancelBooking);
 
 module.exports = router;
