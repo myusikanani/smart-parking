@@ -49,13 +49,29 @@ const Profile = () => {
   };
 
   const handleAddVehicle = async () => {
-    if (!newPlate.trim()) return;
+    const cleanPlate = newPlate.trim().toUpperCase();
+    if (!cleanPlate) {
+      toast('Please enter a valid license plate number', 'error');
+      return;
+    }
+
+    const primary = (user?.vehicleNumber || '').trim().toUpperCase();
+    if (cleanPlate === primary) {
+      toast(`⚠️ Vehicle ${cleanPlate} is already your Primary Registered Car!`, 'error');
+      return;
+    }
+
+    if (user?.vehicles && user.vehicles.map(v => v.trim().toUpperCase()).includes(cleanPlate)) {
+      toast(`⚠️ Vehicle ${cleanPlate} is already registered in your Garage!`, 'error');
+      return;
+    }
+
     setAddVehicleLoading(true);
     try {
-      const res = await authApi.updateProfile({ addVehicle: newPlate.trim().toUpperCase() });
+      const res = await authApi.updateProfile({ addVehicle: cleanPlate });
       if (res.user) {
         updateUser(res.user as Partial<User>);
-        toast(`Vehicle ${newPlate.toUpperCase()} added to garage!`, 'success');
+        toast(`🚗 Vehicle ${cleanPlate} added to your garage!`, 'success');
         setNewPlate('');
       }
     } catch (err: unknown) {
@@ -63,6 +79,19 @@ const Profile = () => {
       toast(message, 'error');
     } finally {
       setAddVehicleLoading(false);
+    }
+  };
+
+  const handleRemoveVehicle = async (plate: string) => {
+    try {
+      const res = await authApi.updateProfile({ removeVehicle: plate });
+      if (res.user) {
+        updateUser(res.user as Partial<User>);
+        toast(`Vehicle ${plate} removed from garage`, 'success');
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to remove vehicle';
+      toast(message, 'error');
     }
   };
 
@@ -208,8 +237,17 @@ const Profile = () => {
                   className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-white/10 text-xs font-mono font-bold text-cyan-200"
                 >
                   <span>🚗 {v}</span>
-                  {v === user.vehicleNumber && (
+                  {v === user.vehicleNumber ? (
                     <span className="text-[9px] px-1 bg-cyan-500/30 text-cyan-300 rounded font-sans">Primary</span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveVehicle(v)}
+                      className="ml-1 text-gray-400 hover:text-red-400 text-xs transition"
+                      title="Remove car from garage"
+                    >
+                      ✕
+                    </button>
                   )}
                 </div>
               ))}

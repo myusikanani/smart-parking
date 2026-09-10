@@ -568,7 +568,7 @@ const getMe = async (req, res) => {
 };
 
 const updateProfile = async (req, res) => {
-  const { name, email, phone, vehicleNumber, addVehicle } = req.body;
+  const { name, email, phone, vehicleNumber, addVehicle, removeVehicle } = req.body;
 
   try {
     const user = await User.findById(req.user.id);
@@ -580,8 +580,34 @@ const updateProfile = async (req, res) => {
     if (email) user.email = email;
     if (phone) user.phone = phone;
 
+    if (!user.vehicles) user.vehicles = [];
+
+    // Remove vehicle from garage if requested
+    if (removeVehicle) {
+      const plateToRemove = String(removeVehicle).trim().toUpperCase();
+      user.vehicles = user.vehicles.filter(v => v !== plateToRemove);
+    }
+
+    // Add new vehicle to garage if requested
     const newPlate = (addVehicle || vehicleNumber) ? String(addVehicle || vehicleNumber).trim().toUpperCase() : '';
     if (newPlate) {
+      // 1. Check if plate is already user's primary vehicle
+      if (user.vehicleNumber && user.vehicleNumber.trim().toUpperCase() === newPlate && addVehicle) {
+        return res.status(400).json({
+          success: false,
+          message: `Vehicle license plate "${newPlate}" is already your Primary Registered Vehicle.`
+        });
+      }
+
+      // 2. Check if plate is already in user's garage array
+      if (user.vehicles.includes(newPlate) && addVehicle) {
+        return res.status(400).json({
+          success: false,
+          message: `Vehicle license plate "${newPlate}" is already in your Garage.`
+        });
+      }
+
+      // 3. Check if plate is registered with another user in the system
       const existingVehicle = await User.findOne({
         _id: { $ne: user._id },
         $or: [
@@ -596,7 +622,6 @@ const updateProfile = async (req, res) => {
         });
       }
 
-      if (!user.vehicles) user.vehicles = [];
       if (!user.vehicles.includes(newPlate)) {
         user.vehicles.push(newPlate);
       }

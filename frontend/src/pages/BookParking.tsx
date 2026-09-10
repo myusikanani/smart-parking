@@ -25,6 +25,7 @@ import { useAuth } from '../context/AuthContext';
 import type { User } from '../context/AuthContext';
 import { CarSedan, ElectricCar, BikeScooter, AccessibleCar } from '../components/vehicles';
 import Modal from '../components/ui/Modal';
+import { useToast } from '../components/ui/Toast';
 import InteractiveFloorMap from '../components/InteractiveFloorMap';
 import type { ParkingSlotItem } from '../components/InteractiveFloorMap';
 import ThreeDTicketPass from '../components/ThreeDTicketPass';
@@ -74,11 +75,10 @@ const itemVariants = {
 const BookParking = () => {
   const navigate = useNavigate();
   const { user, token, updateUser } = useAuth();
+  const { toast } = useToast();
   const isLoggedIn = Boolean(user && token);
 
   // Form State
-  // Default to the NEXT full hour within venue hours (08:00-21:00) so the page
-  // never opens on a past window; late-evening visits roll to tomorrow 08:00.
   const fmtLocal = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const initialSlot = (() => {
@@ -93,7 +93,7 @@ const BookParking = () => {
   const [selectedTime, setSelectedTime] = useState(initialSlot.time);
   const [category, setCategory] = useState('four-wheeler');
   const [selectedHours, setSelectedHours] = useState(2);
-  const [vehicleNumber, setVehicleNumber] = useState(user?.vehicleNumber || 'MH-12-AB-3456');
+  const [vehicleNumber, setVehicleNumber] = useState((user?.vehicleNumber || 'MH-12-AB-3456').trim().toUpperCase());
   const [selectedSlotId, setSelectedSlotId] = useState<string>('');
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
 
@@ -103,37 +103,57 @@ const BookParking = () => {
   const [addingVehicleLoading, setAddingVehicleLoading] = useState(false);
   const [addVehicleMsg, setAddVehicleMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
+  const primaryPlate = useMemo(() => {
+    return (user?.vehicleNumber || 'MH-12-AB-3456').trim().toUpperCase();
+  }, [user?.vehicleNumber]);
+
+  // Secondary garage vehicles (all saved vehicles excluding the primary car)
+  const garageVehicles = useMemo(() => {
+    const list = user?.vehicles && Array.isArray(user.vehicles) ? [...user.vehicles] : [];
+    const primary = (user?.vehicleNumber || '').trim().toUpperCase();
+    const secondary = list
+      .map((v) => (v ? String(v).trim().toUpperCase() : ''))
+      .filter((v) => v && v !== primary);
+    return Array.from(new Set(secondary));
+  }, [user?.vehicles, user?.vehicleNumber]);
+
+  useEffect(() => {
+    if (user?.vehicleNumber && (!vehicleNumber || vehicleNumber === 'MH-12-AB-3456')) {
+      setVehicleNumber(user.vehicleNumber.trim().toUpperCase());
+    }
+  }, [user?.vehicleNumber, vehicleNumber]);
+
   const handleApplyVoiceBooking = (data: { category?: 'four-wheeler' | 'two-wheeler' | 'ev' | 'disabled'; durationHours?: number; time?: string; date?: string; vehicleNumber?: string }) => {
     if (data.category) setCategory(data.category);
     if (data.durationHours) setSelectedHours(data.durationHours);
     if (data.time) setSelectedTime(data.time);
     if (data.date) setDate(data.date);
-    if (data.vehicleNumber) setVehicleNumber(data.vehicleNumber);
+    if (data.vehicleNumber) setVehicleNumber(data.vehicleNumber.trim().toUpperCase());
   };
-
-  const userVehiclesList = useMemo(() => {
-    const list = user?.vehicles && user.vehicles.length > 0 ? [...user.vehicles] : [];
-    if (user?.vehicleNumber && !list.includes(user.vehicleNumber)) {
-      list.unshift(user.vehicleNumber);
-    }
-    if (list.length === 0) {
-      list.push(user?.vehicleNumber || 'MH-12-AB-3456');
-    }
-    return Array.from(new Set(list));
-  }, [user?.vehicles, user?.vehicleNumber]);
-
-  useEffect(() => {
-    if (user?.vehicleNumber && !vehicleNumber) {
-      setVehicleNumber(user.vehicleNumber);
-    }
-  }, [user?.vehicleNumber, vehicleNumber]);
 
   const handleAddNewVehicle = async () => {
     const cleanPlate = newPlateInput.trim().toUpperCase();
     if (!cleanPlate) {
+      toast('Please enter a valid license plate number', 'error');
       setAddVehicleMsg({ type: 'error', text: 'Please enter a valid license plate.' });
       return;
     }
+
+    const primary = (user?.vehicleNumber || '').trim().toUpperCase();
+    // 1. Strict duplicate check against Primary car
+    if (cleanPlate === primary) {
+      toast(`⚠️ Vehicle ${cleanPlate} is already your Primary Registered Car!`, 'error');
+      setAddVehicleMsg({ type: 'error', text: `Vehicle "${cleanPlate}" is already your Primary Vehicle. Cannot re-add.` });
+      return;
+    }
+
+    // 2. Strict duplicate check against Garage cars
+    if (garageVehicles.includes(cleanPlate)) {
+      toast(`⚠️ Vehicle ${cleanPlate} is already registered in your Garage!`, 'error');
+      setAddVehicleMsg({ type: 'error', text: `Vehicle "${cleanPlate}" is already in your Garage. Cannot re-add.` });
+      return;
+    }
+
     setAddingVehicleLoading(true);
     setAddVehicleMsg(null);
     try {
@@ -144,15 +164,57 @@ const BookParking = () => {
       setVehicleNumber(cleanPlate);
       setNewPlateInput('');
       setShowAddVehicle(false);
+      toast(`🚗 Vehicle ${cleanPlate} successfully added to garage & selected!`, 'success');
       setAddVehicleMsg({ type: 'success', text: `Vehicle ${cleanPlate} added to your garage!` });
-    } catch {
-      const updatedVehicles = Array.from(new Set([...userVehiclesList, cleanPlate]));
-      updateUser({ vehicles: updatedVehicles });
-      setVehicleNumber(cleanPlate);
-      setNewPlateInput('');
-      setShowAddVehicle(false);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to register vehicle.';
+      toast(message, 'error');
+      setAddVehicleMsg({ type: 'error', text: message });
     } finally {
       setAddingVehicleLoading(false);
+    }
+  };
+
+  const handleRemoveGarageVehicle = async (plate: string) => {
+    try {
+      const res = await authApi.updateProfile({ removeVehicle: plate });
+      if (res.user) {
+        updateUser(res.user as unknown as Partial<User>);
+      }
+      if (vehicleNumber === plate) {
+        setVehicleNumber(primaryPlate);
+      }
+      toast(`Vehicle ${plate} removed from your garage`, 'success');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to remove vehicle.';
+      toast(message, 'error');
+    }
+  };
+
+  const handleSaveCustomToGarage = async () => {
+    const cleanPlate = vehicleNumber.trim().toUpperCase();
+    if (!cleanPlate) {
+      toast('Please enter a valid license plate number', 'error');
+      return;
+    }
+    const primary = (user?.vehicleNumber || '').trim().toUpperCase();
+    if (cleanPlate === primary) {
+      toast(`Vehicle ${cleanPlate} is already your Primary Car.`, 'info');
+      return;
+    }
+    if (garageVehicles.includes(cleanPlate)) {
+      toast(`Vehicle ${cleanPlate} is already in your garage.`, 'info');
+      return;
+    }
+    try {
+      const res = await authApi.updateProfile({ addVehicle: cleanPlate });
+      if (res.user) {
+        updateUser(res.user as unknown as Partial<User>);
+      }
+      toast(`🚗 Vehicle ${cleanPlate} saved to your garage!`, 'success');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save vehicle.';
+      toast(message, 'error');
     }
   };
 
@@ -284,14 +346,30 @@ const BookParking = () => {
 
       const slotIdToSend = String(selectedSlot.id || (selectedSlot as unknown as Record<string, unknown>)._id || selectedSlot.number || '');
 
+      const cleanVehiclePlate = vehicleNumber.trim().toUpperCase();
+
       const res = await bookingApi.create({
         slotId: slotIdToSend,
-        vehicleNumber: vehicleNumber.trim().toUpperCase(),
+        vehicleNumber: cleanVehiclePlate,
         startTime: startDateObj.toISOString(),
         endTime: endDateObj.toISOString(),
         category,
         amount: Number(totalPrice),
       });
+
+      // Auto-save this vehicle to user's garage if it's new
+      if (
+        isLoggedIn &&
+        cleanVehiclePlate &&
+        cleanVehiclePlate !== primaryPlate &&
+        !garageVehicles.includes(cleanVehiclePlate)
+      ) {
+        authApi.updateProfile({ addVehicle: cleanVehiclePlate })
+          .then((pRes) => {
+            if (pRes.user) updateUser(pRes.user as unknown as Partial<User>);
+          })
+          .catch(() => {});
+      }
 
       // Proceed to Razorpay payment checkout step
       const createdBookingId = (res.booking as Record<string, unknown>)?._id || (res.booking as Record<string, unknown>)?.id || '';
@@ -551,7 +629,7 @@ const BookParking = () => {
               </div>
 
               {/* MULTI-VEHICLE GARAGE MANAGEMENT (PRIMARY CAR + MULTI-CAR SELECTOR + ADD CAR) */}
-              <div className="p-4 rounded-2xl bg-slate-900/70 border border-cyan-500/20 space-y-3.5 shadow-inner">
+              <div className="p-4 rounded-2xl bg-slate-900/80 border border-cyan-500/30 space-y-4 shadow-inner">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <label className="text-xs font-bold text-gray-200 flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
@@ -564,136 +642,186 @@ const BookParking = () => {
                   )}
                 </div>
 
-                {/* LINE 1: PRIMARY REGISTERED VEHICLE (Permanent Default) */}
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30">
+                {/* TIER 1: PRIMARY REGISTERED VEHICLE (Permanent Default) */}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30">
                   <div className="flex items-center gap-2.5">
                     <span className="px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-mono text-[10px] font-extrabold uppercase tracking-wider border border-cyan-400/40">
                       ⭐ Primary Car
                     </span>
                     <span className="font-mono font-bold text-sm text-white tracking-wide">
-                      {user?.vehicleNumber || 'MH-12-AB-3456'}
+                      {primaryPlate}
                     </span>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setVehicleNumber(user?.vehicleNumber || 'MH-12-AB-3456')}
+                    onClick={() => setVehicleNumber(primaryPlate)}
                     className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                      vehicleNumber === (user?.vehicleNumber || 'MH-12-AB-3456')
+                      vehicleNumber === primaryPlate
                         ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
                         : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white'
                     }`}
                   >
-                    {vehicleNumber === (user?.vehicleNumber || 'MH-12-AB-3456') ? '✓ Active Selected' : 'Select Primary'}
+                    {vehicleNumber === primaryPlate ? '✓ Selected' : 'Select Primary'}
                   </button>
                 </div>
 
-                {/* LINE 2: MULTI-VEHICLE SWITCHER & ADD ANOTHER CAR */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
+                {/* TIER 2: MULTI-VEHICLE SWITCHER & ADD ANOTHER CAR */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <span className="text-[11px] font-semibold text-gray-400">
-                      Select Another Vehicle from Your Garage ({userVehiclesList.length} saved)
+                      Select Another Vehicle from Your Garage ({garageVehicles.length} saved):
                     </span>
                     <button
                       type="button"
-                      onClick={() => setShowAddVehicle(!showAddVehicle)}
-                      className="text-[11px] font-bold text-pink-400 hover:text-pink-300 transition flex items-center gap-1 bg-pink-500/10 px-2 py-0.5 rounded-md border border-pink-500/30"
+                      onClick={() => {
+                        setShowAddVehicle(!showAddVehicle);
+                        setAddVehicleMsg(null);
+                      }}
+                      className="text-[11px] font-bold text-pink-400 hover:text-pink-300 transition flex items-center gap-1 bg-pink-500/10 px-2.5 py-1 rounded-md border border-pink-500/30"
                     >
                       {showAddVehicle ? '✕ Close Form' : '+ Add Another Car (2nd/3rd Car)'}
                     </button>
                   </div>
 
-                  {/* Quick Select Chips */}
-                  <div className="flex flex-wrap gap-2">
-                    {userVehiclesList.map((v) => {
-                      const isSelected = vehicleNumber === v;
-                      const isPrimary = v === user?.vehicleNumber;
-                      return (
-                        <button
-                          key={v}
-                          type="button"
-                          onClick={() => setVehicleNumber(v)}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-mono font-bold border transition-all ${
-                            isSelected
-                              ? 'bg-gradient-to-r from-cyan-500/20 to-pink-500/20 border-cyan-400 text-cyan-100 shadow-[0_0_15px_rgba(6,182,212,0.3)] scale-[1.02]'
-                              : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20'
-                          }`}
-                        >
-                          <span>🚗</span>
-                          <span>{v}</span>
-                          {isPrimary ? (
-                            <span className="text-[9px] px-1.5 py-0.2 bg-cyan-500/30 text-cyan-300 rounded font-sans font-semibold">
-                              Primary
-                            </span>
-                          ) : (
-                            <span className="text-[9px] px-1.5 py-0.2 bg-pink-500/20 text-pink-300 rounded font-sans font-semibold">
-                              Garage
-                            </span>
-                          )}
-                          {isSelected && <span className="text-cyan-400">●</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  {/* Garage Quick Select Chips */}
+                  {garageVehicles.length === 0 ? (
+                    <p className="text-[11px] text-gray-500 italic p-2 rounded-lg bg-white/5 border border-white/5">
+                      No extra vehicles registered in garage yet. Click "+ Add Another Car" to register your 2nd or 3rd car.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {garageVehicles.map((v) => {
+                        const isSelected = vehicleNumber === v;
+                        return (
+                          <div
+                            key={v}
+                            className={`flex items-center rounded-xl border transition-all ${
+                              isSelected
+                                ? 'bg-gradient-to-r from-pink-500/20 to-cyan-500/20 border-pink-400 text-pink-100 shadow-[0_0_15px_rgba(236,72,153,0.3)] scale-[1.02]'
+                                : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setVehicleNumber(v)}
+                              className="flex items-center gap-2 px-3 py-1.5 text-xs font-mono font-bold"
+                            >
+                              <span>🚗</span>
+                              <span>{v}</span>
+                              <span className="text-[9px] px-1.5 py-0.2 bg-pink-500/20 text-pink-300 rounded font-sans font-semibold">
+                                Garage
+                              </span>
+                              {isSelected && <span className="text-pink-400">●</span>}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveGarageVehicle(v);
+                              }}
+                              title={`Remove ${v} from garage`}
+                              className="pr-2.5 pl-1 py-1.5 text-gray-500 hover:text-red-400 text-xs transition"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
-                {/* INLINE ADD ANOTHER VEHICLE FORM */}
+                {/* TIER 3: INLINE ADD ANOTHER VEHICLE FORM (WITH STRICT DUPLICATE PREVENTION) */}
                 {showAddVehicle && (
                   <motion.div
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-3 rounded-xl bg-pink-500/10 border border-pink-500/30 space-y-2"
+                    className="p-3.5 rounded-xl bg-pink-500/10 border border-pink-500/40 space-y-2.5 shadow-lg"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-pink-300">
-                        Add New Vehicle Plate to Your Profile
+                        + Register New Vehicle Plate to Garage:
                       </span>
-                      <span className="text-[10px] text-gray-400">Auto-saved to your garage</span>
+                      <span className="text-[10px] text-gray-400">Auto-saved to your account</span>
                     </div>
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={newPlateInput}
-                        onChange={(e) => setNewPlateInput(e.target.value.toUpperCase())}
+                        onChange={(e) => {
+                          setNewPlateInput(e.target.value.toUpperCase());
+                          setAddVehicleMsg(null);
+                        }}
                         placeholder="e.g. GJ-01-XY-9999"
-                        className="input-neon flex-1 px-3 py-1.5 text-xs font-mono uppercase rounded-lg"
+                        className="input-neon flex-1 px-3 py-2 text-xs font-mono uppercase rounded-xl"
                       />
                       <button
                         type="button"
                         disabled={addingVehicleLoading || !newPlateInput.trim()}
                         onClick={handleAddNewVehicle}
-                        className="px-4 py-1.5 rounded-lg bg-pink-500 hover:bg-pink-600 text-white font-bold text-xs shadow-lg shadow-pink-500/25 transition disabled:opacity-50"
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-bold text-xs shadow-lg shadow-pink-500/25 transition disabled:opacity-50"
                       >
                         {addingVehicleLoading ? 'Saving...' : 'Save & Select'}
                       </button>
                     </div>
                     {addVehicleMsg && (
-                      <p className={`text-[11px] ${addVehicleMsg.type === 'error' ? 'text-red-400' : 'text-emerald-400'}`}>
-                        {addVehicleMsg.text}
-                      </p>
+                      <div
+                        className={`p-2 rounded-lg text-xs flex items-center gap-1.5 ${
+                          addVehicleMsg.type === 'error'
+                            ? 'bg-red-500/20 border border-red-500/40 text-red-300'
+                            : 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
+                        }`}
+                      >
+                        <span>{addVehicleMsg.type === 'error' ? '⚠️' : '✓'}</span>
+                        <span>{addVehicleMsg.text}</span>
+                      </div>
                     )}
                   </motion.div>
                 )}
 
-                {/* MANUAL NUMBER PLATE OVERRIDE INPUT */}
-                <div>
-                  <label className="block text-[11px] font-semibold text-gray-400 mb-1">
-                    Or Enter / Edit Custom Plate Directly:
-                  </label>
-                  <input
-                    type="text"
-                    value={vehicleNumber}
-                    onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
-                    placeholder="e.g. GJ-01-AB-1234"
-                    className="input-neon w-full px-4 py-2 text-xs font-mono tracking-wider rounded-xl uppercase"
-                  />
+                {/* TIER 4: MANUAL NUMBER PLATE OVERRIDE WITH QUICK SAVE */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-semibold text-gray-400">
+                      Or Enter / Edit Custom Plate Directly:
+                    </label>
+                    {vehicleNumber.trim() &&
+                      vehicleNumber.trim() !== primaryPlate &&
+                      !garageVehicles.includes(vehicleNumber.trim()) && (
+                        <button
+                          type="button"
+                          onClick={handleSaveCustomToGarage}
+                          className="text-[10px] font-bold text-cyan-400 hover:text-cyan-300 underline"
+                        >
+                          + Save "{vehicleNumber.trim()}" to Garage
+                        </button>
+                      )}
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={vehicleNumber}
+                      onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
+                      placeholder="e.g. GJ-01-AB-1234"
+                      className="input-neon w-full px-4 py-2.5 text-xs font-mono tracking-wider rounded-xl uppercase"
+                    />
+                  </div>
                 </div>
 
-                {/* ACTIVE BOOKING PLATE BADGE */}
-                <div className="pt-2 border-t border-white/5 flex items-center justify-between text-xs">
+                {/* TIER 5: ACTIVE BOOKING PLATE BADGE */}
+                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
                   <span className="text-gray-400 font-medium">Active Plate for this Booking:</span>
-                  <span className="font-mono font-extrabold text-cyan-300 bg-cyan-950/80 px-2.5 py-1 rounded-lg border border-cyan-500/40 shadow-sm">
-                    🚗 {vehicleNumber || 'NO PLATE SPECIFIED'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {vehicleNumber === primaryPlate && (
+                      <span className="text-[10px] text-cyan-400 font-sans">⭐ Primary</span>
+                    )}
+                    {garageVehicles.includes(vehicleNumber) && (
+                      <span className="text-[10px] text-pink-400 font-sans">🚗 Garage Car</span>
+                    )}
+                    <span className="font-mono font-extrabold text-cyan-300 bg-cyan-950/90 px-3 py-1 rounded-lg border border-cyan-500/40 shadow-sm">
+                      🚗 {vehicleNumber || 'NO PLATE SPECIFIED'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
