@@ -141,17 +141,16 @@ const BookParking = () => {
       return;
     }
 
-    const primary = (user?.vehicleNumber || '').trim().toUpperCase();
-    // 1. Strict duplicate check against Primary car
-    if (cleanPlate === primary) {
-      toast(`⚠️ Vehicle ${cleanPlate} is already your Primary Registered Car!`, 'error');
+    // 1. Strict duplicate check against Primary car (MH-12-AB-3456)
+    if (cleanPlate === primaryPlate) {
+      toast(`⚠️ Vehicle ${cleanPlate} is already your Primary Registered Car! Cannot re-add.`, 'error');
       setAddVehicleMsg({ type: 'error', text: `Vehicle "${cleanPlate}" is already your Primary Vehicle. Cannot re-add.` });
       return;
     }
 
     // 2. Strict duplicate check against Garage cars
     if (garageVehicles.includes(cleanPlate)) {
-      toast(`⚠️ Vehicle ${cleanPlate} is already registered in your Garage!`, 'error');
+      toast(`⚠️ Vehicle ${cleanPlate} is already in your Garage! Cannot re-add.`, 'error');
       setAddVehicleMsg({ type: 'error', text: `Vehicle "${cleanPlate}" is already in your Garage. Cannot re-add.` });
       return;
     }
