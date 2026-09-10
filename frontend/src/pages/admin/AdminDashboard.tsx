@@ -21,13 +21,6 @@ import {
   HiOutlineExclamationTriangle,
   HiOutlineShieldCheck,
   HiOutlineSparkles,
-  HiOutlineCube,
-  HiOutlineUsers,
-  HiOutlineCreditCard,
-  HiOutlineCurrencyDollar,
-  HiOutlineDocumentText,
-  HiOutlineTag,
-  HiOutlineCog6Tooth,
 } from 'react-icons/hi2';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -57,23 +50,6 @@ interface UsageCategoryItem {
   [key: string]: unknown;
 }
 
-const quickActionItems = [
-  { label: '3D Layout Designer', icon: HiOutlineCube, route: '/admin/layout-designer', highlight: true },
-  { label: 'AI Analytics', icon: HiOutlineSparkles, route: '/admin/ai-analytics', highlight: true },
-  { label: 'Manage Bookings', icon: HiOutlineCalendarDays, route: '/admin/bookings' },
-  { label: 'Manage Slots', icon: HiOutlineSquare2Stack, route: '/admin/slots' },
-  { label: 'Payments Ledger', icon: HiOutlineCreditCard, route: '/admin/payments' },
-  { label: 'Revenue Dashboard', icon: HiOutlineCurrencyDollar, route: '/admin/revenue' },
-  { label: 'Manage Users', icon: HiOutlineUsers, route: '/admin/users' },
-  { label: 'Reports Hub', icon: HiOutlineDocumentText, route: '/admin/reports' },
-  { label: 'Overstay Tracking', icon: HiOutlineClock, route: '/admin/overstay' },
-  { label: 'No-Show Report', icon: HiOutlineUserMinus, route: '/admin/no-show' },
-  { label: 'Waiting List', icon: HiOutlineQueueList, route: '/admin/waiting-list' },
-  { label: 'Pricing Rates', icon: HiOutlineTag, route: '/admin/pricing' },
-  { label: 'Audit Logs', icon: HiOutlineClipboardDocumentList, route: '/admin/audit-logs' },
-  { label: 'System Settings', icon: HiOutlineCog6Tooth, route: '/admin/settings' },
-];
-
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -85,7 +61,6 @@ const AdminDashboard = () => {
   const [heroExpanded, setHeroExpanded] = useState(() => {
     return sessionStorage.getItem('admin_hero_collapsed') !== 'true';
   });
-  const [modulesExpanded, setModulesExpanded] = useState(false);
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [recoveryMsg, setRecoveryMsg] = useState('');
 
@@ -537,10 +512,10 @@ const AdminDashboard = () => {
         </motion.div>
       </div>
 
-      {/* 7. QUICK ACTIONS ROW (3 ACTION BUTTONS) */}
+      {/* 7. QUICK OPERATIONS ROW (3 FOCUSED ACTIONS) */}
       <motion.div variants={itemVariants}>
-        <div className="glass-card p-3.5 rounded-2xl">
-          <div className="flex items-center justify-between mb-2.5">
+        <div className="glass-card p-4 rounded-2xl">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono flex items-center gap-1.5">
               <HiOutlineSparkles className="w-3.5 h-3.5 text-cyan-400" /> Quick Operations
             </h2>
@@ -550,11 +525,11 @@ const AdminDashboard = () => {
               </span>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {/* Action 1: Add Slot */}
             <button
               onClick={() => navigate('/admin/slots')}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-bold text-xs bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 transition-all hover:scale-[1.01]"
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 transition-all hover:scale-[1.01]"
             >
               <HiOutlinePlusCircle className="w-4 h-4 text-cyan-400" />
               <span>Add / Manage Slot</span>
@@ -563,7 +538,7 @@ const AdminDashboard = () => {
             {/* Action 2: Today's Bookings */}
             <button
               onClick={() => navigate('/admin/bookings')}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-bold text-xs bg-pink-500/10 border border-pink-500/30 text-pink-300 hover:bg-pink-500/20 transition-all hover:scale-[1.01]"
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs bg-pink-500/10 border border-pink-500/30 text-pink-300 hover:bg-pink-500/20 transition-all hover:scale-[1.01]"
             >
               <HiOutlineCalendarDays className="w-4 h-4 text-pink-400" />
               <span>Today's Bookings ({Number(s.todayBookings ?? 0)})</span>
@@ -573,67 +548,12 @@ const AdminDashboard = () => {
             <button
               onClick={handleRunRecovery}
               disabled={recoveryLoading}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-bold text-xs bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 transition-all hover:scale-[1.01] disabled:opacity-50"
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 transition-all hover:scale-[1.01] disabled:opacity-50"
             >
               <HiOutlineArrowPath className={`w-4 h-4 text-emerald-400 ${recoveryLoading ? 'animate-spin' : ''}`} />
               <span>{recoveryLoading ? 'Running Sweep...' : 'Run Recovery Sweep'}</span>
             </button>
           </div>
-        </div>
-      </motion.div>
-
-      {/* 8. COLLAPSIBLE ADMIN MODULES & QUICK NAVIGATION (ALL 14 PAGES) */}
-      <motion.div variants={itemVariants}>
-        <div className="glass-card p-3.5 rounded-2xl border border-white/5">
-          <button
-            onClick={() => setModulesExpanded(!modulesExpanded)}
-            className="w-full flex items-center justify-between text-left hover:text-cyan-300 transition-colors group"
-          >
-            <div className="flex items-center gap-2">
-              <HiOutlineSquare2Stack className="w-4 h-4 text-cyan-400" />
-              <h2 className="text-xs font-bold uppercase tracking-wider text-gray-300 font-mono group-hover:text-cyan-300 transition-colors">
-                Admin Modules & Quick Navigation (14 Modules)
-              </h2>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-gray-400 group-hover:text-cyan-300 font-semibold">
-              <span>{modulesExpanded ? 'Hide Modules' : 'Show All 14 Modules'}</span>
-              <HiOutlineChevronDown
-                className={`w-3.5 h-3.5 transition-transform duration-200 ${modulesExpanded ? 'rotate-180 text-cyan-400' : ''}`}
-              />
-            </div>
-          </button>
-
-          <AnimatePresence>
-            {modulesExpanded && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-                className="pt-3 border-t border-white/5 mt-2.5"
-              >
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
-                  {quickActionItems.map((item, idx) => {
-                    const Icon = item.icon;
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => navigate(item.route)}
-                        className={`flex flex-col items-center justify-center p-2.5 rounded-xl text-center transition-all duration-200 group ${
-                          item.highlight
-                            ? 'btn-neon text-white'
-                            : 'glass-card hover:border-cyan-500/50 hover:bg-cyan-500/10 text-gray-200'
-                        }`}
-                      >
-                        <Icon className="w-4 h-4 mb-1 text-cyan-400 group-hover:scale-110 transition-transform" />
-                        <span className="text-[11px] font-semibold leading-tight line-clamp-2">{item.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </motion.div>
     </motion.div>
