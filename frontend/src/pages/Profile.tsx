@@ -21,6 +21,9 @@ const Profile = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [is2FaModalOpen, setIs2FaModalOpen] = useState(false);
 
+  const [newPlate, setNewPlate] = useState('');
+  const [addVehicleLoading, setAddVehicleLoading] = useState(false);
+
   useEffect(() => {
     if (user) {
       setName(user.name || '');
@@ -42,6 +45,24 @@ const Profile = () => {
       toast(message, 'error');
     } finally {
       setProfileLoading(false);
+    }
+  };
+
+  const handleAddVehicle = async () => {
+    if (!newPlate.trim()) return;
+    setAddVehicleLoading(true);
+    try {
+      const res = await authApi.updateProfile({ addVehicle: newPlate.trim().toUpperCase() });
+      if (res.user) {
+        updateUser(res.user as Partial<User>);
+        toast(`Vehicle ${newPlate.toUpperCase()} added to garage!`, 'success');
+        setNewPlate('');
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to add vehicle';
+      toast(message, 'error');
+    } finally {
+      setAddVehicleLoading(false);
     }
   };
 
@@ -140,6 +161,82 @@ const Profile = () => {
               onChange={e => setPhone(e.target.value)}
               className="input-neon w-full"
             />
+          </div>
+          <button
+            onClick={handleSave}
+            disabled={profileLoading}
+            className="btn-neon w-full py-2.5 rounded-xl font-semibold text-sm disabled:opacity-50 mt-2"
+          >
+            {profileLoading ? 'Saving...' : 'Save Profile Changes'}
+          </button>
+        </div>
+      </div>
+
+      {/* MY VEHICLE GARAGE (REGISTERED CARS) */}
+      <div className="glass-card p-6 rounded-2xl space-y-4 border border-cyan-500/30">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-white flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
+            My Vehicle Garage (Registered Cars)
+          </h3>
+          <span className="text-xs text-cyan-400 font-mono font-bold">
+            {(user?.vehicles?.length || (user?.vehicleNumber ? 1 : 0))} Cars Total
+          </span>
+        </div>
+
+        {/* Primary Car Badge */}
+        <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-400/40">
+              ⭐ Primary Vehicle (Default)
+            </span>
+            <p className="font-mono font-bold text-sm text-white mt-1">
+              {user?.vehicleNumber || 'MH-12-AB-3456'}
+            </p>
+          </div>
+          <span className="text-[11px] text-gray-400 font-sans">Default for ANPR &amp; Pass</span>
+        </div>
+
+        {/* Other Garage Vehicles */}
+        {user?.vehicles && user.vehicles.length > 0 && (
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-gray-400">All Registered Cars in Account:</label>
+            <div className="flex flex-wrap gap-2">
+              {user.vehicles.map((v) => (
+                <div
+                  key={v}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-white/10 text-xs font-mono font-bold text-cyan-200"
+                >
+                  <span>🚗 {v}</span>
+                  {v === user.vehicleNumber && (
+                    <span className="text-[9px] px-1 bg-cyan-500/30 text-cyan-300 rounded font-sans">Primary</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Add New Vehicle Form */}
+        <div className="pt-3 border-t border-white/10 space-y-2">
+          <label className="block text-xs font-semibold text-gray-300">
+            + Register Another Car to Garage (Car 2 / Car 3):
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newPlate}
+              onChange={(e) => setNewPlate(e.target.value.toUpperCase())}
+              placeholder="e.g. GJ-01-XY-9999"
+              className="input-neon flex-1 px-3 py-2 text-xs font-mono uppercase rounded-xl"
+            />
+            <button
+              onClick={handleAddVehicle}
+              disabled={addVehicleLoading || !newPlate.trim()}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold text-xs shadow-lg shadow-pink-500/25 disabled:opacity-50 transition"
+            >
+              {addVehicleLoading ? 'Saving...' : '+ Add to Garage'}
+            </button>
           </div>
         </div>
       </div>
