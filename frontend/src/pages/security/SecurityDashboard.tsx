@@ -19,8 +19,10 @@ import {
   HiOutlineExclamationTriangle,
   HiOutlineTicket,
   HiOutlineMegaphone,
-  HiOutlineShieldCheck
+  HiOutlineShieldCheck,
+  HiOutlineCamera,
 } from 'react-icons/hi2';
+import { createWorker, type Worker } from 'tesseract.js';
 import StatCard from '../../components/StatCard';
 import { securityApi, paymentApi } from '../../services/api';
 import SecurityHero3D from '../../components/3d/SecurityHero3D';
@@ -147,18 +149,38 @@ const SecurityDashboard = () => {
     loadRazorpayScript().then(setScriptReady);
   }, []);
 
-  // Reusable Universal QR Scanner states
+  // Reusable Universal QR & Plate Scanner states
+  const [scannerType, setScannerType] = useState<'qr' | 'plate_ocr'>('qr');
   const [scannerActive, setScannerActive] = useState(false);
   const [cameraPermissionError, setCameraPermissionError] = useState('');
   const [scannerStatus, setScannerStatus] = useState<'idle' | 'perm' | 'scanning' | 'detected'>('idle');
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
 
+  // OCR Pipeline States & Refs
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const activeMediaStreamRef = useRef<MediaStream | null>(null);
+  const ocrWorkerRef = useRef<Worker | null>(null);
+  const ocrLoopActiveRef = useRef(false);
+  const [ocrTelemetry, setOcrTelemetry] = useState<{ text: string; confidence: number; isProcessing: boolean }>({
+    text: '',
+    confidence: 0,
+    isProcessing: false,
+  });
+
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => {
       clearInterval(timer);
+      ocrLoopActiveRef.current = false;
       if (qrScannerRef.current) {
         qrScannerRef.current.stop().catch(err => console.warn(err));
+      }
+      if (activeMediaStreamRef.current) {
+        activeMediaStreamRef.current.getTracks().forEach((t) => t.stop());
+      }
+      if (ocrWorkerRef.current) {
+        ocrWorkerRef.current.terminate();
       }
     };
   }, []);
@@ -204,7 +226,109 @@ const SecurityDashboard = () => {
     }
   };
 
-  const startScanner = async () => {
+  // Initialize or retrieve Tesseract OCR Worker
+  const getOcrWorker = async () => {
+    if (ocrWorkerRef.current) return ocrWorkerRef.current;
+    const worker = await createWorker('eng');
+    await worker.setParameters({
+      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789- ',
+      tessedit_pageseg_mode: '7' as unknown as import('tesseract.js').PSM,
+    });
+    ocrWorkerRef.current = worker;
+    return worker;
+  };
+
+  // Core Plate OCR Recognition Pipeline
+  const processImageForPlateOCR = async (imageSource: CanvasImageSource, sourceWidth: number, sourceHeight: number): Promise<boolean> => {
+    try {
+      const worker = await getOcrWorker();
+      const canvas = canvasRef.current || document.createElement('canvas');
+      canvas.width = sourceWidth;
+      canvas.height = sourceHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return false;
+
+      ctx.drawImage(imageSource, 0, 0, sourceWidth, sourceHeight);
+
+      // Contrast enhancement & Grayscale (adaptive for glare and shadows)
+      const imgData = ctx.getImageData(0, 0, sourceWidth, sourceHeight);
+      const d = imgData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const v = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        const contrast = 1.25;
+        const factor = (259 * (contrast * 255 + 255)) / (255 * (259 - contrast * 255));
+        const boosted = Math.min(255, Math.max(0, factor * (v - 128) + 128));
+        d[i] = boosted;
+        d[i + 1] = boosted;
+        d[i + 2] = boosted;
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      setOcrTelemetry((prev) => ({ ...prev, isProcessing: true }));
+      const result = await worker.recognize(canvas);
+      const raw = result.data.text || '';
+      const cleaned = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+      // Regex matching for standard plates: State(2) + Num(1-2) + Series(1-3) + Num(4)
+      const plateRegex = /[A-Z]{2}[0-9]{1,2}[A-Z]{1,3}[0-9]{4}/;
+      const match = cleaned.match(plateRegex);
+      const extractedPlate = match ? match[0] : (cleaned.length >= 4 && cleaned.length <= 14 ? cleaned : '');
+
+      setOcrTelemetry({
+        text: extractedPlate || cleaned,
+        confidence: Math.round(result.data.confidence || 0),
+        isProcessing: false,
+      });
+
+      if (extractedPlate && extractedPlate.length >= 4) {
+        setScannerStatus('detected');
+        if (soundEnabled) playBeep(true);
+        stopScanner();
+        handleValidateAccess(extractedPlate);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.warn('OCR processing error:', err);
+      setOcrTelemetry((prev) => ({ ...prev, isProcessing: false }));
+      return false;
+    }
+  };
+
+  // Run Real-Time Frame Grabber & Optical Recognition Loop
+  const runPlateOcrLoop = async () => {
+    while (ocrLoopActiveRef.current && videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      if (video.readyState < 2 || video.videoWidth === 0) {
+        await new Promise((r) => setTimeout(r, 100));
+        continue;
+      }
+
+      // Extract ROI: center 80% width, 45% height
+      const roiWidth = Math.floor(video.videoWidth * 0.8);
+      const roiHeight = Math.floor(video.videoHeight * 0.45);
+      const roiX = Math.floor((video.videoWidth - roiWidth) / 2);
+      const roiY = Math.floor((video.videoHeight - roiHeight) / 2);
+
+      const canvas = canvasRef.current;
+      canvas.width = roiWidth;
+      canvas.height = roiHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
+        const recognized = await processImageForPlateOCR(canvas, roiWidth, roiHeight);
+        if (recognized) {
+          break;
+        }
+      }
+
+      // 300ms frame interval for smooth responsiveness
+      await new Promise((r) => setTimeout(r, 300));
+    }
+  };
+
+  // Start QR Camera Scanner
+  const startQRScanner = async () => {
     setCameraPermissionError('');
     if (!window.isSecureContext) {
       setScannerActive(false);
@@ -238,7 +362,7 @@ const SecurityDashboard = () => {
         setScannerStatus('scanning');
 
         await html5QrCode.start(
-          { facingMode: 'environment' }, // Prefer rear/environment camera
+          { facingMode: 'environment' },
           {
             fps: 10,
             qrbox: (vw: number, vh: number) => {
@@ -267,7 +391,54 @@ const SecurityDashboard = () => {
     }, 300);
   };
 
+  // Start AI Number Plate OCR Scanner
+  const startPlateOcrScanner = async () => {
+    setCameraPermissionError('');
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraPermissionError('Camera API unavailable.');
+      return;
+    }
+
+    try {
+      setScannerStatus('perm');
+      setScannerActive(true);
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      });
+
+      activeMediaStreamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      setScannerStatus('scanning');
+      ocrLoopActiveRef.current = true;
+      runPlateOcrLoop();
+    } catch (err) {
+      console.error('Plate OCR stream error:', err);
+      setScannerActive(false);
+      setScannerStatus('idle');
+      setCameraPermissionError('Failed to initialize license plate camera stream.');
+    }
+  };
+
+  const startScanner = () => {
+    if (scannerType === 'qr') {
+      startQRScanner();
+    } else {
+      startPlateOcrScanner();
+    }
+  };
+
   const stopScanner = async () => {
+    ocrLoopActiveRef.current = false;
     if (qrScannerRef.current) {
       try {
         await qrScannerRef.current.stop();
@@ -276,8 +447,29 @@ const SecurityDashboard = () => {
       }
       qrScannerRef.current = null;
     }
+
+    if (activeMediaStreamRef.current) {
+      activeMediaStreamRef.current.getTracks().forEach((t) => t.stop());
+      activeMediaStreamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
     setScannerActive(false);
     setScannerStatus('idle');
+  };
+
+  // Manual Frame Capture
+  const handleCaptureFrame = async () => {
+    if (!videoRef.current || videoRef.current.videoWidth === 0) return;
+    const video = videoRef.current;
+    setOcrTelemetry((prev) => ({ ...prev, isProcessing: true }));
+    const found = await processImageForPlateOCR(video, video.videoWidth, video.videoHeight);
+    if (!found) {
+      setCameraPermissionError('Plate not clearly recognized in current frame. Please hold steady or adjust lighting.');
+    }
   };
 
   const handleValidateAccess = async (searchQuery?: string) => {
@@ -621,22 +813,93 @@ const SecurityDashboard = () => {
             </button>
           </div>
 
+          {/* SCANNER HARDWARE MODE: QR CODE VS AI LICENSE PLATE OCR */}
+          <div className="glass-card p-1.5 rounded-2xl flex items-center gap-2">
+            <button
+              onClick={() => {
+                if (scannerActive) stopScanner();
+                setScannerType('qr');
+              }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                scannerType === 'qr'
+                  ? 'btn-neon text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <HiOutlineQrCode className="w-5 h-5" />
+              📱 QR Code Pass
+            </button>
+            <button
+              onClick={() => {
+                if (scannerActive) stopScanner();
+                setScannerType('plate_ocr');
+              }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                scannerType === 'plate_ocr'
+                  ? 'btn-neon text-white shadow-lg bg-gradient-to-r from-emerald-600 to-cyan-600'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <HiOutlineCamera className="w-5 h-5 text-emerald-400" />
+              🚘 AI License Plate OCR
+            </button>
+          </div>
+
           {/* SCANNER & PLATE LOOKUP CONTROL BOX */}
           <div className="glass-card p-5 sm:p-6 rounded-2xl space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <HiOutlineQrCode className="w-5 h-5 text-cyan-400" />
-                Scan QR Code or Enter License Plate
+                {scannerType === 'qr' ? (
+                  <HiOutlineQrCode className="w-5 h-5 text-cyan-400" />
+                ) : (
+                  <HiOutlineCamera className="w-5 h-5 text-emerald-400" />
+                )}
+                {scannerType === 'qr' ? 'Scan Customer QR Pass' : 'Real-Time AI License Plate Scanner'}
               </h2>
-              <span className="text-xs text-gray-400 font-mono">Camera Viewfinder Active</span>
+              <span className="text-xs text-gray-400 font-mono">
+                {scannerType === 'qr' ? 'QR Viewfinder' : 'Live ALPR Vision'}
+              </span>
             </div>
 
-            {/* QR Viewfinder Container */}
+            {/* Viewfinder Container */}
             <div className="flex flex-col items-center justify-center p-2 rounded-2xl bg-slate-950/40 border border-white/10 relative overflow-hidden">
               {scannerActive ? (
                 <div className="relative w-full max-w-md aspect-square rounded-xl overflow-hidden bg-black flex flex-col justify-between">
-                  <div id="qr-reader" className="w-full h-full" />
+                  {/* QR Viewfinder Container */}
+                  <div id="qr-reader" className={`w-full h-full ${scannerType === 'qr' ? 'block' : 'hidden'}`} />
                   
+                  {/* AI Plate OCR Video Element */}
+                  <video
+                    ref={videoRef}
+                    playsInline
+                    muted
+                    autoPlay
+                    className={`w-full h-full object-cover ${scannerType === 'plate_ocr' ? 'block' : 'hidden'}`}
+                  />
+                  <canvas ref={canvasRef} className="hidden" />
+
+                  {/* AI Holographic Target Reticle for License Plates */}
+                  {scannerType === 'plate_ocr' && (
+                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-6 z-10">
+                      <div className="relative w-full max-w-[280px] h-24 border-2 border-dashed border-emerald-400/80 rounded-xl bg-emerald-500/5 shadow-[0_0_25px_rgba(16,185,129,0.3)] flex flex-col items-center justify-between p-2">
+                        <div className="w-full flex justify-between">
+                          <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest bg-black/60 px-1.5 py-0.5 rounded">
+                            AI ALPR TARGET
+                          </span>
+                          <span className="text-[10px] font-mono text-cyan-300 bg-black/60 px-1.5 py-0.5 rounded">
+                            {ocrTelemetry.confidence}% CONF
+                          </span>
+                        </div>
+                        {ocrTelemetry.text && (
+                          <div className="text-center font-mono font-black text-sm tracking-wider text-emerald-300 bg-black/80 px-3 py-1 rounded-lg border border-emerald-500/40">
+                            {ocrTelemetry.text}
+                          </div>
+                        )}
+                        <span className="text-[9px] text-gray-300">Align vehicle number plate in box</span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Overlay scanning animation and status banners */}
                   <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-10">
                     <div className="flex justify-between">
@@ -646,7 +909,13 @@ const SecurityDashboard = () => {
                     
                     <div className="self-center bg-cyan-950/90 text-cyan-400 text-xs px-3 py-1.5 rounded-full border border-cyan-500/30 animate-pulse flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                      {scannerStatus === 'perm' ? 'Allow Camera Access' : scannerStatus === 'scanning' ? 'Scanning...' : 'QR Detected'}
+                      {scannerStatus === 'perm'
+                        ? 'Allow Camera Access'
+                        : scannerStatus === 'scanning'
+                        ? scannerType === 'qr'
+                          ? 'Scanning QR Pass...'
+                          : 'AI Reading License Plate...'
+                        : 'Target Detected!'}
                     </div>
                     
                     <div className="flex justify-between">
@@ -657,10 +926,16 @@ const SecurityDashboard = () => {
                 </div>
               ) : (
                 <div className="py-8 text-center space-y-4">
-                  <HiOutlineQrCode className="w-16 h-16 text-cyan-400/30 mx-auto animate-pulse" />
+                  {scannerType === 'qr' ? (
+                    <HiOutlineQrCode className="w-16 h-16 text-cyan-400/30 mx-auto animate-pulse" />
+                  ) : (
+                    <HiOutlineCamera className="w-16 h-16 text-emerald-400/30 mx-auto animate-pulse" />
+                  )}
                   <p className="text-sm text-gray-400">
                     {window.isSecureContext
-                      ? 'Camera scanner standby — tap "Start Camera QR Scanner"'
+                      ? scannerType === 'qr'
+                        ? 'QR Camera Standby — tap "Start Camera QR Scanner"'
+                        : 'AI Plate Scanner Standby — tap "Start AI Plate Scanner"'
                       : 'Camera unavailable on this connection — open over HTTPS to enable scanning'}
                   </p>
                 </div>
@@ -670,17 +945,27 @@ const SecurityDashboard = () => {
                 {!scannerActive ? (
                   <button
                     onClick={startScanner}
-                    className="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-600 to-pink-600 hover:from-cyan-500 hover:to-pink-500 text-white shadow-lg flex items-center justify-center gap-2 transition-all"
+                    className="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-600 via-indigo-600 to-emerald-600 hover:opacity-90 text-white shadow-lg flex items-center justify-center gap-2 transition-all"
                   >
-                    📷 Start Camera QR Scanner
+                    <HiOutlineCamera className="w-5 h-5" /> Start {scannerType === 'qr' ? 'QR Pass Scanner' : 'AI Plate Scanner'}
                   </button>
                 ) : (
-                  <button
-                    onClick={stopScanner}
-                    className="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-white/5 border border-white/10 hover:bg-white/10 text-white flex items-center justify-center gap-2 transition-all"
-                  >
-                    🛑 Stop Camera Scanner
-                  </button>
+                  <>
+                    <button
+                      onClick={stopScanner}
+                      className="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-white/5 border border-white/10 hover:bg-white/10 text-white flex items-center justify-center gap-2 transition-all"
+                    >
+                      🛑 Stop Camera Scanner
+                    </button>
+                    {scannerType === 'plate_ocr' && (
+                      <button
+                        onClick={handleCaptureFrame}
+                        className="py-3 px-6 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-600 to-cyan-600 hover:opacity-95 text-white shadow-lg flex items-center justify-center gap-2"
+                      >
+                        <HiOutlineSparkles className="w-5 h-5" /> Capture Now
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
