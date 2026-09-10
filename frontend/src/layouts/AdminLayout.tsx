@@ -28,6 +28,7 @@ import {
   HiOutlineChevronDown,
   HiOutlineSparkles,
   HiOutlineCube,
+  HiOutlineGlobeAlt,
 } from 'react-icons/hi2';
 import { CarSedan } from '../components/vehicles';
 import ThemeToggle from '../components/ThemeToggle';
@@ -37,6 +38,12 @@ interface NavItem {
   label: string;
   icon: ComponentType<{ className?: string }>;
 }
+
+const topWebsiteItem: NavItem = {
+  to: '/',
+  label: 'Home Website',
+  icon: HiOutlineGlobeAlt,
+};
 
 const overviewItems: NavItem[] = [
   { to: '/admin', label: 'Dashboard', icon: HiOutlineHome },
@@ -97,7 +104,7 @@ const AdminLayout = () => {
   const renderNavGroup = (title: string, items: NavItem[]) => (
     <div className="space-y-0.5">
       {!collapsed && (
-        <div className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-500 font-mono">
+        <div className="px-3 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-500 font-mono">
           {title}
         </div>
       )}
@@ -179,6 +186,29 @@ const AdminLayout = () => {
         </div>
 
         <nav className="p-2 space-y-1 overflow-y-auto max-h-[calc(100vh-3.5rem)] scrollbar-thin">
+          {/* Top: Home Website (separated with small divider to clearly indicate 'leave admin') */}
+          <div className="pb-1">
+            <Link
+              to={topWebsiteItem.to}
+              onClick={() => setMobileOpen(false)}
+              title={collapsed ? topWebsiteItem.label : undefined}
+              className={`sidebar-item sidebar-item-inactive hover:text-cyan-300 hover:border-cyan-500/30 hover:bg-cyan-500/5 ${
+                collapsed ? 'justify-center px-0' : ''
+              }`}
+            >
+              <HiOutlineGlobeAlt className="w-5 h-5 flex-shrink-0 text-cyan-400/80" />
+              {!collapsed && (
+                <div className="flex items-center justify-between flex-1 min-w-0">
+                  <span className="text-xs font-medium truncate">{topWebsiteItem.label}</span>
+                  <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-white/5 text-gray-400">
+                    Exit
+                  </span>
+                </div>
+              )}
+            </Link>
+            <div className="my-1.5 border-t border-white/10" />
+          </div>
+
           {renderNavGroup('Overview', overviewItems)}
           {renderNavGroup('Operations', operationsItems)}
           {renderNavGroup('Money', moneyItems)}
