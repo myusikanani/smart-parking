@@ -54,6 +54,7 @@ import ManualPlateVerification from './pages/security/ManualPlateVerification';
 import AIChatAssistant from './components/AIChatAssistant';
 import SocketAlertToasts from './components/SocketAlertToasts';
 import Demo3DOptions from './pages/Demo3DOptions';
+import TurnByTurnNavigation from './pages/TurnByTurnNavigation';
 
 import IntroConceptAD from './components/3d/IntroConceptAD';
 
@@ -72,6 +73,7 @@ export default function App() {
         <Route path="/book-parking" element={<BookParking />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/navigation" element={<TurnByTurnNavigation />} />
       </Route>
 
       {/* User Portal with Left Sidebar Menu */}
@@ -79,6 +81,7 @@ export default function App() {
         <Route element={<UserLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dashboard/book-parking" element={<DashboardBookParking />} />
+          <Route path="/dashboard/navigation" element={<TurnByTurnNavigation />} />
           <Route path="/dashboard/live-map" element={<AvailableSlotsPublic />} />
           <Route path="/dashboard/smart-search" element={<AvailableParking />} />
           <Route path="/available-parking" element={<AvailableSlotsPublic />} />

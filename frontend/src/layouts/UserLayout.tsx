@@ -24,6 +24,7 @@ import {
   HiOutlineShieldCheck,
   HiOutlineCreditCard,
   HiOutlineCheckCircle,
+  HiOutlineMapPin,
 } from 'react-icons/hi2';
 import Footer from '../components/Footer';
 import ThemeToggle from '../components/ThemeToggle';
@@ -43,6 +44,7 @@ const userSidebarItems = [
   { to: '/', label: 'Home Website', icon: HiOutlineSparkles },
   { to: '/dashboard', label: 'Dashboard', icon: HiOutlineHome },
   { to: '/dashboard/book-parking', label: 'Book Parking', icon: HiOutlineCalendarDays },
+  { to: '/dashboard/navigation', label: '3D/AR Navigation', icon: HiOutlineMapPin },
   { to: '/dashboard/live-map', label: 'Live 3D Map', icon: HiOutlineRectangleStack },
   { to: '/dashboard/smart-search', label: 'Smart Search', icon: HiOutlineMagnifyingGlass },
   { to: '/available-parking', label: 'Available Slots', icon: HiOutlineRectangleStack },

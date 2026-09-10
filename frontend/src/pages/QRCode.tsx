@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { HiOutlineArrowDownTray, HiOutlineEnvelope, HiOutlineHome, HiOutlineExclamationTriangle } from 'react-icons/hi2';
+import { HiOutlineArrowDownTray, HiOutlineEnvelope, HiOutlineHome, HiOutlineExclamationTriangle, HiOutlineMapPin } from 'react-icons/hi2';
 import { bookingApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ParkingPass from '../components/ParkingPass';
@@ -388,6 +388,13 @@ const QRCode = () => {
       </motion.div>
 
       <div className="space-y-3">
+        <button
+          className="w-full py-3.5 px-6 rounded-xl font-bold text-base flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 hover:from-pink-600 hover:to-cyan-600 text-white shadow-xl shadow-pink-500/25 transition-all transform hover:scale-[1.02]"
+          onClick={() => navigate('/dashboard/navigation', { state: { booking } })}
+        >
+          <HiOutlineMapPin className="w-5 h-5 animate-pulse" />
+          Start 3D / AR Turn-by-Turn Navigation ➔
+        </button>
         <button
           className="btn-neon w-full py-3.5 px-6 rounded-xl font-semibold text-base flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20"
           onClick={handleDownload}
