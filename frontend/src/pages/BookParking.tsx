@@ -103,6 +103,37 @@ const BookParking = () => {
   const [newPlateInput, setNewPlateInput] = useState('');
   const [addingVehicleLoading, setAddingVehicleLoading] = useState(false);
   const [addVehicleMsg, setAddVehicleMsg] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null);
+  const [localVehicles, setLocalVehicles] = useState<string[]>(() => {
+    if (user?.vehicles && Array.isArray(user.vehicles)) {
+      return user.vehicles.map((v) => String(v).trim().toUpperCase()).filter(Boolean);
+    }
+    return [];
+  });
+
+  // Sync with user?.vehicles whenever user changes
+  useEffect(() => {
+    if (user?.vehicles && Array.isArray(user.vehicles)) {
+      const serverVehicles = user.vehicles.map((v) => String(v).trim().toUpperCase()).filter(Boolean);
+      setLocalVehicles((prev) => Array.from(new Set([...prev, ...serverVehicles])));
+    }
+  }, [user?.vehicles]);
+
+  // Fetch freshest user profile & garage vehicles on page mount
+  useEffect(() => {
+    if (token) {
+      authApi.getMe()
+        .then((res) => {
+          if (res.user) {
+            updateUser(res.user as unknown as Partial<User>);
+            if (Array.isArray(res.user.vehicles)) {
+              const freshList = (res.user.vehicles as string[]).map((v) => String(v).trim().toUpperCase()).filter(Boolean);
+              setLocalVehicles(freshList);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [token, updateUser]);
 
   const primaryPlate = useMemo(() => {
     return (user?.vehicleNumber || 'MH-12-AB-3456').trim().toUpperCase();
@@ -110,13 +141,16 @@ const BookParking = () => {
 
   // Secondary garage vehicles (all saved vehicles excluding the primary car)
   const garageVehicles = useMemo(() => {
-    const list = user?.vehicles && Array.isArray(user.vehicles) ? [...user.vehicles] : [];
-    const primary = (user?.vehicleNumber || '').trim().toUpperCase();
-    const secondary = list
+    const rawList = [
+      ...(Array.isArray(user?.vehicles) ? user.vehicles : []),
+      ...localVehicles,
+    ];
+    const primary = primaryPlate;
+    const secondary = rawList
       .map((v) => (v ? String(v).trim().toUpperCase() : ''))
       .filter((v) => v && v !== primary);
     return Array.from(new Set(secondary));
-  }, [user?.vehicles, user?.vehicleNumber]);
+  }, [user?.vehicles, localVehicles, primaryPlate]);
 
   useEffect(() => {
     if (user?.vehicleNumber && (!vehicleNumber || vehicleNumber === 'MH-12-AB-3456')) {
@@ -160,16 +194,26 @@ const BookParking = () => {
 
     setAddingVehicleLoading(true);
     setAddVehicleMsg(null);
+    // Optimistically add to local state instantly
+    setLocalVehicles((prev) => Array.from(new Set([...prev, cleanPlate])));
+    setVehicleNumber(cleanPlate);
+    setNewPlateInput('');
+
     try {
       const res = await authApi.updateProfile({ addVehicle: cleanPlate });
       if (res.user) {
         updateUser(res.user as unknown as Partial<User>);
+        if (Array.isArray(res.user.vehicles)) {
+          const freshList = (res.user.vehicles as string[]).map((v) => String(v).trim().toUpperCase()).filter(Boolean);
+          setLocalVehicles(freshList);
+        }
       }
-      setVehicleNumber(cleanPlate);
-      setNewPlateInput('');
       toast(`🚗 Vehicle ${cleanPlate} added to your garage & selected for booking!`, 'success');
       setAddVehicleMsg({ type: 'success', text: `✓ Vehicle "${cleanPlate}" added to your garage and selected for this reservation!` });
     } catch (err: unknown) {
+      // Revert optimistic addition on error
+      setLocalVehicles((prev) => prev.filter((v) => v !== cleanPlate));
+      setVehicleNumber(primaryPlate);
       const message = err instanceof Error ? err.message : 'Failed to register vehicle.';
       toast(message, 'error');
       setAddVehicleMsg({ type: 'error', text: message });
@@ -179,13 +223,19 @@ const BookParking = () => {
   };
 
   const handleRemoveGarageVehicle = async (plate: string) => {
+    // Optimistically remove from local state
+    setLocalVehicles((prev) => prev.filter((v) => v !== plate));
+    if (vehicleNumber === plate) {
+      setVehicleNumber(primaryPlate);
+    }
     try {
       const res = await authApi.updateProfile({ removeVehicle: plate });
       if (res.user) {
         updateUser(res.user as unknown as Partial<User>);
-      }
-      if (vehicleNumber === plate) {
-        setVehicleNumber(primaryPlate);
+        if (Array.isArray(res.user.vehicles)) {
+          const freshList = (res.user.vehicles as string[]).map((v) => String(v).trim().toUpperCase()).filter(Boolean);
+          setLocalVehicles(freshList);
+        }
       }
       toast(`Vehicle ${plate} removed from your garage`, 'success');
     } catch (err: unknown) {

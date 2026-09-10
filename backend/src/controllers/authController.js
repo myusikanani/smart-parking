@@ -580,19 +580,21 @@ const updateProfile = async (req, res) => {
     if (email) user.email = email;
     if (phone) user.phone = phone;
 
-    if (!user.vehicles) user.vehicles = [];
+    if (!Array.isArray(user.vehicles)) user.vehicles = [];
 
     // Remove vehicle from garage if requested
     if (removeVehicle) {
       const plateToRemove = String(removeVehicle).trim().toUpperCase();
-      user.vehicles = user.vehicles.filter(v => v !== plateToRemove);
+      user.vehicles = user.vehicles.filter(v => v && String(v).trim().toUpperCase() !== plateToRemove);
+      user.markModified('vehicles');
     }
 
     // Add new vehicle to garage if requested
-    const newPlate = (addVehicle || vehicleNumber) ? String(addVehicle || vehicleNumber).trim().toUpperCase() : '';
+    const newPlate = addVehicle ? String(addVehicle).trim().toUpperCase() : '';
     if (newPlate) {
+      const primaryClean = (user.vehicleNumber || '').trim().toUpperCase();
       // 1. Check if plate is already user's primary vehicle
-      if (user.vehicleNumber && user.vehicleNumber.trim().toUpperCase() === newPlate && addVehicle) {
+      if (primaryClean === newPlate) {
         return res.status(400).json({
           success: false,
           message: `Vehicle license plate "${newPlate}" is already your Primary Registered Vehicle.`
@@ -600,7 +602,8 @@ const updateProfile = async (req, res) => {
       }
 
       // 2. Check if plate is already in user's garage array
-      if (user.vehicles.includes(newPlate) && addVehicle) {
+      const existingInGarage = user.vehicles.map(v => String(v).trim().toUpperCase());
+      if (existingInGarage.includes(newPlate)) {
         return res.status(400).json({
           success: false,
           message: `Vehicle license plate "${newPlate}" is already in your Garage.`
@@ -622,16 +625,18 @@ const updateProfile = async (req, res) => {
         });
       }
 
-      if (!user.vehicles.includes(newPlate)) {
-        user.vehicles.push(newPlate);
-      }
+      user.vehicles.push(newPlate);
+      user.markModified('vehicles');
       if (!user.vehicleNumber) {
         user.vehicleNumber = newPlate;
       }
+    } else if (vehicleNumber && !addVehicle) {
+      user.vehicleNumber = String(vehicleNumber).trim().toUpperCase();
     }
 
     await user.save();
-    res.status(200).json({ success: true, user });
+    const updatedUser = user.toObject();
+    res.status(200).json({ success: true, user: updatedUser });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

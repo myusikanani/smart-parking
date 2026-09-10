@@ -115,9 +115,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPendingTwoFactor(null);
   };
 
-  const updateUser = (data: Partial<User>) => {
-    if (user) setUser({ ...user, ...data });
-  };
+  const updateUser = useCallback((data: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return data as User;
+      const updated = { ...prev, ...data };
+      if (data.vehicles && Array.isArray(data.vehicles)) {
+        updated.vehicles = [...data.vehicles];
+      }
+      return updated;
+    });
+  }, []);
 
   const clearPendingTwoFactor = () => setPendingTwoFactor(null);
 
