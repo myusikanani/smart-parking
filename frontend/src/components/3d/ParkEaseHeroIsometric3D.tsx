@@ -25,7 +25,7 @@ class WebGLErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="w-full h-full flex items-center justify-center bg-[#081224] text-cyan-400 font-mono text-sm p-4">
-          WebGL Rendering Active
+          3D Multi-Floor Parking Deck Active
         </div>
       );
     }
@@ -33,7 +33,7 @@ class WebGLErrorBoundary extends Component<Props, State> {
   }
 }
 
-// 3D Styled Car Component
+// 3D Styled Vehicle Component
 function Car3D({
   color = '#00F2FE',
   position = [0, 0, 0] as [number, number, number],
@@ -212,7 +212,7 @@ function AnimatedDrivingCar() {
   );
 }
 
-// Target Bay A-02 Marker with Glowing Green Cones and Floor Reticle
+// Target Bay C1B (Car Bay on Floor 1) Marker with Glowing Green Cones & Floor Reticle
 function TargetBayMarker({ position }: { position: [number, number, number] }) {
   const ringRef = useRef<THREE.Mesh>(null);
 
@@ -254,7 +254,7 @@ function TargetBayMarker({ position }: { position: [number, number, number] }) {
   );
 }
 
-// Isometric Parking Deck Scene
+// Isometric Parking Deck Scene with Real Slot Layout (Floor 1: C1A, C1B, E1A, B1A, D1A, BUF-1A)
 function ParkingDeckScene() {
   return (
     <group position={[0, 0, 0]}>
@@ -275,7 +275,7 @@ function ParkingDeckScene() {
         />
       </mesh>
 
-      {/* Immediate Visibility Test Mesh (Glowing Grid Center Marker) */}
+      {/* Floor Base Plane */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
         <planeGeometry args={[18, 14]} />
         <meshBasicMaterial color="#0a1222" />
@@ -325,18 +325,33 @@ function ParkingDeckScene() {
         </group>
       ))}
 
-      {/* Parked Cars */}
+      {/* Real Parked Vehicles in Actual Seed Slots */}
+      {/* C1A - Four Wheeler (Parked) */}
       <Car3D color="#0284c7" position={[-7, 0, -4]} rotation={[0, 0, 0]} headlights={false} />
-      <Car3D color="#f59e0b" position={[0, 0, -4]} rotation={[0, 0, 0]} headlights={false} />
+      
+      {/* E1A - EV Slot (Parked with Emerald Accent) */}
+      <Car3D color="#10b981" position={[0, 0, -4]} rotation={[0, 0, 0]} headlights={false} />
+      
+      {/* D1A - Accessible / VIP Standby (Parked) */}
       <Car3D color="#334155" position={[3.5, 0, -4]} rotation={[0, 0, 0]} headlights={false} />
+      
+      {/* BUF-1A - Emergency Buffer Slot (Parked) */}
       <Car3D color="#0ea5e9" position={[7, 0, -4]} rotation={[0, 0, 0]} headlights={false} />
 
+      {/* Bottom Row Vehicles */}
+      {/* B1A - Two Wheeler Row (Parked) */}
       <Car3D color="#64748b" position={[-7, 0, 4]} rotation={[0, Math.PI, 0]} headlights={false} />
-      <Car3D color="#10b981" position={[-3.5, 0, 4]} rotation={[0, Math.PI, 0]} headlights={false} />
+      
+      {/* C1C - Four Wheeler (Parked) */}
+      <Car3D color="#f59e0b" position={[-3.5, 0, 4]} rotation={[0, Math.PI, 0]} headlights={false} />
+      
+      {/* E1B - EV Charging Slot (Parked) */}
       <Car3D color="#475569" position={[3.5, 0, 4]} rotation={[0, Math.PI, 0]} headlights={false} />
+      
+      {/* C1D - Four Wheeler (Parked) */}
       <Car3D color="#0369a1" position={[7, 0, 4]} rotation={[0, Math.PI, 0]} headlights={false} />
 
-      {/* Target Bay A-02 */}
+      {/* Target Bay C1B - Assigned Car Slot (Floor 1) */}
       <TargetBayMarker position={[-3.5, 0, -3.8]} />
 
       {/* Glowing Green Navigation Route Tube */}
@@ -355,23 +370,26 @@ export default function ParkEaseHeroIsometric3D() {
       {/* Background Cyber Grid Floor */}
       <div className="absolute inset-0 cyber-grid-floor opacity-40 pointer-events-none" />
 
-      {/* Top Floating Badges (€120 / €128 Price Badges) */}
+      {/* Top Floating Badges (Real Rates from Database Schema: ₹30/hr Four-Wheeler & ₹25/hr EV Charging) */}
       <div className="absolute top-5 right-5 z-20 space-y-2 pointer-events-none">
         <div className="bg-[#0b1730]/95 border border-[#00FFA3]/70 px-4 py-1.5 rounded-2xl shadow-[0_0_25px_rgba(0,255,163,0.35)] backdrop-blur-xl text-right">
-          <span className="text-[10px] font-space text-emerald-300 font-semibold tracking-wider block">Standard Space</span>
-          <span className="text-base font-extrabold text-[#00FFA3] font-mono tracking-wide">€120</span>
+          <span className="text-[10px] font-space text-emerald-300 font-semibold tracking-wider block">Four-Wheeler Slot</span>
+          <span className="text-base font-extrabold text-[#00FFA3] font-mono tracking-wide">₹30 / hr</span>
         </div>
         <div className="bg-[#0b1730]/95 border border-[#00D2FF]/60 px-4 py-1.5 rounded-2xl shadow-[0_0_20px_rgba(0,210,255,0.25)] backdrop-blur-xl text-right">
-          <span className="text-[10px] font-space text-cyan-300 font-semibold tracking-wider block">Reserved Spot</span>
-          <span className="text-base font-extrabold text-[#00D2FF] font-mono tracking-wide">€128</span>
+          <span className="text-[10px] font-space text-cyan-300 font-semibold tracking-wider block">EV Fast Charging</span>
+          <span className="text-base font-extrabold text-[#00D2FF] font-mono tracking-wide">₹25 / hr</span>
         </div>
       </div>
 
-      {/* Top-Left Live Sensor Badge */}
-      <div className="absolute top-5 left-5 z-20 flex items-center gap-2 pointer-events-none">
+      {/* Top-Left Live Sensor Badge with Real Floor Indicator */}
+      <div className="absolute top-5 left-5 z-20 flex flex-col gap-1.5 pointer-events-none">
         <div className="flex items-center gap-2 bg-[#071124]/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#00D2FF]/40 text-[11px] font-space text-[#00D2FF] shadow-[0_0_15px_rgba(0,210,255,0.2)]">
           <span className="w-2.5 h-2.5 rounded-full bg-[#00FFA3] animate-ping" />
-          <span className="font-bold tracking-wide">RADAR // LIVE ALLOCATION</span>
+          <span className="font-bold tracking-wide">FLOOR 1 // 3D DECK</span>
+        </div>
+        <div className="text-[10px] font-mono text-gray-400 pl-2">
+          Target Bay: <strong className="text-[#00FFA3]">#C1B (Available)</strong>
         </div>
       </div>
 
@@ -386,7 +404,7 @@ export default function ParkEaseHeroIsometric3D() {
             className="w-full h-full cursor-grab active:cursor-grabbing"
             style={{ width: '100%', height: '100%', minHeight: '440px' }}
           >
-            {/* 1. Camera Settings */}
+            {/* Camera Settings */}
             <PerspectiveCamera
               makeDefault
               position={[16, 18, 16]}
@@ -404,14 +422,14 @@ export default function ParkEaseHeroIsometric3D() {
               target={[0, 0, 0]}
             />
 
-            {/* 2. High-Intensity Lights */}
+            {/* High-Intensity Lights */}
             <ambientLight intensity={2.5} />
             <directionalLight position={[15, 25, 15]} intensity={3.5} castShadow />
             <pointLight position={[-10, 10, -10]} intensity={1.5} color="#00ffff" />
             <pointLight position={[0, 8, 0]} intensity={2.5} color="#00FFA3" distance={25} />
             <pointLight position={[-3.5, 3, -3.8]} intensity={3.0} color="#00FFA3" distance={10} />
 
-            {/* 3. Visual Objects Scene */}
+            {/* Parking Deck Scene */}
             <ParkingDeckScene />
           </Canvas>
         </WebGLErrorBoundary>
@@ -421,13 +439,13 @@ export default function ParkEaseHeroIsometric3D() {
       <div className="absolute bottom-4 left-4 right-4 z-20 flex items-center justify-between text-[11px] font-mono text-gray-200 bg-[#071022]/95 border border-[#00D2FF]/30 px-4 py-2 rounded-2xl backdrop-blur-md shadow-lg pointer-events-none">
         <span className="text-cyan-300 flex items-center gap-1.5 font-bold">
           <span className="w-2 h-2 rounded-full bg-[#00FFA3] animate-pulse" />
-          Sensor Node: #4092
+          WebSocket: Live Sync
         </span>
         <span className="text-gray-400 hidden sm:inline">
           Latency: <strong className="text-[#00FFA3]">12ms</strong>
         </span>
         <span className="text-[#00FFA3] font-bold">
-          Availability: 94%
+          3 Floors Connected
         </span>
       </div>
 
