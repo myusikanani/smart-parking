@@ -463,45 +463,83 @@ export default function ParkEaseHeroIsometric3D() {
           </g>
 
           {/* =================================================================
-              6. SLEEK ISOMETRIC LUXURY SPORTS CAR (AERODYNAMIC CURVED PROFILE)
+              6. 3D REALISTIC ISOMETRIC VEHICLE ENGINE
               ================================================================= */}
           <g transform={`translate(${car.x}, ${car.y}) rotate(${car.angle})`}>
-            {/* Ground Contact Multi-Stage Drop Shadow */}
-            <ellipse cx="0" cy="8" rx="36" ry="14" fill="#000000" opacity="0.75" filter="url(#softGlow)" />
-            <ellipse cx="0" cy="5" rx="30" ry="10" fill="#000000" opacity="0.9" />
+            {/* 1. Ground Contact Shadow */}
+            <ellipse cx="0" cy="14" rx="34" ry="12" fill="#000000" opacity="0.65" filter="url(#laserGlow)" />
 
-            {/* Glowing Neon Underglow */}
-            <ellipse cx="0" cy="0" rx="34" ry="14" fill="#00FFA3" opacity="0.45" filter="url(#laserGlow)" />
+            {/* 2. 3D Isometric Wheels (Tires with glowing rims) */}
+            {/* Front-Left Wheel */}
+            <g transform="translate(-18, 12)">
+              <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#00FFA3" strokeWidth="1" />
+              <circle cx="0" cy="0" r="1.5" fill="#00FFA3" />
+            </g>
+            {/* Front-Right Wheel */}
+            <g transform="translate(-8, 17)">
+              <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#00FFA3" strokeWidth="1" />
+              <circle cx="0" cy="0" r="1.5" fill="#00FFA3" />
+            </g>
+            {/* Rear-Left Wheel */}
+            <g transform="translate(14, -2)">
+              <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#00FFA3" strokeWidth="1" />
+              <circle cx="0" cy="0" r="1.5" fill="#00FFA3" />
+            </g>
+            {/* Rear-Right Wheel */}
+            <g transform="translate(24, 3)">
+              <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#00FFA3" strokeWidth="1" />
+              <circle cx="0" cy="0" r="1.5" fill="#00FFA3" />
+            </g>
 
-            {/* 4 Visible Isometric Alloy Wheels/Tires with Glowing Calipers */}
-            <rect x="-24" y="6" width="10" height="5" rx="2" fill="#0f172a" stroke="#00FFA3" strokeWidth="0.8" />
-            <rect x="14" y="6" width="10" height="5" rx="2" fill="#0f172a" stroke="#00FFA3" strokeWidth="0.8" />
-            <rect x="-22" y="-12" width="9" height="4" rx="1.5" fill="#0f172a" stroke="#00D2FF" strokeWidth="0.6" opacity="0.8" />
-            <rect x="13" y="-10" width="9" height="4" rx="1.5" fill="#0f172a" stroke="#00D2FF" strokeWidth="0.6" opacity="0.8" />
-
-            {/* Aerodynamic Luxury Body Profile (Smooth Cubic Bezier Curves) */}
+            {/* 3. Lower Chassis (Side extrusion for 3D body height) */}
             <path
-              d="M -32 4 C -34 -2, -26 -10, -10 -12 C 4 -13, 20 -8, 30 2 C 34 6, 28 14, 18 16 C 0 18, -20 16, -32 4 Z"
+              d="M -24 8 L 8 20 L 28 8 L -4 -4 Z"
+              fill="#040b17"
+              stroke="#00D2FF"
+              strokeWidth="0.8"
+            />
+            <path
+              d="M -24 8 L -24 3 L 8 15 L 8 20 Z"
+              fill="#0284C7"
+            />
+            <path
+              d="M 8 20 L 8 15 L 28 3 L 28 8 Z"
+              fill="#0369A1"
+            />
+
+            {/* 4. Main Hood & Upper Bodywork (Smooth Sport Profile) */}
+            <path
+              d="M -24 3 L 8 15 L 28 3 L -4 -9 Z"
               fill="url(#carBodyGrad)"
               stroke="#00FFA3"
               strokeWidth="1.2"
             />
 
-            {/* Tinted Panoramic Roof & Windshield with Cyan Sky Reflection */}
-            <path
-              d="M -16 -2 C -18 -8, -6 -10, 2 -10 C 12 -10, 18 -6, 16 0 C 8 4, -4 4, -16 -2 Z"
-              fill="#040d1a"
+            {/* 5. 3D Slanted Greenhouse Cabin & Windshield */}
+            <polygon
+              points="-10,2 4,8 14,2 0,-4"
+              fill="#020617"
               stroke="#38BDF8"
               strokeWidth="0.9"
             />
+            {/* Sky Reflection on Glass */}
+            <polygon
+              points="-8,1 -1,4 5,-1 -2,-3"
+              fill="#38BDF8"
+              opacity="0.4"
+            />
 
-            {/* Front LED Projector Headlights with Light Cone Beam */}
-            <circle cx="-30" cy="1" r="2.5" fill="#FFFFFF" filter="url(#laserGlow)" />
-            <circle cx="-25" cy="7" r="2" fill="#FFFFFF" filter="url(#laserGlow)" />
-            <path d="M -30 1 L -90 -20 L -80 25 Z" fill="#00FFA3" opacity="0.28" />
+            {/* 6. Dual Projector LED Headlights & Volumetric Beams */}
+            <circle cx="-21" cy="4.5" r="2" fill="#FFFFFF" filter="url(#laserGlow)" />
+            <circle cx="-16" cy="7.5" r="2" fill="#FFFFFF" filter="url(#laserGlow)" />
+            <polygon
+              points="-21,4.5 -75,-15 -55,25 -16,7.5"
+              fill="#00FFA3"
+              opacity="0.25"
+            />
 
-            {/* Rear Taillight Light Strip */}
-            <path d="M 24 6 C 28 8, 29 11, 25 13" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round" filter="url(#softGlow)" />
+            {/* 7. Neon Red Brake Light Bar */}
+            <line x1="22" y1="5" x2="27" y2="2" stroke="#EF4444" strokeWidth="2.5" filter="url(#softGlow)" />
           </g>
 
         </svg>
