@@ -8,8 +8,8 @@ import {
   HiOutlineCheckCircle,
 } from 'react-icons/hi2';
 import ThreeDParkingCanvas from '../../components/ThreeDParkingCanvas';
-import type { ThreeDSlotData } from '../../components/ThreeDParkingCanvas';
-import { layoutApi, slotApi } from '../../services/api';
+import type { ThreeDSlotData, ThreeDLayoutItem } from '../../components/ThreeDParkingCanvas';
+import { layoutApi } from '../../services/api';
 
 interface LayoutItem {
   id: string;
@@ -30,7 +30,7 @@ export const AdminLayoutDesigner: FC = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  // Fetch Layout for Floor
+  // Fetch Layout for Floor directly from MongoDB
   const fetchLayout = async () => {
     setLoading(true);
     setMessage('');
@@ -40,7 +40,7 @@ export const AdminLayoutDesigner: FC = () => {
         setItems(res.layout.items as unknown as LayoutItem[]);
       }
     } catch (err) {
-      setMessage('Failed to load floor layout.');
+      setMessage('Failed to load floor layout from server.');
     } finally {
       setLoading(false);
     }
@@ -100,7 +100,7 @@ export const AdminLayoutDesigner: FC = () => {
     );
   };
 
-  // Save Layout to MongoDB & Auto-sync Slots System-wide
+  // Save Layout to MongoDB & Auto-sync Slots System-wide (No LocalStorage)
   const handleSave = async () => {
     setSaving(true);
     setMessage('');
@@ -121,7 +121,7 @@ export const AdminLayoutDesigner: FC = () => {
     }
   };
 
-  // Map items to 3D Canvas format
+  // Map slots to 3D Canvas format
   const canvasSlots: ThreeDSlotData[] = items
     .filter((it) => it.type === 'slot')
     .map((it) => ({
@@ -133,6 +133,18 @@ export const AdminLayoutDesigner: FC = () => {
       x: it.x,
       z: it.z,
       rotation: it.rotation || 0,
+    }));
+
+  // Map non-slot elements to 3D Layout items (Entrance, Exit, Lanes, Zones)
+  const nonSlotLayoutItems: ThreeDLayoutItem[] = items
+    .filter((it) => it.type !== 'slot')
+    .map((it) => ({
+      id: it.id,
+      type: it.type as ThreeDLayoutItem['type'],
+      x: it.x,
+      z: it.z,
+      rotation: it.rotation || 0,
+      floor: activeFloor,
     }));
 
   return (
@@ -373,8 +385,17 @@ export const AdminLayoutDesigner: FC = () => {
         <div className="lg:col-span-2 space-y-3">
           <ThreeDParkingCanvas
             slots={canvasSlots}
+            layoutItems={nonSlotLayoutItems}
             selectedSlotId={selectedId}
             onSelectSlot={(s) => setSelectedId(s.id)}
+            onSelectLayoutItem={(it) => setSelectedId(it.id)}
+            draggableIds={items.map((it) => it.id)}
+            onItemDrag={(id, x, z) => {
+              setItems((prev) =>
+                prev.map((it) => (it.id === id ? { ...it, x, z } : it))
+              );
+              setSelectedId(id);
+            }}
             activeFloor={activeFloor}
           />
         </div>

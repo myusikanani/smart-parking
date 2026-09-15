@@ -8,6 +8,7 @@ import {
   HiOutlineUser,
   HiOutlineArrowRightOnRectangle,
   HiOutlineChevronDown,
+  HiOutlineMagnifyingGlass,
 } from 'react-icons/hi2';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
@@ -24,9 +25,9 @@ const MainLayout = () => {
 
   const navLinks = [
     { to: '/', label: 'Home' },
-    { to: '/available-slots', label: 'Available Slots' },
-    { to: '/book-parking', label: 'Book Parking' },
-    { to: '/about', label: 'About' },
+    { to: '/available-slots', label: 'Car Parking' },
+    { to: '/book-parking', label: 'Find Parking' },
+    { to: '/subscriptions', label: 'Pricing' },
     { to: '/contact', label: 'Contact' },
   ];
   const notifRef = useRef<HTMLDivElement>(null);
@@ -155,16 +156,23 @@ const MainLayout = () => {
                   </AnimatePresence>
                 </div>
               ) : (
-                <div className="hidden md:flex items-center gap-2">
+                <div className="hidden md:flex items-center gap-3">
+                  <Link
+                    to="/available-slots"
+                    title="Search Parking Slots"
+                    className="p-2 rounded-lg text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
+                  >
+                    <HiOutlineMagnifyingGlass className="w-5 h-5" />
+                  </Link>
                   <Link
                     to="/login"
-                    className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-cyan-400 transition-colors"
+                    className="px-3 py-1.5 text-sm font-medium text-gray-300 hover:text-cyan-400 transition-colors"
                   >
-                    Login
+                    Log In
                   </Link>
                   <Link
                     to="/register"
-                    className="btn-neon px-4 py-2 text-sm font-medium text-white rounded-xl"
+                    className="px-4 py-1.5 text-sm font-semibold text-cyan-300 rounded-full border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all duration-300"
                   >
                     Register
                   </Link>

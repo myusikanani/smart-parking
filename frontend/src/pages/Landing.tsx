@@ -1,599 +1,872 @@
 import { useState, useRef, useCallback } from 'react';
-import { motion, useInView, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   HiOutlineQrCode,
   HiOutlineClock,
-  HiOutlineDocumentText,
   HiOutlineShieldCheck,
   HiOutlineCalendarDays,
-  HiOutlineChartBarSquare,
-  HiOutlinePhoneArrowUpRight,
-  HiOutlineUser,
-  HiOutlineBuildingOffice2,
-  HiOutlineShieldExclamation,
-  HiOutlineStar,
   HiOutlineChevronDown,
   HiOutlineArrowRight,
   HiOutlineMapPin,
   HiOutlineUsers,
-  HiOutlineFaceSmile,
-  HiOutlineGlobeAlt,
+  HiOutlineStar,
+  HiOutlineCpuChip,
+  HiOutlineChatBubbleLeftRight,
+  HiOutlineCurrencyDollar,
+  HiOutlineGlobeAmericas,
+  HiOutlineCheck,
+  HiOutlineCursorArrowRays,
+  HiOutlineSparkles,
 } from 'react-icons/hi2';
 import { useNavigate } from 'react-router-dom';
-import { CarSedan, BikeScooter, ElectricCar } from '../components/vehicles';
-import LandingHero3D from '../components/3d/LandingHero3D';
-import ThreeDParkingVisualizer from '../components/ThreeDParkingVisualizer';
-import LiveAvailabilityBar from '../components/LiveAvailabilityBar';
+import ParkEaseHeroIsometric3D from '../components/3d/ParkEaseHeroIsometric3D';
+import { CarSedan, ElectricCar, BikeScooter } from '../components/vehicles';
 
-function CountUp({ end, suffix = '' }: { end: number; suffix?: string }) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: '-50px' });
-  const motionValue = useMotionValue(0);
-  const spring = useSpring(motionValue, { stiffness: 50, damping: 20 });
-  const display = useTransform(spring, (v) => `${Math.round(v)}${suffix}`);
-  if (inView) motionValue.set(end);
-  return (
-    <motion.span ref={ref} className="tabular-nums">
-      {display}
-    </motion.span>
-  );
-}
-
-const features = [
-  { icon: HiOutlineQrCode, title: 'QR Code Access', description: 'Generate and scan unique QR codes for seamless parking entry and exit without physical tickets.' },
-  { icon: HiOutlineClock, title: 'Real-Time Availability', description: 'Live parking slot availability with instant updates so you never waste time searching.' },
-  { icon: HiOutlineDocumentText, title: 'Paperless System', description: 'Fully digital experience eliminating paper tickets, receipts, and manual paperwork.' },
-  { icon: HiOutlineShieldCheck, title: 'Secure Entry/Exit', description: 'Advanced authentication and license plate recognition for maximum security.' },
-  { icon: HiOutlineCalendarDays, title: 'Booking History', description: 'Complete history of your parking sessions with detailed receipts and analytics.' },
-  { icon: HiOutlineChartBarSquare, title: 'Admin Dashboard', description: 'Comprehensive dashboard with analytics, user management, and system controls.' },
-];
-
-const steps = [
-  { icon: HiOutlineCalendarDays, title: 'Book Online', description: 'Reserve your parking spot in advance through the web or mobile app.' },
-  { icon: HiOutlineQrCode, title: 'Get QR Code', description: 'Receive a unique QR code via email or app for contactless entry.' },
-  { icon: HiOutlinePhoneArrowUpRight, title: 'Scan & Enter', description: 'Scan your QR at the gate and the barrier opens automatically.' },
-  { icon: HiOutlineShieldCheck, title: 'Scan & Exit', description: 'Scan again at exit, payment is processed, and you are on your way.' },
-];
-
-const stats = [
-  { icon: HiOutlineMapPin, end: 500, suffix: '+', label: 'Parking Slots', color: 'text-cyan-400' },
-  { icon: HiOutlineUsers, end: 10000, suffix: '+', label: 'Happy Users', color: 'text-pink-400' },
-  { icon: HiOutlineFaceSmile, end: 98, suffix: '%', label: 'Satisfaction', color: 'text-green-400' },
-  { icon: HiOutlineGlobeAlt, end: 50, suffix: '+', label: 'Locations', color: 'text-cyan-400' },
-];
-
-const benefits = [
+// 6 Main Feature Cards matching mockup
+const featureCards = [
   {
-    icon: HiOutlineUser,
-    title: 'For Users',
-    points: ['Easy online booking', 'Contactless entry/exit', 'Real-time slot availability', 'Digital payment & receipts', 'Booking history access'],
-    color: 'text-cyan-400',
+    icon: HiOutlineCpuChip,
+    badge: 'IoT RADAR',
+    title: 'IoT Device',
+    description: 'Real-time ultrasonic & optical bay sensors detect vehicle occupancy instantly, synchronizing with smart barriers.',
+    color: 'from-cyan-500/20 to-blue-500/20',
+    borderColor: 'border-cyan-500/30',
+    iconColor: 'text-cyan-400',
   },
   {
-    icon: HiOutlineBuildingOffice2,
-    title: 'For Owners',
-    points: ['Automated operations', 'Revenue analytics', 'Reduced staffing costs', 'Dynamic pricing tools', 'Maintenance alerts'],
-    color: 'text-pink-400',
+    icon: HiOutlineChatBubbleLeftRight,
+    badge: '24/7 AI HELP',
+    title: '24/7 Support',
+    description: 'Instant automated AI assistant and on-demand human roadside helpline whenever you need immediate assistance.',
+    color: 'from-emerald-500/20 to-cyan-500/20',
+    borderColor: 'border-emerald-500/30',
+    iconColor: 'text-emerald-400',
   },
   {
-    icon: HiOutlineShieldExclamation,
-    title: 'For Security',
-    points: ['License plate recognition', 'Real-time monitoring', 'Audit trail & logs', 'Access control system', 'Incident reporting'],
-    color: 'text-green-400',
+    icon: HiOutlineQrCode,
+    badge: 'NO TICKETS',
+    title: 'Ticketless Access',
+    description: 'High-speed license plate recognition (LPR) & encrypted dynamic QR codes for 100% contactless gate entry and exit.',
+    color: 'from-blue-500/20 to-indigo-500/20',
+    borderColor: 'border-blue-500/30',
+    iconColor: 'text-blue-400',
+  },
+  {
+    icon: HiOutlineMapPin,
+    badge: 'LIVE GPS',
+    title: 'Live Navigation',
+    description: 'Turn-by-turn indoor navigation directs you straight to your assigned empty bay without circling or guesswork.',
+    color: 'from-cyan-500/20 to-teal-500/20',
+    borderColor: 'border-cyan-500/30',
+    iconColor: 'text-cyan-400',
+  },
+  {
+    icon: HiOutlineCurrencyDollar,
+    badge: 'FAIR RATES',
+    title: 'Dynamic Rates',
+    description: 'Transparent live pricing, off-peak discounts, and instant contactless digital wallet checkout with e-invoicing.',
+    color: 'from-amber-500/20 to-orange-500/20',
+    borderColor: 'border-amber-500/30',
+    iconColor: 'text-amber-400',
+  },
+  {
+    icon: HiOutlineGlobeAmericas,
+    badge: 'NATIONWIDE',
+    title: 'Nationwide Coverage',
+    description: 'A unified smart parking grid connecting commercial towers, airports, shopping centers, and urban garages.',
+    color: 'from-purple-500/20 to-pink-500/20',
+    borderColor: 'border-purple-500/30',
+    iconColor: 'text-purple-400',
   },
 ];
 
+// 4 Simple Steps with interactive data
+const roadmapSteps = [
+  {
+    id: 1,
+    num: '1',
+    title: 'Online Booking',
+    tag: 'Step 01: Select Spot',
+    shortDesc: 'Choose your destination, vehicle type & preferred time slot.',
+    details: 'Browse real-time available bays on the 3D map, reserve with one click, and receive an instant digital QR parking pass.',
+    icon: HiOutlineCalendarDays,
+  },
+  {
+    id: 2,
+    num: '2',
+    title: 'Get to Node',
+    tag: 'Step 02: GPS Navigation',
+    shortDesc: 'Follow turn-by-turn indoor routing directly to the parking gate.',
+    details: 'Smart GPS routes you around traffic and straight to the nearest open gate sensor node.',
+    icon: HiOutlineMapPin,
+  },
+  {
+    id: 3,
+    num: '3',
+    title: 'Start & Slide',
+    tag: 'Step 03: Contactless Entry',
+    shortDesc: 'Drive through effortlessly as the barrier automatically lifts.',
+    details: 'IoT camera or QR scanner verifies your reservation in <0.3s. The glowing path lights up your bay.',
+    icon: HiOutlineShieldCheck,
+  },
+  {
+    id: 4,
+    num: '4',
+    title: 'Scan & Pay',
+    tag: 'Step 04: Instant Exit',
+    shortDesc: 'Automatic cashless settlement and seamless gate opening.',
+    details: 'Exit effortlessly with automatic wallet debit or express contactless payment with instant tax receipt.',
+    icon: HiOutlineQrCode,
+  },
+];
+
+// Built for Everyone Audience Cards
+const audienceCards = [
+  {
+    title: 'For Drivers',
+    icon: HiOutlineUsers,
+    image: '/assets/car_driver_sedan.jpg',
+    points: [
+      'Guaranteed spot reservation before arrival',
+      'Turn-by-turn indoor bay navigation',
+      'Contactless QR code & LPR gate entry',
+      'Instant digital wallet payment & receipts',
+      'Live booking history & pass re-downloads',
+    ],
+    accentColor: 'border-cyan-500/30',
+    badgeText: 'DAILY COMMUTER',
+    badgeColor: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
+  },
+  {
+    title: 'For Operators',
+    icon: HiOutlineClock,
+    image: '/assets/car_operator_suv.jpg',
+    points: [
+      'Real-time bay occupancy radar dashboard',
+      'Automated barrier gate & sensor controls',
+      'Dynamic demand-based pricing algorithms',
+      'High-accuracy vehicle plate audit logs',
+      'Automated revenue analytics & reports',
+    ],
+    accentColor: 'border-emerald-500/30',
+    badgeText: 'FACILITY MANAGER',
+    badgeColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+  },
+  {
+    title: 'For Fleets & VIPs',
+    icon: HiOutlineShieldCheck,
+    image: '/assets/car_fleet_sports.jpg',
+    points: [
+      'Multi-vehicle corporate accounts & passes',
+      'Pre-paid discounted monthly subscriptions',
+      'Reserved priority EV charging stations',
+      'Express VIP gate lanes with zero delay',
+      'Dedicated 24/7 enterprise concierge',
+    ],
+    accentColor: 'border-purple-500/30',
+    badgeText: 'ENTERPRISE FLEET',
+    badgeColor: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+  },
+];
+
+// Testimonials matching mockup
 const testimonials = [
-  { quote: 'This system transformed how we manage parking. The QR code access is seamless and our users love the convenience.', name: 'Sarah Chen', role: 'Facility Manager, TechPark' },
-  { quote: 'Real-time availability has eliminated the frustration of circling for spots. A game-changer for our daily commute.', name: 'Mark Rivera', role: 'Regular Commuter' },
-  { quote: 'The admin dashboard gives us incredible insight into usage patterns. We optimized pricing based on real data.', name: 'Priya Patel', role: 'Operations Director, CityPark' },
+  {
+    name: 'David Vance',
+    role: 'Commercial Fleet Owner',
+    quote: 'ParkEase transformed our fleet operations. Drivers never waste time circling for spots, and all payments are unified automatically.',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+    rating: 5,
+  },
+  {
+    name: 'Sarah Chen',
+    role: 'Daily City Commuter',
+    quote: 'The 3D turn-by-turn indoor routing is incredible. I reserve my spot in the morning and drive straight in without touching a ticket.',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80',
+    rating: 5,
+  },
+  {
+    name: 'Marcus Brody',
+    role: 'Shopping Mall Facility Director',
+    quote: 'Our garage revenue grew by 28% after deploying ParkEase dynamic pricing and automated sensor barriers. Highly recommended!',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+    rating: 5,
+  },
 ];
 
+// Frequently Asked Questions
 const faqs = [
-  { q: 'How do I book a parking spot?', a: 'Simply create an account, select your desired location and time slot, and complete the payment. Your QR code will be sent via email and available in your dashboard.' },
-  { q: 'Can I cancel or modify my booking?', a: 'Yes, you can cancel or modify bookings up to 1 hour before the scheduled start time through your account dashboard. Refunds follow our cancellation policy.' },
-  { q: 'How does the QR code scanning work?', a: 'At entry and exit gates, hold your QR code up to the scanner. The system instantly validates your booking and opens the barrier automatically.' },
-  { q: 'Is my payment information secure?', a: 'Absolutely. We use industry-standard encryption and PCI-compliant payment processing. Your payment details are never stored on our servers.' },
-  { q: 'What if I lose my QR code?', a: 'You can regenerate your QR code anytime from your account dashboard or contact support for assistance. We recommend saving it to your digital wallet.' },
-  { q: 'Do you offer monthly subscriptions?', a: 'Yes, we offer flexible monthly and annual subscription plans for frequent users. Check our pricing page for details and discounts.' },
+  {
+    q: 'How can I reserve a parking spot in advance?',
+    a: 'Simply click "Book Parking Now", select your city or garage, choose your vehicle type, and pick a time slot. Once confirmed, you will instantly receive your digital QR parking pass.',
+  },
+  {
+    q: 'What are the contactless entry options?',
+    a: 'ParkEase supports both automatic License Plate Recognition (LPR) and high-speed QR code scanning at the gate. As you approach the barrier, the sensor validates your booking in under 0.3 seconds.',
+  },
+  {
+    q: 'How does ParkEase dynamic pricing work?',
+    a: 'Pricing is dynamically optimized based on real-time garage occupancy and off-peak hours. You always see the exact rate before booking, with zero hidden surcharges.',
+  },
+  {
+    q: 'Why choose sensor-based over traditional parking?',
+    a: 'Sensor-based parking eliminates 100% of paper tickets, reduces traffic congestion inside facilities by 60%, and guides you directly to an empty spot with turn-by-turn navigation.',
+  },
+  {
+    q: 'What if I need to extend or cancel my session?',
+    a: 'You can easily extend your session or cancel up to 30 minutes before your scheduled start time directly from the User Dashboard. Refunds are processed automatically.',
+  },
+  {
+    q: 'Are EV charging slots guaranteed?',
+    a: 'Yes! When you select an EV-enabled parking spot, the high-speed charging station is reserved exclusively for your vehicle during your entire booking window.',
+  },
 ];
 
-const Landing = () => {
+export default function Landing() {
   const navigate = useNavigate();
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [activeStep, setActiveStep] = useState(0);
-  const [expandedStep, setExpandedStep] = useState<number | null>(null);
-  const [carAnimKey, setCarAnimKey] = useState(0);
-  const [carStartX, setCarStartX] = useState('0%');
-  const [carEndX, setCarEndX] = useState('0%');
-  const [celebrating, setCelebrating] = useState(false);
+  const [activeStep, setActiveStep] = useState(1);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [heroSlide, setHeroSlide] = useState(0);
 
-  const handleStepClick = useCallback((index: number) => {
-    setExpandedStep(index);
-    setCelebrating(false);
-    if (index === 0) {
-      setCarStartX('0%');
-      setCarEndX('25%');
-      setCarAnimKey((k) => k + 1);
-      setActiveStep(1);
-    } else if (index === 1) {
-      setCarStartX('25%');
-      setCarEndX('50%');
-      setCarAnimKey((k) => k + 1);
-      setActiveStep(2);
-    } else if (index === 2) {
-      setCarStartX('50%');
-      setCarEndX('75%');
-      setCarAnimKey((k) => k + 1);
-      setActiveStep(3);
-    } else {
-      setCarStartX('75%');
-      setCarEndX('100%');
-      setCarAnimKey((k) => k + 1);
-      setActiveStep(4);
-      setCelebrating(true);
-      setTimeout(() => setCelebrating(false), 1500);
-    }
+  // Handle Step Click
+  const handleStepClick = useCallback((stepId: number) => {
+    setActiveStep(stepId);
   }, []);
 
   return (
-    <div className="min-h-screen font-sans overflow-x-hidden" style={{ backgroundColor: 'var(--bg)', color: 'var(--text)' }}>
+    <div className="min-h-screen bg-[#070d18] text-white font-sans overflow-x-hidden selection:bg-cyan-500 selection:text-black">
 
-      <section className="relative min-h-screen flex items-center overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <motion.div
-            animate={{ y: [0, -30, 0], x: [0, 15, 0] }}
-            transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut' }}
-            className="absolute top-20 left-[10%] w-72 h-72 bg-cyan-500/20 rounded-full blur-[100px]"
-          />
-          <motion.div
-            animate={{ y: [0, 20, 0], x: [0, -20, 0] }}
-            transition={{ repeat: Infinity, duration: 10, ease: 'easeInOut', delay: 1 }}
-            className="absolute bottom-32 right-[15%] w-96 h-96 bg-pink-500/20 rounded-full blur-[120px]"
-          />
-          <motion.div
-            animate={{ rotate: [0, 360] }}
-            transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
-            className="absolute top-[40%] left-[55%] w-48 h-48 bg-green-500/10 rounded-3xl blur-[80px]"
-          />
-        </div>
+      {/* Ambient background glow elements */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10%] left-[15%] w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[140px]" />
+        <div className="absolute top-[40%] right-[10%] w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[160px]" />
+        <div className="absolute bottom-[20%] left-[5%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[140px]" />
+      </div>
 
-        {/* Structured Bottom Road Strip Animation */}
-        <div className="absolute bottom-4 left-0 right-0 pointer-events-none opacity-20 border-b border-dashed border-cyan-500/30 pb-2">
+      {/* =========================================================================
+          1. HERO SECTION (Matching Mockup Left Content + Right 3D Visual)
+          ========================================================================= */}
+      <section className="relative z-10 pt-28 pb-20 lg:pt-36 lg:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          
+          {/* Left Hero Content */}
           <motion.div
-            initial={{ x: '-20%' }}
-            animate={{ x: '110vw' }}
-            transition={{ repeat: Infinity, duration: 14, ease: 'linear' }}
-            className="flex items-center gap-12"
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-6 space-y-6 text-left"
           >
-            <CarSedan className="w-28 h-auto" color="#06b6d4" />
-            <ElectricCar className="w-24 h-auto" color="#10b981" />
-            <BikeScooter className="w-20 h-auto" color="#ec4899" />
-          </motion.div>
-        </div>
+            {/* Animated Gradient Splash Pill Tag */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-semibold tracking-wider uppercase shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+              <span>Animated gradient splash</span>
+            </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 grid lg:grid-cols-2 gap-16 items-center">
-          <motion.div initial="hidden" animate="visible" variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.15 } } }}>
-            <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.1, 0.25, 1] } } }}>
-              <span className="inline-block px-4 py-1.5 mb-6 text-xs font-semibold uppercase tracking-widest text-cyan-400 glass rounded-full border border-cyan-500/30">
-                Next-Gen Parking Solution
-              </span>
-            </motion.div>
-            <motion.h1 variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.1, 0.25, 1] } } }} className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight mb-6">
-              Park<span className="neon-text">Ease</span><br />Smart Parking
-            </motion.h1>
-            <motion.p variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.1, 0.25, 1] } } }} className="text-lg sm:text-xl max-w-lg mb-8 leading-relaxed text-gray-400">
-              Real-time parking solutions for modern cities. Save time, fuel and the environment.
-            </motion.p>
-            <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.1, 0.25, 1] } } }} className="flex flex-wrap gap-4">
+            {/* Bold Title */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] text-white">
+              Park<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400">Ease</span>
+              <br />
+              <span className="text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.2)]">Smart Parking</span>
+            </h1>
+
+            {/* Subtitle / Description */}
+            <p className="text-base sm:text-lg text-gray-400 max-w-lg leading-relaxed">
+              Effortless, secure, and predictive parking solutions powered by IoT sensors, automated gates, and turn-by-turn indoor bay navigation.
+            </p>
+
+            {/* CTA Buttons Row */}
+            <div className="flex flex-wrap items-center gap-4 pt-2">
               <button
                 onClick={() => navigate('/book-parking')}
-                className="px-8 py-4 font-bold rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all duration-300 shadow-xl shadow-indigo-600/30 flex items-center gap-2"
+                className="parkease-cyan-btn px-7 py-3.5 rounded-2xl text-sm sm:text-base font-bold flex items-center gap-2.5 transition-all shadow-xl shadow-cyan-500/25 group cursor-pointer"
               >
-                Book Parking
+                <span>Book Parking Now</span>
+                <HiOutlineCursorArrowRays className="w-4 h-4 group-hover:scale-125 transition-transform" />
               </button>
+
               <button
-                onClick={() => navigate('/available-slots')}
-                className="px-8 py-4 font-bold rounded-2xl border border-white/20 hover:border-cyan-400 text-white transition-all duration-300 glass flex items-center gap-2"
+                onClick={() => navigate('/register')}
+                className="px-6 py-3.5 rounded-2xl text-sm sm:text-base font-semibold text-gray-200 border border-white/15 bg-white/5 hover:bg-white/10 hover:border-cyan-400/50 hover:text-white transition-all backdrop-blur-md flex items-center gap-2 cursor-pointer"
               >
-                Explore ▶
+                <span>Register</span>
+                <HiOutlineArrowRight className="w-4 h-4 text-cyan-400" />
+              </button>
+            </div>
+
+            {/* Pagination Dots Indicator */}
+            <div className="flex items-center gap-2 pt-6">
+              {[0, 1, 2].map((dot) => (
+                <button
+                  key={dot}
+                  onClick={() => setHeroSlide(dot)}
+                  className={`transition-all duration-300 rounded-full ${
+                    heroSlide === dot
+                      ? 'w-6 h-2 bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.8)]'
+                      : 'w-2 h-2 bg-gray-600 hover:bg-gray-400'
+                  }`}
+                  aria-label={`Slide ${dot + 1}`}
+                />
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Right 3D Isometric Visual */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.9, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-6 relative"
+          >
+            {/* 3D Isometric Parking Lot Scene with Moving Car */}
+            <ParkEaseHeroIsometric3D />
+
+            {/* Curved Glowing Neon Trail flowing toward bottom-left */}
+            <div className="absolute -bottom-10 -left-12 w-64 h-24 pointer-events-none opacity-60 hidden md:block">
+              <svg viewBox="0 0 200 80" fill="none" className="w-full h-full">
+                <path
+                  d="M180 10 C120 20, 60 60, 10 75"
+                  stroke="url(#neon-trail-grad)"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+                <defs>
+                  <linearGradient id="neon-trail-grad" x1="180" y1="10" x2="10" y2="75" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#10b981" />
+                    <stop offset="0.5" stopColor="#06b6d4" />
+                    <stop offset="1" stopColor="#3b82f6" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+          </motion.div>
+
+        </div>
+      </section>
+
+      {/* =========================================================================
+          2. "EVERYTHING YOU NEED" FEATURE GRID (6 Glassmorphism Cards)
+          ========================================================================= */}
+      <section className="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-3"
+          >
+            Everything you need
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-sm sm:text-base text-gray-400"
+          >
+            A cohesive design engineered to deliver frictionless parking anywhere at any hour.
+          </motion.p>
+        </div>
+
+        {/* 6 Grid Cards */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {featureCards.map((card, idx) => (
+            <motion.div
+              key={card.title}
+              initial={{ opacity: 0, y: 25 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: idx * 0.08 }}
+              className="parkease-glass-card p-6 flex flex-col justify-between group"
+            >
+              <div>
+                {/* Card Top Row with Icon & Mini Status Badge */}
+                <div className="flex items-center justify-between mb-5">
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.color} border ${card.borderColor} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
+                    <card.icon className={`w-6 h-6 ${card.iconColor}`} />
+                  </div>
+                  <span className="text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300">
+                    {card.badge}
+                  </span>
+                </div>
+
+                {/* Card Title & Content */}
+                <h3 className="text-lg font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors">
+                  {card.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
+                  {card.description}
+                </p>
+              </div>
+
+              {/* Bottom Subtle Status Link */}
+              <div className="pt-5 mt-4 border-t border-white/5 flex items-center justify-between text-xs text-cyan-400 font-medium opacity-80 group-hover:opacity-100">
+                <span>Learn more</span>
+                <HiOutlineArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* =========================================================================
+          3. "FOUR SIMPLE STEPS" INTERACTIVE ROADMAP & MOVING CARS SECTION
+          ========================================================================= */}
+      <section className="relative z-10 py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-3"
+          >
+            Four simple steps
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-sm sm:text-base text-gray-400"
+          >
+            Interactive simple-choice journey. The seamless user process.
+          </motion.p>
+        </div>
+
+        {/* Stepper Navigation Buttons (1, 2, 3, 4) with Progress Bar */}
+        <div className="relative mb-12 max-w-4xl mx-auto">
+          {/* Background Connecting Line */}
+          <div className="absolute top-6 left-8 right-8 h-1 bg-slate-800 rounded-full z-0 hidden sm:block">
+            <motion.div
+              className="h-full bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-400 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.6)]"
+              animate={{
+                width: `${((activeStep - 1) / (roadmapSteps.length - 1)) * 100}%`,
+              }}
+              transition={{ duration: 0.5, ease: 'easeInOut' }}
+            />
+          </div>
+
+          {/* Stepper Tabs */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 relative z-10">
+            {roadmapSteps.map((step) => {
+              const isActive = activeStep === step.id;
+              return (
+                <button
+                  key={step.id}
+                  onClick={() => handleStepClick(step.id)}
+                  className="flex flex-col items-center text-center p-3 rounded-2xl transition-all cursor-pointer group"
+                >
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mb-3 transition-all duration-300 ${
+                      isActive
+                        ? 'bg-gradient-to-br from-cyan-400 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.7)] scale-110 ring-4 ring-cyan-500/20'
+                        : 'bg-slate-900 border border-slate-700 text-gray-400 hover:border-cyan-500/40 hover:text-white'
+                    }`}
+                  >
+                    {step.num}
+                  </div>
+                  <span className={`text-xs sm:text-sm font-bold tracking-wide transition-colors ${
+                    isActive ? 'text-cyan-300' : 'text-gray-400 group-hover:text-gray-200'
+                  }`}>
+                    {step.title}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Glowing Road Visual with 4 Sequential Cars on Track */}
+        <div className="relative max-w-5xl mx-auto bg-gradient-to-b from-[#0a1224] to-[#070d18] rounded-3xl p-6 sm:p-10 border border-cyan-500/20 shadow-2xl overflow-hidden">
+          
+          {/* Road Visual Track Header Info */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+            <div className="flex items-center gap-3">
+              <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs font-mono text-cyan-300 font-bold uppercase tracking-wider">
+                {roadmapSteps[activeStep - 1].tag}
+              </span>
+            </div>
+            <div className="text-xs font-mono text-gray-400">
+              Interactive Highway Simulation
+            </div>
+          </div>
+
+          {/* Curved Glowing Highway Lane with Moving Cars */}
+          <div className="relative w-full h-36 sm:h-44 bg-[#050912] rounded-2xl border border-cyan-500/20 flex items-center px-4 sm:px-12 overflow-hidden">
+            {/* Road Lane Glowing Strip in Center */}
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-20 border-y border-dashed border-cyan-500/30 bg-gradient-to-r from-cyan-950/20 via-blue-950/40 to-emerald-950/20" />
+
+            {/* Glowing Trajectory Path */}
+            <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-cyan-500/40 via-blue-500/40 to-emerald-500/40" />
+
+            {/* 4 Sequentially Positioned Cars */}
+            <div className="relative z-10 w-full flex items-center justify-between">
+              {roadmapSteps.map((step, index) => {
+                const isActive = activeStep === step.id;
+                return (
+                  <motion.div
+                    key={step.id}
+                    animate={{
+                      scale: isActive ? 1.25 : 0.95,
+                      y: isActive ? -4 : 0,
+                    }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                    onClick={() => handleStepClick(step.id)}
+                    className="flex flex-col items-center cursor-pointer group"
+                  >
+                    <div className="relative">
+                      {/* Active Car Spotlight Glow */}
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeCarGlow"
+                          className="absolute -inset-4 bg-cyan-400/25 rounded-full blur-lg"
+                        />
+                      )}
+
+                      {/* Car Visual by Index */}
+                      {index === 0 && <CarSedan className={`w-14 sm:w-20 h-auto transition-colors ${isActive ? 'text-cyan-400 filter drop-shadow-[0_0_12px_rgba(6,182,212,0.8)]' : 'text-slate-600 opacity-60'}`} color={isActive ? '#06b6d4' : '#475569'} />}
+                      {index === 1 && <ElectricCar className={`w-14 sm:w-20 h-auto transition-colors ${isActive ? 'text-teal-400 filter drop-shadow-[0_0_12px_rgba(20,184,166,0.8)]' : 'text-slate-600 opacity-60'}`} color={isActive ? '#14b8a6' : '#475569'} />}
+                      {index === 2 && <CarSedan className={`w-14 sm:w-20 h-auto transition-colors ${isActive ? 'text-emerald-400 filter drop-shadow-[0_0_12px_rgba(16,185,129,0.8)]' : 'text-slate-600 opacity-60'}`} color={isActive ? '#10b981' : '#475569'} />}
+                      {index === 3 && <BikeScooter className={`w-12 sm:w-16 h-auto transition-colors ${isActive ? 'text-amber-400 filter drop-shadow-[0_0_12px_rgba(245,158,11,0.8)]' : 'text-slate-600 opacity-60'}`} color={isActive ? '#f59e0b' : '#475569'} />}
+                    </div>
+
+                    {/* Step Number Tag Below */}
+                    <span className={`text-xs font-mono font-bold mt-2 px-2 py-0.5 rounded-full transition-colors ${
+                      isActive ? 'bg-cyan-500 text-black shadow-[0_0_10px_rgba(6,182,212,0.6)]' : 'text-gray-500'
+                    }`}>
+                      Node {step.num}
+                    </span>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Active Step Detailed Description Box */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeStep}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3 }}
+              className="mt-6 p-6 rounded-2xl bg-[#09101f]/80 border border-cyan-500/20 backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+            >
+              <div>
+                <h4 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                  <span className="text-cyan-400">Step {activeStep}:</span> {roadmapSteps[activeStep - 1].title}
+                </h4>
+                <p className="text-xs sm:text-sm text-gray-300 max-w-2xl leading-relaxed">
+                  {roadmapSteps[activeStep - 1].details}
+                </p>
+              </div>
+
+              <button
+                onClick={() => navigate('/book-parking')}
+                className="px-5 py-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-xs font-bold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>Try Step {activeStep}</span>
+                <HiOutlineArrowRight className="w-3.5 h-3.5" />
               </button>
             </motion.div>
-          </motion.div>
+          </AnimatePresence>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, ease: [0.25, 0.1, 0.25, 1], delay: 0.3 }}
-            className="relative hidden lg:block"
-          >
-            <LandingHero3D />
-            <div className="absolute top-6 right-6 z-20 space-y-3 pointer-events-none">
-              <div className="bg-slate-950/90 border border-emerald-500/40 p-3 rounded-2xl shadow-2xl backdrop-blur-xl font-mono text-center w-40">
-                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block">Available Spaces</span>
-                <span className="text-2xl font-extrabold text-emerald-400">128 ⬆</span>
-              </div>
-              <div className="bg-slate-950/90 border border-cyan-500/40 p-3 rounded-2xl shadow-2xl backdrop-blur-xl font-mono text-center w-40">
-                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block">Today's Bookings</span>
-                <span className="text-2xl font-extrabold text-cyan-400">320 ⬆</span>
-              </div>
-            </div>
-          </motion.div>
         </div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 1 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
-        >
-          <motion.div animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }} className="w-5 h-8 rounded-full border-2 border-cyan-500/50 flex items-start justify-center pt-1.5">
-            <div className="w-1 h-2 rounded-full bg-cyan-400" />
-          </motion.div>
-        </motion.div>
       </section>
 
-      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
-        >
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4 neon-text-cyan">Everything you need</h2>
-            <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-              A comprehensive parking management platform built for the modern world.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((f, i) => (
-              <motion.div
-                key={f.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-50px' }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-              >
-                <div className="glass-card p-6 h-full group hover:-translate-y-1 transition-transform duration-300">
-                  <div className="w-12 h-12 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center mb-4 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-shadow duration-300">
-                    <f.icon className="w-6 h-6 text-cyan-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2 text-cyan-400">{f.title}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">{f.description}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
-
-      <section className="py-24 px-4 sm:px-6 lg:px-8 overflow-hidden" style={{ backgroundColor: 'var(--section-alt)' }}>
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
+      {/* =========================================================================
+          4. "BUILT FOR EVERYONE" (Drivers, Operators, Fleets - 3 Cards with Photos)
+          ========================================================================= */}
+      <section className="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-100px' }}
-            transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
+            viewport={{ once: true }}
+            className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-3"
           >
-            <div className="text-center mb-16">
-              <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4 neon-text-pink">Four simple steps</h2>
-              <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-                Click each step to watch the car drive. The description opens below.
-              </p>
-            </div>
-
-            <div className="relative">
-              <div className="hidden lg:block absolute top-8 left-[5%] right-[5%] h-1.5 rounded-full" style={{ backgroundColor: 'var(--glass-bg)' }}>
-                <motion.div
-                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-500 via-pink-500 to-green-500 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.4)]"
-                  animate={{
-                    width: activeStep === 0 ? '0%' : activeStep === 1 ? '25%' : activeStep === 2 ? '50%' : activeStep === 3 ? '75%' : '100%'
-                  }}
-                  transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
-                />
-                <motion.div
-                  key={carAnimKey}
-                  initial={{ left: carStartX }}
-                  animate={{ left: carEndX }}
-                  transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
-                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10"
-                >
-                  <CarSedan className="w-12 h-auto vehicle-glow-cyan" color="#06b6d4" />
-                </motion.div>
-                {celebrating && (
-                  <>
-                    {[...Array(14)].map((_, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 1, scale: 0 }}
-                        animate={{
-                          opacity: [1, 1, 0],
-                          scale: [0, 1.2, 0.5],
-                          x: (Math.random() - 0.5) * 200,
-                          y: (Math.random() - 0.5) * 80
-                        }}
-                        transition={{ duration: 1, delay: i * 0.04, ease: 'easeOut' }}
-                        className="absolute -top-2 text-sm"
-                        style={{ left: carEndX, color: ['#06b6d4', '#ec4899', '#10b981', '#f59e0b'][i % 4] }}
-                      >
-                        {['✦', '◆', '●', '★'][i % 4]}
-                      </motion.div>
-                    ))}
-                  </>
-                )}
-              </div>
-
-              <div className="grid lg:grid-cols-4 gap-8 lg:gap-6">
-                {steps.map((s, i) => (
-                  <motion.div
-                    key={s.title}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: '-50px' }}
-                    transition={{ duration: 0.5, delay: i * 0.15 }}
-                    className="relative flex flex-col items-center text-center"
-                  >
-                    <button
-                      onClick={() => handleStepClick(i)}
-                      className="relative z-10 w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 via-pink-500 to-green-500 flex items-center justify-center shadow-[0_0_25px_rgba(6,182,212,0.4)] mb-6 hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer"
-                    >
-                      <motion.span
-                         className="font-bold text-lg text-white"
-                        animate={activeStep === i + 1 ? { scale: [1, 1.3, 1] } : {}}
-                        transition={{ duration: 0.3 }}
-                      >
-                        {i + 1}
-                      </motion.span>
-                    </button>
-                    <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-4">
-                      <s.icon className="w-6 h-6 text-cyan-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text)' }}>{s.title}</h3>
-
-                    <AnimatePresence>
-                      {expandedStep === i && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-                          className="overflow-hidden"
-                        >
-                          <p className="text-sm text-gray-400 leading-relaxed max-w-xs">{s.description}</p>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
+            Built for everyone
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-sm sm:text-base text-gray-400"
+          >
+            Tailored solutions designed for daily drivers, commercial operators, and corporate fleets.
+          </motion.p>
         </div>
-      </section>
 
-      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
-        >
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((s, i) => (
-              <motion.div
-                key={s.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-50px' }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-              >
-                <div className="glass-card-glow p-4 sm:p-8 text-center hover:-translate-y-1 transition-transform duration-300">
-                  <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto mb-4">
-                    <s.icon className={`w-6 h-6 ${s.color}`} />
-                  </div>
-                  <div className={`text-2xl sm:text-4xl lg:text-5xl font-bold mb-1 ${s.color}`}>
-                    <CountUp end={s.end} suffix={s.suffix} />
-                  </div>
-                  <p className="text-sm text-gray-400">{s.label}</p>
+        {/* 3 Audience Cards */}
+        <div className="grid md:grid-cols-3 gap-8">
+          {audienceCards.map((aud, i) => (
+            <motion.div
+              key={aud.title}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.12 }}
+              className={`parkease-glass-card overflow-hidden border ${aud.accentColor} flex flex-col`}
+            >
+              {/* Card Image Header */}
+              <div className="relative h-44 sm:h-48 w-full bg-slate-950 overflow-hidden">
+                <img
+                  src={aud.image}
+                  alt={aud.title}
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a1224] via-transparent to-transparent" />
+                
+                {/* Badge Tag */}
+                <div className="absolute top-3 left-3">
+                  <span className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border backdrop-blur-md ${aud.badgeColor}`}>
+                    {aud.badgeText}
+                  </span>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
+              </div>
 
-      <section className="py-24 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: 'var(--section-alt)' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
-          className="max-w-7xl mx-auto"
-        >
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4 neon-text-green">Built for everyone</h2>
-            <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-              Tailored experiences for every stakeholder in the ecosystem.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {benefits.map((b, i) => (
-              <motion.div
-                key={b.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-50px' }}
-                transition={{ duration: 0.5, delay: i * 0.15 }}
-              >
-                <div className="glass-card p-8 h-full hover:-translate-y-1 transition-transform duration-300">
-                  <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-5">
-                    <b.icon className={`w-7 h-7 ${b.color}`} />
-                  </div>
-                   <h3 className="text-xl font-semibold mb-5" style={{ color: 'var(--text)' }}>{b.title}</h3>
-                  <ul className="space-y-3">
-                    {b.points.map((p) => (
-                      <li key={p} className="flex items-start gap-3 text-sm text-gray-400">
-                        <svg className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        {p}
+              {/* Card Content & Checklist */}
+              <div className="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <aud.icon className="w-5 h-5 text-cyan-400" />
+                    <span>{aud.title}</span>
+                  </h3>
+
+                  <ul className="space-y-2.5">
+                    {aud.points.map((point) => (
+                      <li key={point} className="flex items-start gap-2.5 text-xs sm:text-sm text-gray-300">
+                        <span className="w-4 h-4 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 flex-shrink-0 mt-0.5">
+                          <HiOutlineCheck className="w-3 h-3" />
+                        </span>
+                        <span>{point}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
 
-      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
-        >
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4 neon-text-cyan">What people say</h2>
-            <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-              Trusted by thousands of users and businesses worldwide.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((t, i) => (
-              <motion.div
-                key={t.name}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-50px' }}
-                transition={{ duration: 0.5, delay: i * 0.15 }}
-              >
-                <div className="glass-card border-l-4 border-l-cyan-500 p-8 h-full flex flex-col">
-                  <div className="mb-6">
-                    {Array.from({ length: 5 }).map((_, j) => (
-                      <HiOutlineStar key={j} className="w-4 h-4 inline-block text-cyan-400 fill-cyan-400" />
-                    ))}
-                  </div>
-                  <p className="text-sm text-gray-400 leading-relaxed flex-1 italic mb-6">&ldquo;{t.quote}&rdquo;</p>
-                  <div className="flex items-center gap-3 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
-                      {t.name.split(' ').map((n) => n[0]).join('')}
-                    </div>
-                    <div>
-                       <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{t.name}</p>
-                      <p className="text-xs text-gray-500">{t.role}</p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
-
-      <section className="py-24 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: 'var(--section-alt)' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
-          className="max-w-3xl mx-auto"
-        >
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4 neon-text-pink">Frequently asked questions</h2>
-            <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-              Got questions? We have answers.
-            </p>
-          </div>
-          <div className="space-y-3">
-            {faqs.map((faq, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-30px' }}
-                transition={{ duration: 0.3, delay: i * 0.05 }}
-              >
-                <div className={`glass transition-all duration-300 ${openFaq === i ? 'shadow-[0_0_20px_rgba(6,182,212,0.15)]' : ''}`}>
+                <div className="pt-6 mt-6 border-t border-white/5">
                   <button
-                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                    className="w-full text-left p-5"
+                    onClick={() => navigate('/available-slots')}
+                    className="w-full py-2.5 rounded-xl text-xs font-bold text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm sm:text-base pr-4" style={{ color: 'var(--text)' }}>{faq.q}</span>
-                      <motion.div
-                        animate={{ rotate: openFaq === i ? 180 : 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="flex-shrink-0"
-                      >
-                        <HiOutlineChevronDown className="w-5 h-5 text-cyan-400" />
-                      </motion.div>
-                    </div>
-                    <AnimatePresence>
-                      {openFaq === i && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.3, ease: 'easeInOut' }}
-                          className="overflow-hidden"
-                        >
-                          <p className="mt-4 text-sm text-gray-400 leading-relaxed">{faq.a}</p>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    <span>Explore Solutions</span>
+                    <HiOutlineArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </section>
 
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-100px' }}
-        transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
-      >
-        <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <div className="glass-card-glow p-12 sm:p-16 lg:p-20 text-center relative overflow-hidden">
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-[100px]" />
-              <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-pink-500/10 rounded-full blur-[100px]" />
-            </div>
+      {/* =========================================================================
+          5. "WHAT PEOPLE SAY" (Testimonials Section Matching Mockup)
+          ========================================================================= */}
+      <section className="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-3"
+          >
+            What people say
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-sm sm:text-base text-gray-400"
+          >
+            On-board drivers and commercial facility owners across 40+ connected facilities.
+          </motion.p>
+        </div>
 
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              <motion.div
-                initial={{ x: '120%' }}
-                whileInView={{ x: '-120%' }}
-                viewport={{ once: true }}
-                transition={{ duration: 6, ease: 'linear' }}
-                className="absolute top-1/3 opacity-20"
+        {/* Testimonial Cards Grid */}
+        <div className="grid md:grid-cols-3 gap-6">
+          {testimonials.map((t, i) => (
+            <motion.div
+              key={t.name}
+              initial={{ opacity: 0, y: 25 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              className="parkease-glass-card p-6 flex flex-col justify-between"
+            >
+              <div>
+                {/* Top 5 Stars + Mini Car Icon Badge */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-1 text-amber-400">
+                    {Array.from({ length: t.rating }).map((_, idx) => (
+                      <HiOutlineStar key={idx} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                  <span className="text-xs font-mono text-cyan-400 flex items-center gap-1 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
+                    🚗 Verified
+                  </span>
+                </div>
+
+                {/* Quote Text */}
+                <p className="text-xs sm:text-sm text-gray-300 italic leading-relaxed mb-6">
+                  "{t.quote}"
+                </p>
+              </div>
+
+              {/* Author Row */}
+              <div className="flex items-center gap-3 pt-4 border-t border-white/5">
+                <img
+                  src={t.avatar}
+                  alt={t.name}
+                  className="w-10 h-10 rounded-full object-cover border border-cyan-500/30"
+                />
+                <div>
+                  <h4 className="text-sm font-bold text-white">{t.name}</h4>
+                  <p className="text-[11px] text-gray-400">{t.role}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Carousel indicator dots */}
+        <div className="flex items-center justify-center gap-2 mt-8">
+          <span className="w-6 h-1.5 rounded-full bg-cyan-400" />
+          <span className="w-2 h-1.5 rounded-full bg-gray-600" />
+          <span className="w-2 h-1.5 rounded-full bg-gray-600" />
+        </div>
+      </section>
+
+      {/* =========================================================================
+          6. "FREQUENTLY ASKED QUESTIONS" (FAQ Accordion with Tag)
+          ========================================================================= */}
+      <section className="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
+          <div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-2">
+              Frequently asked questions
+            </h2>
+            <p className="text-sm text-gray-400">
+              Collection of ParkEase answers & policies.
+            </p>
+          </div>
+          
+          <div className="inline-flex items-center gap-2 self-start sm:self-auto px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono">
+            <span>🚗 Car FAQ</span>
+          </div>
+        </div>
+
+        {/* Accordion List */}
+        <div className="space-y-3">
+          {faqs.map((faq, index) => {
+            const isOpen = openFaq === index;
+            return (
+              <div
+                key={faq.q}
+                className="parkease-glass-card overflow-hidden transition-all duration-300"
               >
-                <CarSedan className="w-48 h-auto" color="#06b6d4" />
-              </motion.div>
-            </div>
+                <button
+                  onClick={() => setOpenFaq(isOpen ? null : index)}
+                  className="w-full text-left p-5 flex items-center justify-between gap-4 cursor-pointer"
+                >
+                  <span className="text-sm sm:text-base font-semibold text-gray-200 hover:text-white transition-colors">
+                    {faq.q}
+                  </span>
+                  <motion.div
+                    animate={{ rotate: isOpen ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex-shrink-0 w-7 h-7 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400"
+                  >
+                    <HiOutlineChevronDown className="w-4 h-4" />
+                  </motion.div>
+                </button>
 
-            <div className="relative z-10">
-              <h2 className="text-4xl sm:text-5xl font-bold tracking-tight neon-text mb-4">Ready to get started?</h2>
-              <p className="text-lg text-gray-400 max-w-xl mx-auto mb-8">
-                Join thousands of satisfied users and transform your parking experience today.
-              </p>
+                <AnimatePresence>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-gray-400 leading-relaxed border-t border-white/5">
+                        {faq.a}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* =========================================================================
+          7. "READY TO GET STARTED?" CTA BANNER (Glowing Neon Car Silhouette & Gold Button)
+          ========================================================================= */}
+      <section className="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#0a1428] via-[#0b1b36] to-[#0a1428] border border-cyan-500/30 p-10 sm:p-16 text-center shadow-[0_0_60px_rgba(6,182,212,0.15)]">
+          
+          {/* Neon Car Outline Silhouette in Background */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
+            <svg
+              viewBox="0 0 800 240"
+              fill="none"
+              className="w-full max-w-4xl h-auto"
+            >
+              {/* Outer Car Body Outline Neon Glow */}
+              <path
+                d="M 100 180 C 130 180, 160 130, 240 120 C 300 80, 480 75, 580 120 C 650 125, 720 150, 750 180 Z"
+                stroke="#00f0ff"
+                strokeWidth="2.5"
+                strokeDasharray="8 4"
+              />
+              {/* Wheels Hollow Circles */}
+              <circle cx="210" cy="180" r="32" stroke="#00f0ff" strokeWidth="2" />
+              <circle cx="630" cy="180" r="32" stroke="#00f0ff" strokeWidth="2" />
+              {/* Cabin Glass Line */}
+              <path
+                d="M 280 120 C 330 90, 460 85, 540 120 Z"
+                stroke="#10b981"
+                strokeWidth="1.5"
+              />
+            </svg>
+          </div>
+
+          {/* Ambient Glow Particles */}
+          <div className="absolute top-4 right-10 text-cyan-400 opacity-60 text-lg animate-pulse">
+            <HiOutlineSparkles />
+          </div>
+          <div className="absolute bottom-6 left-12 text-teal-400 opacity-50 text-base animate-pulse">
+            ✦
+          </div>
+
+          {/* Banner Content */}
+          <div className="relative z-10 max-w-2xl mx-auto space-y-5">
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+              Ready to Get started?
+            </h2>
+            <p className="text-sm sm:text-base text-gray-300">
+              Fast-track your daily parking routine with AI-powered smart spots and zero waiting.
+            </p>
+
+            {/* Glowing Amber/Gold Shimmer "Book Now" Button */}
+            <div className="pt-3">
               <button
-                onClick={() => navigate('/register')}
-                className="btn-neon px-8 py-4 font-semibold rounded-xl flex items-center gap-2 mx-auto transition-all duration-300"
+                onClick={() => navigate('/book-parking')}
+                className="parkease-gold-btn px-10 py-4 rounded-2xl text-base sm:text-lg font-bold inline-flex items-center gap-2 cursor-pointer"
               >
-                Register Now <HiOutlineArrowRight className="w-5 h-5" />
+                <span>Book Now 🚗</span>
               </button>
             </div>
           </div>
-        </section>
-      </motion.div>
+
+        </div>
+      </section>
+
     </div>
   );
-};
-
-export default Landing;
+}

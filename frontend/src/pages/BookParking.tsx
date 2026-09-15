@@ -22,7 +22,7 @@ import {
   HiOutlineArrowRight,
   HiOutlineMapPin,
 } from 'react-icons/hi2';
-import { slotApi, bookingApi, authApi } from '../services/api';
+import { slotApi, bookingApi, authApi, layoutApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import type { User } from '../context/AuthContext';
 import { CarSedan, ElectricCar, BikeScooter, AccessibleCar } from '../components/vehicles';
@@ -30,6 +30,8 @@ import Modal from '../components/ui/Modal';
 import { useToast } from '../components/ui/Toast';
 import InteractiveFloorMap from '../components/InteractiveFloorMap';
 import type { ParkingSlotItem } from '../components/InteractiveFloorMap';
+import ThreeDParkingCanvas from '../components/ThreeDParkingCanvas';
+import type { ThreeDSlotData, ThreeDLayoutItem } from '../components/ThreeDParkingCanvas';
 import AIVoiceBookingModal from '../components/AIVoiceBookingModal';
 
 interface Slot {
@@ -322,6 +324,54 @@ const BookParking = () => {
       slots.find((s) => s.status === 'available' && !isEmergencySlot(s)),
     [slots, selectedSlotId, category]
   );
+
+  // 3D / 2D Floor Deck View Mode in Step 2
+  const [mapViewMode, setMapViewMode] = useState<'3d' | '2d'>('3d');
+  const [deckFloor, setDeckFloor] = useState<number>(1);
+  const [layoutItems, setLayoutItems] = useState<ThreeDLayoutItem[]>([]);
+
+  // Update deckFloor when selectedSlot changes floor
+  useEffect(() => {
+    if (selectedSlot?.floor) {
+      setDeckFloor(selectedSlot.floor);
+    }
+  }, [selectedSlot?.floor]);
+
+  // Load custom 3D layout from MongoDB for active deck floor
+  useEffect(() => {
+    layoutApi.getByFloor(deckFloor)
+      .then((res) => {
+        if (res.layout && Array.isArray(res.layout.items)) {
+          const nonSlots: ThreeDLayoutItem[] = res.layout.items
+            .filter((it: Record<string, unknown>) => it.type !== 'slot')
+            .map((it: Record<string, unknown>) => ({
+              id: String(it.id || `${it.type}-${deckFloor}`),
+              type: String(it.type) as ThreeDLayoutItem['type'],
+              x: Number(it.x || 0),
+              z: Number(it.z || 0),
+              rotation: Number(it.rotation || 0),
+              floor: deckFloor,
+            }));
+          setLayoutItems(nonSlots);
+        }
+      })
+      .catch(() => {});
+  }, [deckFloor]);
+
+  const threeDSlots: ThreeDSlotData[] = useMemo(() => {
+    return slots
+      .filter((s) => (s.floor || 1) === deckFloor)
+      .map((s, idx) => ({
+        id: s.id,
+        number: s.number,
+        category: s.category,
+        status: s.status,
+        floor: s.floor || 1,
+        pricePerHour: s.pricePerHour,
+        x: (idx % 6) * 4 - 10,
+        z: Math.floor(idx / 6) * 6 - 6,
+      }));
+  }, [slots, deckFloor]);
 
   // Price Calculation — mirrors backend formula exactly:
   const hourlyRate = useMemo(() => {
@@ -809,7 +859,7 @@ const BookParking = () => {
             className="space-y-6"
           >
             {/* Top Navigation Bar for Step 2 */}
-            <div className="flex items-center justify-between pb-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
               <button
                 type="button"
                 onClick={() => setCurrentStep(1)}
@@ -819,42 +869,110 @@ const BookParking = () => {
                 <span>← Back to Vehicle & Time</span>
               </button>
 
-              <div className="text-right">
-                <span className="text-xs text-gray-400 font-medium">Selected Slot: </span>
-                <span className="font-mono font-bold text-cyan-300">
-                  {selectedSlot ? `Bay #${selectedSlot.number} (Floor ${selectedSlot.floor || 1})` : 'None Selected'}
-                </span>
+              {/* View Mode Toggle: 3D Interactive Deck vs 2D Floor Plan */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setMapViewMode('3d')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                      mapViewMode === '3d' ? 'bg-cyan-500 text-slate-950 shadow-md' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <span>🎮 3D Deck Model</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMapViewMode('2d')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                      mapViewMode === '2d' ? 'bg-cyan-500 text-slate-950 shadow-md' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <span>🗺️ 2D Floor Plan</span>
+                  </button>
+                </div>
+
+                <div className="text-right hidden sm:block">
+                  <span className="text-xs text-gray-400 font-medium">Selected Slot: </span>
+                  <span className="font-mono font-bold text-cyan-300">
+                    {selectedSlot ? `Bay #${selectedSlot.number} (Floor ${selectedSlot.floor || 1})` : 'None Selected'}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* 2D INTERACTIVE PARKING LOT MAP GRID */}
-            <InteractiveFloorMap
-              slots={slots.map((s) => ({
-                _id: s.id,
-                number: s.number,
-                category: s.category,
-                floor: s.floor || 1,
-                status: s.status as ParkingSlotItem['status'],
-                pricePerHour: s.pricePerHour || 30,
-                pricePerDay: s.pricePerDay || 150,
-                isEmergencyBuffer: Boolean(s.isEmergencyBuffer || s.number?.startsWith('BUF') || s.features?.includes('emergency_buffer')),
-                features: s.features,
-              }))}
-              selectedSlotId={selectedSlotId}
-              onSelectSlot={(slot) => {
-                if (slot.isEmergencyBuffer || slot.number?.startsWith('BUF')) {
-                  toast(
-                    `🛡️ Bay ${slot.number} is a System Reserved Emergency Buffer Slot. It is automatically assigned by the Smart Conflict Engine in overstay emergencies (₹0 fee).`,
-                    'info'
-                  );
-                  return;
-                }
-                setSelectedSlotId(slot._id);
-                if (slot.category) {
-                  setCategory(slot.category);
-                }
-              }}
-            />
+            {/* MAP VIEW SELECTION: 3D INTERACTIVE CANVAS OR 2D FLOOR GRID */}
+            {mapViewMode === '3d' ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-xl border border-white/10">
+                    {[1, 2, 3].map((f) => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setDeckFloor(f)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                          deckFloor === f ? 'bg-cyan-500 text-slate-950 shadow' : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        Floor {f}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="text-[11px] text-gray-400 font-medium">
+                    Click any available 3D parking bay to reserve
+                  </span>
+                </div>
+
+                <ThreeDParkingCanvas
+                  slots={threeDSlots}
+                  layoutItems={layoutItems}
+                  selectedSlotId={selectedSlotId}
+                  activeFloor={deckFloor}
+                  onSelectSlot={(slot) => {
+                    if (slot.number?.startsWith('BUF')) {
+                      toast(
+                        `🛡️ Bay ${slot.number} is a System Reserved Emergency Buffer Slot. It is automatically assigned in overstay emergencies.`,
+                        'info'
+                      );
+                      return;
+                    }
+                    setSelectedSlotId(slot.id);
+                    if (slot.category) {
+                      setCategory(slot.category);
+                    }
+                  }}
+                />
+              </div>
+            ) : (
+              <InteractiveFloorMap
+                slots={slots.map((s) => ({
+                  _id: s.id,
+                  number: s.number,
+                  category: s.category,
+                  floor: s.floor || 1,
+                  status: s.status as ParkingSlotItem['status'],
+                  pricePerHour: s.pricePerHour || 30,
+                  pricePerDay: s.pricePerDay || 150,
+                  isEmergencyBuffer: Boolean(s.isEmergencyBuffer || s.number?.startsWith('BUF') || s.features?.includes('emergency_buffer')),
+                  features: s.features,
+                }))}
+                selectedSlotId={selectedSlotId}
+                onSelectSlot={(slot) => {
+                  if (slot.isEmergencyBuffer || slot.number?.startsWith('BUF')) {
+                    toast(
+                      `🛡️ Bay ${slot.number} is a System Reserved Emergency Buffer Slot. It is automatically assigned by the Smart Conflict Engine in overstay emergencies (₹0 fee).`,
+                      'info'
+                    );
+                    return;
+                  }
+                  setSelectedSlotId(slot._id);
+                  if (slot.category) {
+                    setCategory(slot.category);
+                  }
+                }}
+              />
+            )}
 
             {/* STEP 2 BOTTOM BAR: CONFIRM SELECTION & ADVANCE TO STEP 3 */}
             <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-cyan-950/50 to-slate-900 border border-cyan-500/30 flex flex-wrap items-center justify-between gap-4 shadow-xl">

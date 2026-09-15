@@ -51,6 +51,7 @@ interface ThreeDParkingCanvasProps {
   heatmapMode?: boolean;
   // Optional custom layout (falls back to the default campus ground+lane if omitted)
   layoutItems?: ThreeDLayoutItem[];
+  onSelectLayoutItem?: (item: ThreeDLayoutItem) => void;
   // Smart Search (Feature 7): highlight a matched slot distinctly from the AI pick
   highlightedSlotId?: string | null;
   // Admin Layout Designer drag & drop (Feature 2)
@@ -312,17 +313,20 @@ const ThreeDParkingBay: FC<{
 // driving lanes, walking paths, and EV/handicap/VIP zones.
 const ThreeDLayoutElement: FC<{
   item: ThreeDLayoutItem;
+  isSelected?: boolean;
   draggable: boolean;
   onDragStart?: (id: string) => void;
-}> = ({ item, draggable, onDragStart }) => {
+  onSelect?: (item: ThreeDLayoutItem) => void;
+}> = ({ item, isSelected, draggable, onDragStart, onSelect }) => {
   const handlers = {
     onPointerDown: (e: ThreeEvent<PointerEvent>) => {
+      e.stopPropagation();
+      onSelect?.(item);
       if (draggable) {
-        e.stopPropagation();
         onDragStart?.(item.id);
       }
     },
-    onPointerOver: () => { document.body.style.cursor = draggable ? 'grab' : 'auto'; },
+    onPointerOver: () => { document.body.style.cursor = draggable ? 'grab' : 'pointer'; },
     onPointerOut: () => { document.body.style.cursor = 'auto'; },
   };
 
@@ -334,11 +338,21 @@ const ThreeDLayoutElement: FC<{
           <planeGeometry args={[4, 3]} />
           <meshStandardMaterial color={isEntrance ? '#10b981' : '#ef4444'} transparent opacity={0.35} />
         </mesh>
+        {isSelected && (
+          <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[2.2, 2.6, 32]} />
+            <meshBasicMaterial color="#06b6d4" side={THREE.DoubleSide} />
+          </mesh>
+        )}
         <Html center distanceFactor={22}>
           <div
-            className={`font-extrabold text-[10px] px-2.5 py-1 rounded-lg shadow-lg flex items-center gap-1 font-mono tracking-wider ${
-              isEntrance ? 'bg-emerald-500 text-slate-950' : 'bg-red-500 text-white'
-            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect?.(item);
+            }}
+            className={`cursor-pointer font-extrabold text-[10px] px-2.5 py-1 rounded-lg shadow-lg flex items-center gap-1 font-mono tracking-wider transition-all ${
+              isSelected ? 'ring-2 ring-cyan-400 scale-110 ' : ''
+            }${isEntrance ? 'bg-emerald-500 text-slate-950' : 'bg-red-500 text-white'}`}
           >
             {isEntrance ? '➔ ENTRANCE GATE' : 'EXIT GATE ➔'}
           </div>
@@ -359,6 +373,12 @@ const ThreeDLayoutElement: FC<{
           <planeGeometry args={[item.width || 24, 0.25]} />
           <meshBasicMaterial color="#06b6d4" opacity={0.8} transparent />
         </mesh>
+        {isSelected && (
+          <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[3, 3.4, 32]} />
+            <meshBasicMaterial color="#06b6d4" side={THREE.DoubleSide} />
+          </mesh>
+        )}
       </group>
     );
   }
@@ -377,8 +397,22 @@ const ThreeDLayoutElement: FC<{
           <planeGeometry args={[10, 5]} />
           <meshStandardMaterial color="#334155" roughness={0.8} />
         </mesh>
+        {isSelected && (
+          <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[3, 3.4, 32]} />
+            <meshBasicMaterial color="#06b6d4" side={THREE.DoubleSide} />
+          </mesh>
+        )}
         <Html center distanceFactor={25}>
-          <div className="text-[10px] font-mono font-bold text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/40 shadow-lg">
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect?.(item);
+            }}
+            className={`cursor-pointer text-[10px] font-mono font-bold text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/40 shadow-lg ${
+              isSelected ? 'ring-2 ring-cyan-400 scale-110' : ''
+            }`}
+          >
             ↩️ L-Corner Turn
           </div>
         </Html>
@@ -404,8 +438,23 @@ const ThreeDLayoutElement: FC<{
         <ringGeometry args={[(item.width || 8) / 2 - 0.1, (item.width || 8) / 2, 32]} />
         <meshBasicMaterial color={style.color} side={THREE.DoubleSide} transparent opacity={0.6} />
       </mesh>
+      {isSelected && (
+        <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[(item.width || 8) / 2, (item.width || 8) / 2 + 0.3, 32]} />
+          <meshBasicMaterial color="#06b6d4" side={THREE.DoubleSide} />
+        </mesh>
+      )}
       <Html center distanceFactor={28}>
-        <div className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-900/80" style={{ color: style.color }}>
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect?.(item);
+          }}
+          className={`cursor-pointer text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-900/80 ${
+            isSelected ? 'ring-2 ring-cyan-400 scale-110' : ''
+          }`}
+          style={{ color: style.color }}
+        >
           {style.label}
         </div>
       </Html>
@@ -527,6 +576,7 @@ export const ThreeDParkingCanvas: FC<ThreeDParkingCanvasProps> = ({
   activeFloor,
   heatmapMode = false,
   layoutItems,
+  onSelectLayoutItem,
   highlightedSlotId,
   draggableIds,
   onItemDrag,
@@ -550,7 +600,7 @@ export const ThreeDParkingCanvas: FC<ThreeDParkingCanvasProps> = ({
 
   const selectedSlot = visibleSlots.find((s) => s.id === selectedSlotId || s.number === selectedSlotId);
 
-  const isDraggable = (id: string) => !!draggableIds?.includes(id);
+  const isDraggable = (id: string) => !draggableIds || draggableIds.includes(id);
 
   const handleDragMove = (x: number, z: number) => {
     if (!draggingId) return;
@@ -611,7 +661,9 @@ export const ThreeDParkingCanvas: FC<ThreeDParkingCanvasProps> = ({
               <ThreeDLayoutElement
                 key={item.id}
                 item={item}
+                isSelected={item.id === selectedSlotId}
                 draggable={isDraggable(item.id)}
+                onSelect={onSelectLayoutItem}
                 onDragStart={setDraggingId}
               />
             ))}

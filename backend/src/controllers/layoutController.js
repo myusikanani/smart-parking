@@ -91,17 +91,30 @@ const saveLayout = async (req, res) => {
       if (!s.slotNumber) continue;
       const cat = ['two-wheeler', 'four-wheeler', 'ev', 'disabled'].includes(s.category)
         ? s.category
-        : 'four-wheeler';
+        : (s.category === 'vip' ? 'four-wheeler' : 'four-wheeler');
+
+      const defaultPrice = cat === 'two-wheeler' ? 15 : cat === 'ev' ? 40 : s.category === 'vip' ? 50 : cat === 'disabled' ? 20 : 30;
 
       await ParkingSlot.findOneAndUpdate(
         { number: s.slotNumber },
         {
-          number: s.slotNumber,
-          floor: targetFloor,
-          category: cat,
-          x: Number(s.x || 0),
-          z: Number(s.z || 0),
-          ...(s.isEmergencyBuffer !== undefined ? { isEmergencyBuffer: s.isEmergencyBuffer } : {})
+          $set: {
+            number: s.slotNumber,
+            floor: targetFloor,
+            category: cat,
+            x: Number(s.x || 0),
+            z: Number(s.z || 0),
+            ...(s.isEmergencyBuffer !== undefined ? { isEmergencyBuffer: s.isEmergencyBuffer } : {})
+          },
+          $setOnInsert: {
+            status: 'available',
+            pricePerHour: defaultPrice,
+            pricePerDay: defaultPrice * 6,
+            pricePerMonth: defaultPrice * 100,
+            location: 'City Center Hub (Downtown)',
+            zone: 'A',
+            features: cat === 'ev' ? ['ev-charging', 'cctv'] : ['cctv', 'covered']
+          }
         },
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
@@ -110,7 +123,7 @@ const saveLayout = async (req, res) => {
     res.status(200).json({
       success: true,
       layout,
-      message: `Floor ${targetFloor} 3D layout & ${slotItems.length} parking slots synchronized across the system!`
+      message: `Floor ${targetFloor} 3D layout & ${slotItems.length} parking slots synchronized in MongoDB database!`
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

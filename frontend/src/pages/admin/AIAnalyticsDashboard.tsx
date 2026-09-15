@@ -10,7 +10,7 @@ import {
 } from 'react-icons/hi2';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import ThreeDParkingCanvas from '../../components/ThreeDParkingCanvas';
-import type { ThreeDSlotData } from '../../components/ThreeDParkingCanvas';
+import type { ThreeDSlotData, ThreeDLayoutItem } from '../../components/ThreeDParkingCanvas';
 import { slotApi, layoutApi } from '../../services/api';
 
 const weeklyData = [
@@ -37,6 +37,7 @@ export const AIAnalyticsDashboard: FC = () => {
   const [activeFloor, setActiveFloor] = useState<number>(1);
   const [heatmapMode, setHeatmapMode] = useState(true);
   const [slots, setSlots] = useState<ThreeDSlotData[]>([]);
+  const [layoutItems, setLayoutItems] = useState<ThreeDLayoutItem[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -51,12 +52,26 @@ export const AIAnalyticsDashboard: FC = () => {
               id: String(it.id || it.slotNumber),
               number: String(it.slotNumber || 'BAY'),
               category: String(it.category || 'four-wheeler'),
-              status: 'available',
+              status: String(it.status || 'available'),
               floor: activeFloor,
               x: Number(it.x || 0),
               z: Number(it.z || 0),
               rotation: Number(it.rotation || 0),
             }));
+
+          const nonSlots: ThreeDLayoutItem[] = res.layout.items
+            .filter((it: Record<string, unknown>) => it.type !== 'slot')
+            .map((it: Record<string, unknown>) => ({
+              id: String(it.id || `${it.type}-${activeFloor}`),
+              type: String(it.type) as ThreeDLayoutItem['type'],
+              x: Number(it.x || 0),
+              z: Number(it.z || 0),
+              rotation: Number(it.rotation || 0),
+              floor: activeFloor,
+            }));
+
+          setLayoutItems(nonSlots);
+
           if (lSlots.length > 0) {
             setSlots(lSlots);
             return;
@@ -171,6 +186,7 @@ export const AIAnalyticsDashboard: FC = () => {
 
         <ThreeDParkingCanvas
           slots={slots}
+          layoutItems={layoutItems}
           activeFloor={activeFloor}
           heatmapMode={heatmapMode}
         />
