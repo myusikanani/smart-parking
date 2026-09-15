@@ -25,7 +25,7 @@ import { useNavigate } from 'react-router-dom';
 import ParkEaseHeroIsometric3D from '../components/3d/ParkEaseHeroIsometric3D';
 import { CarSedan, ElectricCar, BikeScooter } from '../components/vehicles';
 
-// 6 Feature Cards matching mockup in English
+// 6 Feature Cards in 100% Clean English
 const featureCards = [
   {
     icon: HiOutlineCpuChip,
@@ -33,7 +33,7 @@ const featureCards = [
     badgeText: 'IoT SENSOR',
     badgeColor: 'text-[#00FFA3] bg-[#00FFA3]/10 border-[#00FFA3]/30',
     title: 'IoT Device',
-    description: 'High-frequency ultrasonic & optical bay sensors detect vehicle occupancy in 10ms, synchronizing with smart barriers.',
+    description: 'High-frequency ultrasonic & optical bay sensors detect vehicle occupancy in 10ms, synchronizing with automated barrier gates.',
     iconColor: 'text-[#00D2FF]',
     glowColor: 'hover:shadow-[0_0_25px_rgba(0,255,163,0.25)] hover:border-[#00FFA3]/40',
   },
@@ -43,7 +43,7 @@ const featureCards = [
     badgeText: '24/7 AI HELP',
     badgeColor: 'text-[#00D2FF] bg-[#00D2FF]/10 border-[#00D2FF]/30',
     title: '24/7 Support',
-    description: 'Continuous automated AI concierge and live human operator fallback for seamless lane clearances and instant roadside assistance.',
+    description: 'Continuous automated AI concierge and live operator fallback for automated lane clearances and instant roadside assistance.',
     iconColor: 'text-[#00FFA3]',
     glowColor: 'hover:shadow-[0_0_25px_rgba(0,210,255,0.25)] hover:border-[#00D2FF]/40',
   },
@@ -63,7 +63,7 @@ const featureCards = [
     badgeText: 'LIVE GPS',
     badgeColor: 'text-[#00FFA3] bg-[#00FFA3]/10 border-[#00FFA3]/30',
     title: 'Live Navigation',
-    description: 'Turn-by-turn indoor wayfinding directs your vehicle straight to your reserved bay number without circling or delay.',
+    description: 'Turn-by-turn indoor 3D wayfinding directs your vehicle straight to your reserved bay without circling or guessing.',
     iconColor: 'text-[#00FFA3]',
     glowColor: 'hover:shadow-[0_0_25px_rgba(0,255,163,0.25)] hover:border-[#00FFA3]/40',
   },
@@ -73,7 +73,7 @@ const featureCards = [
     badgeText: 'FAIR RATES',
     badgeColor: 'text-[#00D2FF] bg-[#00D2FF]/10 border-[#00D2FF]/30',
     title: 'Dynamic Rates',
-    description: 'Transparent live pricing, off-peak discounts, and instant cashless digital wallet billing with automated e-invoicing.',
+    description: 'Transparent live pricing, off-peak discounts, and instant cashless digital wallet checkout with automated e-invoicing.',
     iconColor: 'text-[#00D2FF]',
     glowColor: 'hover:shadow-[0_0_25px_rgba(0,210,255,0.25)] hover:border-[#00D2FF]/40',
   },
@@ -89,33 +89,33 @@ const featureCards = [
   },
 ];
 
-// 4 Simple Steps Timeline in English
+// 4 Simple Steps Timeline in 100% English
 const roadmapSteps = [
   {
     id: 1,
     num: '1',
-    title: 'Online Booking',
-    sub: 'Select Spot & Time',
-    tag: 'Step 01: Spot Selection',
+    title: 'Search Spot',
+    sub: 'Online Booking & Time',
+    tag: 'Step 01: Search Spot',
     shortDesc: 'Choose your destination & preferred parking bay.',
-    details: 'Browse live occupancy on the 3D map, reserve your spot in advance, and receive an instant digital QR parking pass.',
+    details: 'Browse real-time bay availability on the 3D map, reserve your spot in advance, and receive an instant digital QR parking pass.',
     icon: HiOutlineArrowDownTray,
   },
   {
     id: 2,
     num: '2',
-    title: 'Get to Node',
+    title: 'Navigate',
     sub: 'GPS Indoor Routing',
-    tag: 'Step 02: GPS Navigation',
+    tag: 'Step 02: Navigation',
     shortDesc: 'Follow turn-by-turn indoor routing directly to the gate.',
-    details: 'Autonomous GPS guidance navigates you directly to the entrance sensor node without traffic delays.',
+    details: 'Autonomous GPS guidance navigates you directly to the entrance sensor node without circling or delays.',
     icon: HiOutlineUserPlus,
   },
   {
     id: 3,
     num: '3',
-    title: 'Start & Slide',
-    sub: 'Contactless Gate Entry',
+    title: 'Contactless Entry',
+    sub: 'Automatic Barrier Gate',
     tag: 'Step 03: Contactless Entry',
     shortDesc: 'Drive through smoothly as the barrier automatically lifts.',
     details: 'IoT camera or QR scanner verifies your booking in <0.3s. The glowing laser trail lights up your assigned bay.',
@@ -124,23 +124,23 @@ const roadmapSteps = [
   {
     id: 4,
     num: '4',
-    title: 'Scan & Pay',
-    sub: 'Go to Spot & Exit',
+    title: 'Express Exit',
+    sub: 'Scan & Pay / Departure',
     tag: 'Step 04: Express Exit',
     shortDesc: 'Automatic cashless settlement and seamless departure.',
-    details: 'Exit effortlessly with automatic wallet settlement or contactless tap with automated digital receipts.',
+    details: 'Exit effortlessly with automatic wallet settlement or contactless tap with instant digital receipts.',
     icon: HiOutlineMapPin,
   },
 ];
 
-// Built for Everyone Audience Cards (Drivers, Operators, Business & Fleet)
+// Built for Everyone Audience Cards (Drivers, Fleet Operators, Valet Managers)
 const audienceCards = [
   {
     title: 'For Drivers',
     type: 'mobile',
     points: [
       'Guaranteed spot reservation before arrival',
-      'Turn-by-turn indoor bay navigation',
+      'Turn-by-turn indoor 3D bay guidance',
       'Contactless QR code & LPR gate entry',
       'Instant digital wallet payment & receipts',
       'Live booking history & pass re-downloads',
@@ -149,7 +149,7 @@ const audienceCards = [
     badgeColor: 'text-[#00FFA3] bg-[#00FFA3]/10 border-[#00FFA3]/30',
   },
   {
-    title: 'For Operators',
+    title: 'For Fleet Operators',
     type: 'tablet',
     points: [
       'Real-time bay occupancy radar dashboard',
@@ -158,11 +158,11 @@ const audienceCards = [
       'High-accuracy vehicle plate audit logs',
       'Automated daily revenue and overstay reports',
     ],
-    badgeText: 'FACILITY MANAGER',
+    badgeText: 'FLEET OPERATOR',
     badgeColor: 'text-[#00D2FF] bg-[#00D2FF]/10 border-[#00D2FF]/30',
   },
   {
-    title: 'For Fleets & VIPs',
+    title: 'For Valet Managers',
     type: 'mobile-fleet',
     points: [
       'Multi-vehicle corporate accounts & passes',
@@ -171,7 +171,7 @@ const audienceCards = [
       'Express VIP gate lanes with zero delay',
       'Dedicated 24/7 enterprise concierge',
     ],
-    badgeText: 'ENTERPRISE FLEET',
+    badgeText: 'VALET & ENTERPRISE',
     badgeColor: 'text-[#00FFA3] bg-[#00FFA3]/10 border-[#00FFA3]/30',
   },
 ];
@@ -205,7 +205,7 @@ const testimonials = [
 const faqs = [
   {
     q: 'How can I reserve a parking spot in advance?',
-    a: 'Simply click "Book Parking", select your desired garage location, choose your vehicle type, and pick a time slot. Once confirmed, you will instantly receive your encrypted digital QR parking pass.',
+    a: 'Simply click "Book Parking Now", select your desired garage location, choose your vehicle type, and pick a time slot. Once confirmed, you will instantly receive your encrypted digital QR parking pass.',
   },
   {
     q: 'What are the contactless entry options?',
@@ -242,16 +242,56 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-[#080C15] text-white font-sora overflow-x-hidden selection:bg-[#00FFA3] selection:text-black">
 
-      {/* Perspective 3D Grid Background in Hero Area */}
+      {/* Global Glowing Light Trails Background Canvas */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute inset-0 cyber-grid-floor opacity-35" />
         <div className="absolute top-[-10%] left-[15%] w-[550px] h-[550px] bg-[#00D2FF]/10 rounded-full blur-[140px]" />
         <div className="absolute top-[35%] right-[10%] w-[650px] h-[650px] bg-[#00FFA3]/08 rounded-full blur-[160px]" />
         <div className="absolute bottom-[20%] left-[5%] w-[550px] h-[550px] bg-[#00D2FF]/08 rounded-full blur-[140px]" />
+
+        {/* High-visibility SVG Neon Glow Light-Trail Paths (#00F2FE and #4FACFE) */}
+        <svg className="absolute inset-0 w-full h-full opacity-60" preserveAspectRatio="none" viewBox="0 0 1440 900">
+          <defs>
+            <linearGradient id="neonTrail1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#00F2FE" stopOpacity="0.8" />
+              <stop offset="50%" stopColor="#4FACFE" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#00FFA3" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="neonTrail2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#4FACFE" stopOpacity="0.6" />
+              <stop offset="70%" stopColor="#00F2FE" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#00FFA3" stopOpacity="0" />
+            </linearGradient>
+            <filter id="neonBlur" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="8" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/* Flowing curve from Hero right down to Steps left */}
+          <path
+            d="M 980 180 C 720 280, 420 460, 260 620 C 140 740, 200 860, 480 890"
+            fill="none"
+            stroke="url(#neonTrail1)"
+            strokeWidth="3.5"
+            filter="url(#neonBlur)"
+            strokeDasharray="16 8"
+          />
+          <path
+            d="M 1020 190 C 760 290, 460 470, 300 630 C 180 750, 240 870, 520 900"
+            fill="none"
+            stroke="url(#neonTrail2)"
+            strokeWidth="1.5"
+            filter="url(#neonBlur)"
+          />
+        </svg>
       </div>
 
       {/* =========================================================================
-          1. HERO SECTION (100% English - ParkEase Smart Parking)
+          1. HERO SECTION (ParkEase Smart Parking - 100% English)
           ========================================================================= */}
       <section className="relative z-10 pt-28 pb-20 lg:pt-36 lg:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
@@ -278,16 +318,16 @@ export default function Landing() {
 
             {/* Subtitle */}
             <p className="text-base sm:text-lg text-gray-300 max-w-lg leading-relaxed font-sans">
-              Real-time parking solutions at your fingertips. Next-generation predictive parking platform powered by autonomous IoT sensor networks, automated gates, and turn-by-turn indoor wayfinding.
+              Effortless, intelligent parking management powered by real-time IoT sensors and 3D navigation.
             </p>
 
-            {/* CTA Buttons Row Matching Mockup */}
+            {/* Hero CTA Buttons */}
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <button
                 onClick={() => navigate('/book-parking')}
                 className="parkease-cyan-btn px-7 py-3.5 rounded-2xl text-sm sm:text-base font-bold flex items-center gap-2.5 transition-all shadow-xl shadow-cyan-500/30 group cursor-pointer"
               >
-                <span>Book Parking</span>
+                <span>Book Parking Now</span>
                 <HiOutlineCursorArrowRays className="w-4 h-4 group-hover:scale-125 transition-transform text-[#00FFA3]" />
               </button>
 
@@ -295,8 +335,15 @@ export default function Landing() {
                 onClick={() => navigate('/available-slots')}
                 className="cyber-btn-shimmer px-6 py-3.5 rounded-2xl text-sm sm:text-base font-semibold transition-all flex items-center gap-2 cursor-pointer"
               >
-                <span>Explore</span>
+                <span>Explore Spots</span>
                 <HiOutlineArrowRight className="w-4 h-4 text-[#00FFA3]" />
+              </button>
+
+              <button
+                onClick={() => navigate('/waiting-list')}
+                className="px-5 py-3 rounded-2xl text-xs sm:text-sm font-semibold text-gray-400 hover:text-white border border-white/10 hover:border-cyan-500/40 transition-all cursor-pointer backdrop-blur-md"
+              >
+                Join Waitlist
               </button>
             </div>
 
@@ -317,27 +364,27 @@ export default function Landing() {
             </div>
           </motion.div>
 
-          {/* Right 3D Isometric Visual with Vehicles, Routes, and Price Tags */}
+          {/* Right 3D Isometric Visual with Explicit Sizing Container */}
           <motion.div
             initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.9, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-6 relative"
+            className="lg:col-span-6 relative w-full min-h-[440px] lg:h-[520px] flex items-center justify-center"
           >
             {/* 3D Isometric Parking Lot Scene with Moving Car & HUD */}
             <ParkEaseHeroIsometric3D />
 
             {/* Glowing Neon Trail flowing toward bottom-left */}
-            <div className="absolute -bottom-10 -left-12 w-64 h-24 pointer-events-none opacity-70 hidden md:block">
+            <div className="absolute -bottom-10 -left-12 w-64 h-24 pointer-events-none opacity-80 hidden md:block">
               <svg viewBox="0 0 200 80" fill="none" className="w-full h-full">
                 <path
                   d="M180 10 C120 20, 60 60, 10 75"
-                  stroke="url(#neon-laser-grad-en)"
+                  stroke="url(#neon-laser-grad-3)"
                   strokeWidth="3.5"
                   strokeLinecap="round"
                 />
                 <defs>
-                  <linearGradient id="neon-laser-grad-en" x1="180" y1="10" x2="10" y2="75" gradientUnits="userSpaceOnUse">
+                  <linearGradient id="neon-laser-grad-3" x1="180" y1="10" x2="10" y2="75" gradientUnits="userSpaceOnUse">
                     <stop stopColor="#00FFA3" />
                     <stop offset="0.5" stopColor="#00D2FF" />
                     <stop offset="1" stopColor="#00D2FF" stopOpacity="0" />
@@ -426,7 +473,7 @@ export default function Landing() {
       </section>
 
       {/* =========================================================================
-          3. "FOUR SIMPLE STEPS" (Laser Guidance Path & 4-Car Road Progression)
+          3. "FOUR SIMPLE STEPS" (Laser Guidance Path & 4-Car Highway Track)
           ========================================================================= */}
       <section className="relative z-10 py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
         <div className="text-center max-w-2xl mx-auto mb-16">
@@ -449,10 +496,10 @@ export default function Landing() {
           </motion.p>
         </div>
 
-        {/* Stepper Navigation Buttons (1, 2, 3, 4) with Laser Line */}
+        {/* Stepper Navigation Buttons (1, 2, 3, 4) with Laser Connecting Line */}
         <div className="relative mb-12 max-w-4xl mx-auto">
           {/* Background Connecting Laser Line */}
-          <div className="absolute top-6 left-8 right-8 h-1 bg-slate-800 rounded-full z-0 hidden sm:block">
+          <div className="absolute top-6 left-8 right-8 h-1.5 bg-slate-800 rounded-full z-0 hidden sm:block">
             <motion.div
               className="h-full cyber-laser-line rounded-full"
               animate={{
@@ -498,7 +545,7 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* Step Preview Box with Preview Cards & 4-Car Track */}
+        {/* Step Preview Box with Preview Cards & 4-Car Highway Track */}
         <div className="relative max-w-5xl mx-auto bg-gradient-to-b from-[#0a152d] via-[#070e20] to-[#050a14] rounded-3xl p-6 sm:p-10 border border-[#00D2FF]/25 shadow-[0_0_40px_rgba(0,210,255,0.15)] overflow-hidden">
           
           {/* Step 1 & 2 Interactive Glass Preview Cards directly below tabs */}
@@ -566,7 +613,7 @@ export default function Landing() {
                     <span className={`text-xs font-space font-bold mt-2 px-2.5 py-0.5 rounded-full transition-colors ${
                       isActive ? 'bg-[#00FFA3] text-black shadow-[0_0_12px_#00FFA3]' : 'text-gray-500 bg-slate-900/60'
                     }`}>
-                      Node {step.num}
+                      Step 0{step.num}
                     </span>
                   </motion.div>
                 );
@@ -607,7 +654,7 @@ export default function Landing() {
       </section>
 
       {/* =========================================================================
-          4. "BUILT FOR EVERYONE" (Drivers, Operators, Business & Fleet)
+          4. "BUILT FOR EVERYONE" (Drivers, Fleet Operators, Valet Managers)
           ========================================================================= */}
       <section className="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="text-center max-w-2xl mx-auto mb-14">
