@@ -1100,57 +1100,209 @@ export default function Landing() {
       </section>
 
       {/* =========================================================================
-          7. "READY TO GET STARTED?" (Glowing Blueprint Wireframe & Radiant Gold Button)
+          7. "READY TO GET STARTED?" (Screenshot-Exact Glassmorphic Card & Golden Car Swoosh)
           ========================================================================= */}
-      <section className="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#0a152d] via-[#091836] to-[#0a152d] border border-[#00D2FF]/30 p-10 sm:p-16 text-center shadow-[0_0_60px_rgba(0,210,255,0.2)]">
+      <section className="relative z-10 py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
+        
+        {/* Outer Banner Wrapper with Royal Ocean Blue Ambient Lighting */}
+        <div className="relative rounded-[2.5rem] overflow-hidden bg-gradient-to-r from-[#031435] via-[#07245c] to-[#041a45] border border-[#00D2FF]/30 p-6 sm:p-12 shadow-[0_0_80px_rgba(2,132,199,0.35)]">
           
-          {/* Detailed Glowing Blueprint / Wireframe Illustration of Car with Light Trails */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
-            <svg
-              viewBox="0 0 800 240"
-              fill="none"
-              className="w-full max-w-4xl h-auto"
-            >
+          {/* Luminous Glowing Electric-Blue Swoosh Light-Trail streaming from Golden Car to Top-Right */}
+          <svg
+            className="absolute inset-0 w-full h-full pointer-events-none z-10"
+            viewBox="0 0 1000 400"
+            preserveAspectRatio="none"
+            fill="none"
+          >
+            <defs>
+              <linearGradient id="swooshTrailGrad1" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.8" />
+                <stop offset="25%" stopColor="#00FFA3" stopOpacity="0.85" />
+                <stop offset="60%" stopColor="#00F2FE" stopOpacity="0.95" />
+                <stop offset="100%" stopColor="#FFFFFF" stopOpacity="1" />
+              </linearGradient>
+
+              <linearGradient id="swooshTrailGrad2" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.4" />
+                <stop offset="30%" stopColor="#00D2FF" stopOpacity="0.7" />
+                <stop offset="80%" stopColor="#4FACFE" stopOpacity="0.85" />
+                <stop offset="100%" stopColor="#00F2FE" stopOpacity="0.95" />
+              </linearGradient>
+
+              <filter id="swooshGlow" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="8" result="blur1" />
+                <feGaussianBlur stdDeviation="3.5" result="blur2" />
+                <feMerge>
+                  <feMergeNode in="blur1" />
+                  <feMergeNode in="blur2" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            {/* Wide Soft Smoke Trail */}
+            <path
+              d="M 580 270 C 670 270, 790 255, 855 185 C 915 120, 945 50, 965 0"
+              stroke="url(#swooshTrailGrad2)"
+              strokeWidth="16"
+              strokeOpacity="0.45"
+              filter="url(#swooshGlow)"
+              strokeLinecap="round"
+            />
+
+            {/* Core Glowing Streamline */}
+            <path
+              d="M 580 270 C 670 270, 790 255, 855 185 C 915 120, 945 50, 965 0"
+              stroke="url(#swooshTrailGrad1)"
+              strokeWidth="4"
+              filter="url(#swooshGlow)"
+              strokeLinecap="round"
+              className="animate-road-flow-fast"
+              strokeDasharray="25 8"
+            />
+
+            {/* Parallel Fine White Stream */}
+            <path
+              d="M 590 265 C 680 265, 800 245, 865 175 C 925 110, 955 40, 975 0"
+              stroke="#FFFFFF"
+              strokeWidth="1.8"
+              strokeOpacity="0.9"
+              filter="url(#swooshGlow)"
+            />
+            {/* Parallel Cyan Ribbon */}
+            <path
+              d="M 590 275 C 680 275, 780 265, 845 195 C 905 130, 935 60, 955 0"
+              stroke="#00F2FE"
+              strokeWidth="2.2"
+              strokeOpacity="0.8"
+              filter="url(#swooshGlow)"
+            />
+          </svg>
+
+          {/* Bottom Right Glowing 4-Point Diamond Star */}
+          <div className="absolute bottom-6 right-12 z-10 pointer-events-none opacity-90 animate-pulse">
+            <svg viewBox="0 0 100 100" className="w-20 sm:w-28 h-20 sm:h-28 drop-shadow-[0_0_25px_#00D2FF]">
               <path
-                d="M 100 180 C 130 180, 160 130, 240 120 C 300 80, 480 75, 580 120 C 650 125, 720 150, 750 180 Z"
-                stroke="#00D2FF"
-                strokeWidth="2.5"
-                strokeDasharray="8 4"
+                d="M 50 0 C 50 35, 65 50, 100 50 C 65 50, 50 65, 50 100 C 50 65, 35 50, 0 50 C 35 50, 50 35, 50 0 Z"
+                fill="url(#diamondStarGrad)"
               />
-              <circle cx="210" cy="180" r="32" stroke="#00FFA3" strokeWidth="2" />
-              <circle cx="630" cy="180" r="32" stroke="#00FFA3" strokeWidth="2" />
-              <path
-                d="M 280 120 C 330 90, 460 85, 540 120 Z"
-                stroke="#00FFA3"
-                strokeWidth="1.5"
-              />
+              <defs>
+                <linearGradient id="diamondStarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#FFFFFF" />
+                  <stop offset="35%" stopColor="#38BDF8" />
+                  <stop offset="100%" stopColor="#0284C7" />
+                </linearGradient>
+              </defs>
             </svg>
           </div>
 
-          <div className="absolute top-4 right-10 text-[#00FFA3] opacity-60 text-lg animate-pulse">
-            ✦
-          </div>
-          <div className="absolute bottom-6 left-12 text-[#00D2FF] opacity-50 text-base animate-pulse">
-            ✦
-          </div>
+          {/* Inner Centered Glassmorphic Elevated Card */}
+          <div className="relative z-20 max-w-3xl mx-auto rounded-3xl bg-[#091e4a]/75 border border-[#00D2FF]/25 backdrop-blur-2xl p-8 sm:p-12 text-center shadow-[0_20px_50px_rgba(0,0,0,0.55)]">
+            
+            {/* Top Glowing Wireframe Car Front Icon */}
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-14 h-14 rounded-2xl bg-[#0a2355] border border-cyan-400/40 flex items-center justify-center text-cyan-300 shadow-[0_0_25px_rgba(0,210,255,0.35)]">
+                <svg viewBox="0 0 32 32" className="w-8 h-8 fill-none stroke-current" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  {/* Roof & Windshield */}
+                  <path d="M 9 13 L 11 7 C 11.5 5.5, 20.5 5.5, 21 7 L 23 13 Z" />
+                  {/* Body Contour */}
+                  <path d="M 6 13 C 5 14, 5 19, 5 21 C 5 23, 7 24, 8 24 L 24 24 C 25 24, 27 23, 27 21 C 27 19, 27 14, 26 13 Z" />
+                  {/* Headlights */}
+                  <circle cx="9" cy="18" r="1.5" className="fill-cyan-300" />
+                  <circle cx="23" cy="18" r="1.5" className="fill-cyan-300" />
+                  {/* Front Grille */}
+                  <line x1="13" y1="20" x2="19" y2="20" />
+                  <line x1="14" y1="22" x2="18" y2="22" />
+                  {/* Wheels */}
+                  <rect x="4" y="21" width="2" height="4" rx="1" className="fill-cyan-400" />
+                  <rect x="26" y="21" width="2" height="4" rx="1" className="fill-cyan-400" />
+                </svg>
+              </div>
+            </div>
 
-          <div className="relative z-10 max-w-2xl mx-auto space-y-5">
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-              Ready to park smarter?
+            {/* Headline */}
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight mb-3">
+              Ready to get started?
             </h2>
-            <p className="text-sm sm:text-base text-gray-300 font-sans">
-              Reserve your slot in seconds with real-time 3D navigation and contactless gate access.
+
+            {/* Subtitle */}
+            <p className="text-xs sm:text-sm text-gray-300 max-w-lg mx-auto leading-relaxed mb-8 font-sans">
+              Join thousands of smart commuters and facility owners on the connected smart parking network.
             </p>
 
-            <div className="pt-3">
-              <button
-                onClick={() => navigate('/book-parking')}
-                className="parkease-gold-btn px-10 py-4 rounded-2xl text-base sm:text-lg font-bold inline-flex items-center gap-2 cursor-pointer shadow-[0_0_35px_rgba(245,158,11,0.5)]"
-              >
-                <span>Book Now 🚗</span>
-              </button>
+            {/* Center Row: Concentric Radio Arcs + Glowing Golden Button + Metallic Golden Car Silhouette */}
+            <div className="flex items-center justify-center gap-3 relative">
+              
+              {/* Concentric Sonic / Radio Pulse Arcs on Left */}
+              <div className="flex items-center gap-1 opacity-70">
+                <svg viewBox="0 0 24 36" className="w-5 h-8 text-amber-400/80">
+                  <path d="M 18 4 C 10 10, 10 26, 18 32" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M 10 9 C 5 13, 5 23, 10 27" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" opacity="0.6" />
+                </svg>
+              </div>
+
+              {/* Glowing Golden Button */}
+              <div className="relative group">
+                {/* Sonar Glow Ring */}
+                <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 opacity-60 blur-md group-hover:opacity-100 transition-opacity" />
+                
+                <button
+                  onClick={() => navigate('/book-parking')}
+                  className="relative px-9 py-3.5 rounded-full bg-gradient-to-r from-[#FDE047] via-[#F59E0B] to-[#D97706] text-black font-extrabold text-sm sm:text-base flex items-center gap-2 shadow-[0_0_35px_rgba(245,158,11,0.75)] hover:scale-105 active:scale-95 transition-all cursor-pointer border border-amber-200"
+                >
+                  <span>Book now</span>
+                  <span className="text-lg font-bold">›</span>
+                </button>
+              </div>
+
+              {/* Metallic Golden Luxury Car (Facing Right toward the Swoosh) */}
+              <div className="relative flex items-center">
+                <svg viewBox="0 0 100 50" className="w-20 sm:w-24 h-auto drop-shadow-[0_0_18px_rgba(245,158,11,0.65)]">
+                  <defs>
+                    <linearGradient id="goldCarBodyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#78350F" />
+                      <stop offset="35%" stopColor="#F59E0B" />
+                      <stop offset="70%" stopColor="#FEF08A" />
+                      <stop offset="100%" stopColor="#F59E0B" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Ground Shadow */}
+                  <ellipse cx="50" cy="25" rx="44" ry="14" fill="#000000" opacity="0.6" />
+                  
+                  {/* Tires */}
+                  <rect x="18" y="5" width="16" height="6" rx="2" fill="#18181b" stroke="#FBBF24" strokeWidth="0.8" />
+                  <rect x="66" y="5" width="16" height="6" rx="2" fill="#18181b" stroke="#FBBF24" strokeWidth="0.8" />
+                  <rect x="18" y="39" width="16" height="6" rx="2" fill="#18181b" stroke="#FBBF24" strokeWidth="0.8" />
+                  <rect x="66" y="39" width="16" height="6" rx="2" fill="#18181b" stroke="#FBBF24" strokeWidth="0.8" />
+
+                  {/* Golden Aerodynamic Car Body */}
+                  <path
+                    d="M 12 25 C 10 18, 18 10, 36 9 C 58 8, 76 10, 88 17 C 94 21, 94 29, 88 33 C 76 40, 58 42, 36 41 C 18 40, 10 32, 12 25 Z"
+                    fill="url(#goldCarBodyGrad)"
+                    stroke="#FDE047"
+                    strokeWidth="1.2"
+                  />
+
+                  {/* Panoramic Tinted Windshield & Roof */}
+                  <path
+                    d="M 32 25 C 30 18, 38 14, 52 14 C 64 14, 70 17, 72 25 C 70 33, 64 36, 52 36 C 38 36, 30 32, 32 25 Z"
+                    fill="#0a0a0c"
+                    stroke="#FBBF24"
+                    strokeWidth="0.8"
+                  />
+
+                  {/* Dual Xenon Headlights (Front Right) */}
+                  <circle cx="86" cy="18" r="2.5" fill="#FFFFFF" />
+                  <circle cx="86" cy="32" r="2.5" fill="#FFFFFF" />
+
+                  {/* Rear LED Strip (Back Left) */}
+                  <path d="M 14 18 C 12 22, 12 28, 14 32" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+              </div>
+
             </div>
+
           </div>
 
         </div>
