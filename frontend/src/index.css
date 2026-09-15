@@ -1323,6 +1323,37 @@ html.dark .sidebar-item-inactive:hover {
   transform: scale(1.02);
 }
 
+/* Gold Radiant Button for Bottom CTA */
+.parkease-gold-btn {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 50%, #B45309 100%);
+  color: #000000;
+  font-weight: 800;
+  border: 1px solid rgba(251, 191, 36, 0.6);
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.45), 0 4px 15px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.parkease-gold-btn:hover {
+  background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 50%, #D97706 100%);
+  box-shadow: 0 0 35px rgba(245, 158, 11, 0.7), 0 6px 20px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* Cyan Primary Button */
+.parkease-cyan-btn {
+  background: linear-gradient(135deg, #00D2FF 0%, #00FFA3 100%);
+  color: #050B14;
+  font-weight: 800;
+  border: 1px solid rgba(0, 255, 163, 0.6);
+  box-shadow: 0 0 25px rgba(0, 210, 255, 0.4);
+  transition: all 0.3s ease;
+}
+
+.parkease-cyan-btn:hover {
+  box-shadow: 0 0 35px rgba(0, 255, 163, 0.6);
+  transform: translateY(-2px) scale(1.02);
+}
+
 /* Sonar Radar Pulse */
 @keyframes sonarPulse {
   0% { transform: scale(0.6); opacity: 0.9; }
@@ -1339,5 +1370,48 @@ html.dark .sidebar-item-inactive:hover {
   background: linear-gradient(90deg, #00d2ff 0%, #00ffa3 50%, #00d2ff 100%);
   box-shadow: 0 0 15px #00d2ff, 0 0 30px #00ffa3;
 }
+
+/* Flowing Roadway Dash Animation */
+@keyframes roadDashFlow {
+  0% {
+    stroke-dashoffset: 200;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-road-flow {
+  animation: roadDashFlow 4s linear infinite;
+}
+
+@keyframes roadDashFlowFast {
+  0% {
+    stroke-dashoffset: 120;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-road-flow-fast {
+  animation: roadDashFlowFast 2s linear infinite;
+}
+
+/* Radar Sweep Animation */
+@keyframes radarSweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-radar-sweep {
+  transform-origin: center;
+  animation: radarSweep 8s linear infinite;
+}
+
 
 

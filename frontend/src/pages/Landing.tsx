@@ -2,13 +2,10 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   HiOutlineQrCode,
-  HiOutlineClock,
   HiOutlineShieldCheck,
-  HiOutlineCalendarDays,
   HiOutlineChevronDown,
   HiOutlineArrowRight,
   HiOutlineMapPin,
-  HiOutlineUsers,
   HiOutlineStar,
   HiOutlineCpuChip,
   HiOutlineChatBubbleLeftRight,
@@ -18,8 +15,10 @@ import {
   HiOutlineCursorArrowRays,
   HiOutlineSparkles,
   HiOutlineBolt,
-  HiOutlineArrowDownTray,
-  HiOutlineUserPlus,
+  HiOutlineMagnifyingGlass,
+  HiOutlineTicket,
+  HiOutlineIdentification,
+  HiOutlineCreditCard,
 } from 'react-icons/hi2';
 import { useNavigate } from 'react-router-dom';
 import ParkEaseHeroIsometric3D from '../components/3d/ParkEaseHeroIsometric3D';
@@ -89,47 +88,47 @@ const featureCards = [
   },
 ];
 
-// 4 Simple Steps Timeline in 100% English
-const roadmapSteps = [
+// 4 Simple Steps on the Highway Track
+const highwaySteps = [
   {
     id: 1,
-    num: '1',
-    title: 'Search Spot',
-    sub: 'Online Booking & Time',
-    tag: 'Step 01: Search Spot',
-    shortDesc: 'Choose your destination & preferred parking bay.',
-    details: 'Browse real-time bay availability on the 3D map, reserve your spot in advance, and receive an instant digital QR parking pass.',
-    icon: HiOutlineArrowDownTray,
+    stepNum: '01',
+    title: 'Find Online',
+    sub: 'Search & Live Radar',
+    desc: 'Locate available bays near your destination in real time with 3D capacity radar.',
+    icon: HiOutlineMagnifyingGlass,
+    accentColor: '#00D2FF',
+    glowClass: 'shadow-[0_0_25px_#00D2FF]',
   },
   {
     id: 2,
-    num: '2',
-    title: 'Navigate',
-    sub: 'GPS Indoor Routing',
-    tag: 'Step 02: Navigation',
-    shortDesc: 'Follow turn-by-turn indoor routing directly to the gate.',
-    details: 'Autonomous GPS guidance navigates you directly to the entrance sensor node without circling or delays.',
-    icon: HiOutlineUserPlus,
+    stepNum: '02',
+    title: 'Reserve Spot',
+    sub: 'Bay Lock & QR Pass',
+    desc: 'Lock in your preferred bay (e.g. Bay A-02) and receive an instant encrypted mobile pass.',
+    icon: HiOutlineTicket,
+    accentColor: '#00FFA3',
+    glowClass: 'shadow-[0_0_25px_#00FFA3]',
   },
   {
     id: 3,
-    num: '3',
-    title: 'Contactless Entry',
-    sub: 'Automatic Barrier Gate',
-    tag: 'Step 03: Contactless Entry',
-    shortDesc: 'Drive through smoothly as the barrier automatically lifts.',
-    details: 'IoT camera or QR scanner verifies your booking in <0.3s. The glowing laser trail lights up your assigned bay.',
-    icon: HiOutlineCalendarDays,
+    stepNum: '03',
+    title: 'Scan & Enter',
+    sub: 'Instant Gate Lift',
+    desc: 'Barrier lifts automatically via high-speed License Plate Recognition or QR scan in <0.3s.',
+    icon: HiOutlineIdentification,
+    accentColor: '#00D2FF',
+    glowClass: 'shadow-[0_0_25px_#00D2FF]',
   },
   {
     id: 4,
-    num: '4',
-    title: 'Express Exit',
-    sub: 'Scan & Pay / Departure',
-    tag: 'Step 04: Express Exit',
-    shortDesc: 'Automatic cashless settlement and seamless departure.',
-    details: 'Exit effortlessly with automatic wallet settlement or contactless tap with instant digital receipts.',
-    icon: HiOutlineMapPin,
+    stepNum: '04',
+    title: 'Exit & Pay',
+    sub: 'Cashless Departure',
+    desc: 'Drive out smoothly with automated wallet settlement, receipt generation, and zero queues.',
+    icon: HiOutlineCreditCard,
+    accentColor: '#F59E0B',
+    glowClass: 'shadow-[0_0_25px_#F59E0B]',
   },
 ];
 
@@ -231,61 +230,73 @@ const faqs = [
 
 export default function Landing() {
   const navigate = useNavigate();
-  const [activeStep, setActiveStep] = useState(1);
+  const [selectedStep, setSelectedStep] = useState(1);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [heroSlide, setHeroSlide] = useState(0);
 
-  const handleStepClick = useCallback((stepId: number) => {
-    setActiveStep(stepId);
+  const handleStepSelect = useCallback((stepId: number) => {
+    setSelectedStep(stepId);
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#080C15] text-white font-sora overflow-x-hidden selection:bg-[#00FFA3] selection:text-black">
+    <div className="min-h-screen bg-[#080C15] text-white font-sora overflow-x-hidden selection:bg-[#00FFA3] selection:text-black relative">
 
-      {/* Global Glowing Light Trails Background Canvas */}
+      {/* =========================================================================
+          GLOBAL CONTINUOUS GLOWING NEON ROAD TRAILS CANVAS
+          Connecting Hero -> Features -> Four Steps -> Audience -> Bottom CTA
+          ========================================================================= */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute inset-0 cyber-grid-floor opacity-35" />
         <div className="absolute top-[-10%] left-[15%] w-[550px] h-[550px] bg-[#00D2FF]/10 rounded-full blur-[140px]" />
         <div className="absolute top-[35%] right-[10%] w-[650px] h-[650px] bg-[#00FFA3]/08 rounded-full blur-[160px]" />
         <div className="absolute bottom-[20%] left-[5%] w-[550px] h-[550px] bg-[#00D2FF]/08 rounded-full blur-[140px]" />
 
-        {/* High-visibility SVG Neon Glow Light-Trail Paths (#00F2FE and #4FACFE) */}
-        <svg className="absolute inset-0 w-full h-full opacity-60" preserveAspectRatio="none" viewBox="0 0 1440 900">
+        {/* Continuous Flowing SVG Light-Trail Paths (#00F2FE and #4FACFE) */}
+        <svg className="absolute inset-0 w-full h-full opacity-70" preserveAspectRatio="none" viewBox="0 0 1440 2800">
           <defs>
-            <linearGradient id="neonTrail1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#00F2FE" stopOpacity="0.8" />
-              <stop offset="50%" stopColor="#4FACFE" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="#00FFA3" stopOpacity="0" />
+            <linearGradient id="globalNeonTrail1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#00F2FE" stopOpacity="0.9" />
+              <stop offset="35%" stopColor="#4FACFE" stopOpacity="0.85" />
+              <stop offset="70%" stopColor="#00FFA3" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#00D2FF" stopOpacity="0.9" />
             </linearGradient>
-            <linearGradient id="neonTrail2" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#4FACFE" stopOpacity="0.6" />
-              <stop offset="70%" stopColor="#00F2FE" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#00FFA3" stopOpacity="0" />
+
+            <linearGradient id="globalNeonTrail2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#4FACFE" stopOpacity="0.7" />
+              <stop offset="50%" stopColor="#00F2FE" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#00FFA3" stopOpacity="0.7" />
             </linearGradient>
-            <filter id="neonBlur" x="-20%" y="-20%" width="140%" height="140%">
+
+            <filter id="roadTrailGlow" x="-20%" y="-20%" width="140%" height="140%">
               <feGaussianBlur stdDeviation="8" result="blur" />
               <feMerge>
+                <feMergeNode in="blur" />
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
           </defs>
 
-          {/* Flowing curve from Hero right down to Steps left */}
+          {/* Primary Main Highway Spine Path: Hero -> Steps -> CTA */}
           <path
-            d="M 980 180 C 720 280, 420 460, 260 620 C 140 740, 200 860, 480 890"
+            d="M 1150 280 C 850 480, 200 680, 240 1050 C 280 1420, 1200 1600, 1100 2050 C 1000 2450, 450 2550, 720 2750"
             fill="none"
-            stroke="url(#neonTrail1)"
-            strokeWidth="3.5"
-            filter="url(#neonBlur)"
-            strokeDasharray="16 8"
+            stroke="url(#globalNeonTrail1)"
+            strokeWidth="4"
+            filter="url(#roadTrailGlow)"
+            strokeDasharray="24 12"
+            className="animate-road-flow"
           />
+
+          {/* Secondary Parallel Light-Trail Ribbon */}
           <path
-            d="M 1020 190 C 760 290, 460 470, 300 630 C 180 750, 240 870, 520 900"
+            d="M 1190 295 C 890 495, 240 695, 280 1065 C 320 1435, 1240 1615, 1140 2065 C 1040 2465, 490 2565, 760 2765"
             fill="none"
-            stroke="url(#neonTrail2)"
-            strokeWidth="1.5"
-            filter="url(#neonBlur)"
+            stroke="url(#globalNeonTrail2)"
+            strokeWidth="1.8"
+            filter="url(#roadTrailGlow)"
+            strokeDasharray="16 8"
+            className="animate-road-flow-fast"
           />
         </svg>
       </div>
@@ -306,7 +317,7 @@ export default function Landing() {
             {/* Animated Gradient Splash Pill Tag */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#00D2FF]/10 border border-[#00D2FF]/30 text-[#00D2FF] text-xs font-space font-semibold tracking-wider uppercase shadow-[0_0_20px_rgba(0,210,255,0.25)]">
               <span className="w-2 h-2 rounded-full bg-[#00FFA3] animate-ping" />
-              <span>Animated gradient splash</span>
+              <span>Next-Gen Autonomous Parking</span>
             </div>
 
             {/* Bold Neon Glow Header */}
@@ -348,12 +359,12 @@ export default function Landing() {
             </div>
 
             {/* Pagination Dots */}
-            <div className="flex items-center gap-2 pt-6">
+            <div className="flex items-center gap-2 pt-4">
               {[0, 1, 2].map((dot) => (
                 <button
                   key={dot}
                   onClick={() => setHeroSlide(dot)}
-                  className={`transition-all duration-300 rounded-full ${
+                  className={`transition-all duration-300 rounded-full cursor-pointer ${
                     heroSlide === dot
                       ? 'w-6 h-2 bg-[#00FFA3] shadow-[0_0_12px_#00FFA3]'
                       : 'w-2 h-2 bg-gray-700 hover:bg-gray-500'
@@ -366,32 +377,13 @@ export default function Landing() {
 
           {/* Right 3D Isometric Visual with Explicit Sizing Container */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
+            initial={{ opacity: 0, scale: 0.94 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.9, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.9, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-6 relative w-full min-h-[440px] lg:h-[520px] flex items-center justify-center"
           >
-            {/* 3D Isometric Parking Lot Scene with Moving Car & HUD */}
+            {/* 3D Isometric Parking Deck Scene with Moving Car & HUD */}
             <ParkEaseHeroIsometric3D />
-
-            {/* Glowing Neon Trail flowing toward bottom-left */}
-            <div className="absolute -bottom-10 -left-12 w-64 h-24 pointer-events-none opacity-80 hidden md:block">
-              <svg viewBox="0 0 200 80" fill="none" className="w-full h-full">
-                <path
-                  d="M180 10 C120 20, 60 60, 10 75"
-                  stroke="url(#neon-laser-grad-3)"
-                  strokeWidth="3.5"
-                  strokeLinecap="round"
-                />
-                <defs>
-                  <linearGradient id="neon-laser-grad-3" x1="180" y1="10" x2="10" y2="75" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#00FFA3" />
-                    <stop offset="0.5" stopColor="#00D2FF" />
-                    <stop offset="1" stopColor="#00D2FF" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
           </motion.div>
 
         </div>
@@ -473,18 +465,32 @@ export default function Landing() {
       </section>
 
       {/* =========================================================================
-          3. "FOUR SIMPLE STEPS" (Laser Guidance Path & 4-Car Highway Track)
+          3. "FOUR SIMPLE STEPS" - CONTINUOUS S-CURVED HIGHWAY ROAD TRACK
+          (Removed Inner Boxed Tabs / Restored Realistic Highway Nodes & Vehicles)
           ========================================================================= */}
       <section className="relative z-10 py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
+        
+        {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#00FFA3]/10 border border-[#00FFA3]/30 text-[#00FFA3] text-xs font-space font-bold tracking-wider uppercase mb-3 shadow-[0_0_15px_rgba(0,255,163,0.2)]"
+          >
+            <span>Autonomous Journey Flow</span>
+          </motion.div>
+
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-3"
+            transition={{ delay: 0.05 }}
+            className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-3"
           >
             Four simple steps
           </motion.h2>
+          
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -492,165 +498,202 @@ export default function Landing() {
             transition={{ delay: 0.1 }}
             className="text-sm sm:text-base text-gray-400 font-sans"
           >
-            Interactive laser-guided user journey. The seamless autonomous parking process.
+            From instant online discovery to seamless contactless exit on our continuous smart roadway.
           </motion.p>
         </div>
 
-        {/* Stepper Navigation Buttons (1, 2, 3, 4) with Laser Connecting Line */}
-        <div className="relative mb-12 max-w-4xl mx-auto">
-          {/* Background Connecting Laser Line */}
-          <div className="absolute top-6 left-8 right-8 h-1.5 bg-slate-800 rounded-full z-0 hidden sm:block">
-            <motion.div
-              className="h-full cyber-laser-line rounded-full"
-              animate={{
-                width: `${((activeStep - 1) / (roadmapSteps.length - 1)) * 100}%`,
-              }}
-              transition={{ duration: 0.5, ease: 'easeInOut' }}
-            />
-          </div>
-
-          {/* Stepper Tabs */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 relative z-10">
-            {roadmapSteps.map((step) => {
-              const isActive = activeStep === step.id;
-              return (
-                <button
-                  key={step.id}
-                  onClick={() => handleStepClick(step.id)}
-                  className="flex flex-col items-center text-center p-3 rounded-2xl transition-all cursor-pointer group"
-                >
-                  <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mb-3 transition-all duration-300 relative ${
-                      isActive
-                        ? 'bg-gradient-to-br from-[#00D2FF] to-[#00FFA3] text-black shadow-[0_0_25px_#00FFA3] scale-110 ring-4 ring-[#00FFA3]/30'
-                        : 'bg-[#0a1428] border border-cyan-500/25 text-gray-400 hover:border-[#00FFA3]/50 hover:text-white'
-                    }`}
-                  >
-                    {step.num}
-                    {isActive && (
-                      <span className="absolute -inset-1 rounded-full border border-[#00FFA3] animate-ping opacity-50" />
-                    )}
-                  </div>
-                  <span className={`text-xs sm:text-sm font-bold tracking-wide transition-colors ${
-                    isActive ? 'text-[#00FFA3]' : 'text-gray-400 group-hover:text-gray-200'
-                  }`}>
-                    {step.title}
-                  </span>
-                  <span className="text-[10px] text-gray-500 hidden sm:block font-space">
-                    {step.sub}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Step Preview Box with Preview Cards & 4-Car Highway Track */}
-        <div className="relative max-w-5xl mx-auto bg-gradient-to-b from-[#0a152d] via-[#070e20] to-[#050a14] rounded-3xl p-6 sm:p-10 border border-[#00D2FF]/25 shadow-[0_0_40px_rgba(0,210,255,0.15)] overflow-hidden">
+        {/* CONTINUOUS HIGHWAY ROADWAY SVG CANVAS */}
+        <div className="relative w-full py-8 my-6">
           
-          {/* Step 1 & 2 Interactive Glass Preview Cards directly below tabs */}
-          <div className="grid sm:grid-cols-2 gap-4 mb-8">
-            <div className={`p-4 rounded-2xl cyber-card transition-all ${activeStep === 1 ? 'border-[#00FFA3]/60 shadow-[0_0_20px_rgba(0,255,163,0.2)]' : 'opacity-70'}`}>
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-xl bg-[#081830] border border-[#00FFA3]/30 flex items-center justify-center text-[#00FFA3] text-xl shadow-md">
-                  👆
-                </div>
-                <div>
-                  <span className="text-[10px] font-space text-[#00FFA3] font-bold block">STEP 01 // SPOT SELECTION</span>
-                  <h4 className="text-sm font-bold text-white">Select Slot On Map</h4>
-                  <p className="text-[11px] text-gray-400">Choose Bay A-02 with instant 3D reservation.</p>
-                </div>
-              </div>
-            </div>
+          {/* Ambient Road Glow Bed */}
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-28 bg-gradient-to-r from-[#00D2FF]/08 via-[#00FFA3]/12 to-[#F59E0B]/08 rounded-full blur-3xl pointer-events-none" />
 
-            <div className={`p-4 rounded-2xl cyber-card transition-all ${activeStep === 2 ? 'border-[#00D2FF]/60 shadow-[0_0_20px_rgba(0,210,255,0.2)]' : 'opacity-70'}`}>
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-xl bg-[#081830] border border-[#00D2FF]/30 flex items-center justify-center text-[#00D2FF] text-xl shadow-md">
-                  🚗
-                </div>
-                <div>
-                  <span className="text-[10px] font-space text-[#00D2FF] font-bold block">STEP 02 // GATE RADAR</span>
-                  <h4 className="text-sm font-bold text-white">GPS Routing & Auto Check-in</h4>
-                  <p className="text-[11px] text-gray-400">Barrier lifts automatically via LPR in 0.3s.</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* SVG S-Curved Highway Surface */}
+          <div className="relative w-full h-44 sm:h-52">
+            <svg viewBox="0 0 1200 200" className="w-full h-full" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="highwayAsphalt" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#061226" />
+                  <stop offset="30%" stopColor="#081832" />
+                  <stop offset="70%" stopColor="#081832" />
+                  <stop offset="100%" stopColor="#061226" />
+                </linearGradient>
 
-          {/* Curved Glowing Highway Lane with 4 Sequentially Positioned Cars */}
-          <div className="relative w-full h-36 sm:h-44 bg-[#040812] rounded-2xl border border-cyan-500/20 flex items-center px-4 sm:px-12 overflow-hidden">
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-20 border-y border-dashed border-[#00D2FF]/30 bg-gradient-to-r from-cyan-950/20 via-blue-950/40 to-emerald-950/20" />
-            <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-[#00D2FF] via-[#00FFA3] to-[#00D2FF] shadow-[0_0_12px_#00D2FF]" />
+                <linearGradient id="highwayLaserBorder" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#00D2FF" />
+                  <stop offset="35%" stopColor="#00FFA3" />
+                  <stop offset="75%" stopColor="#00D2FF" />
+                  <stop offset="100%" stopColor="#F59E0B" />
+                </linearGradient>
 
-            <div className="relative z-10 w-full flex items-center justify-between">
-              {roadmapSteps.map((step, index) => {
-                const isActive = activeStep === step.id;
+                <filter id="roadGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="4" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              {/* 1. Asphalt Road Body with S-Curve */}
+              <path
+                d="M 20 100 C 300 40, 500 160, 800 60 C 950 10, 1100 80, 1180 100"
+                fill="none"
+                stroke="url(#highwayAsphalt)"
+                strokeWidth="56"
+                strokeLinecap="round"
+              />
+
+              {/* 2. Glowing Roadway Top & Bottom Curb Rails */}
+              <path
+                d="M 20 72 C 300 12, 500 132, 800 32 C 950 -18, 1100 52, 1180 72"
+                fill="none"
+                stroke="url(#highwayLaserBorder)"
+                strokeWidth="2"
+                strokeOpacity="0.6"
+                filter="url(#roadGlowFilter)"
+              />
+              <path
+                d="M 20 128 C 300 68, 500 188, 800 88 C 950 38, 1100 108, 1180 128"
+                fill="none"
+                stroke="url(#highwayLaserBorder)"
+                strokeWidth="2"
+                strokeOpacity="0.6"
+                filter="url(#roadGlowFilter)"
+              />
+
+              {/* 3. Center Dashed Flowing Highway Line */}
+              <path
+                d="M 20 100 C 300 40, 500 160, 800 60 C 950 10, 1100 80, 1180 100"
+                fill="none"
+                stroke="url(#highwayLaserBorder)"
+                strokeWidth="3.5"
+                strokeDasharray="18 10"
+                filter="url(#roadGlowFilter)"
+                className="animate-road-flow-fast"
+              />
+            </svg>
+
+            {/* 4 Interactive Highway Nodes Positioned Across the Curve */}
+            <div className="absolute inset-0 max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-12 pointer-events-none">
+              {highwaySteps.map((st) => {
+                const isSelected = selectedStep === st.id;
                 return (
-                  <motion.div
-                    key={step.id}
-                    animate={{
-                      scale: isActive ? 1.25 : 0.95,
-                      y: isActive ? -4 : 0,
-                    }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                    onClick={() => handleStepClick(step.id)}
-                    className="flex flex-col items-center cursor-pointer group"
+                  <div
+                    key={st.id}
+                    onClick={() => handleStepSelect(st.id)}
+                    className="relative flex flex-col items-center pointer-events-auto cursor-pointer group"
                   >
-                    <div className="relative">
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeCarGlow"
-                          className="absolute -inset-4 bg-[#00FFA3]/25 rounded-full blur-lg"
-                        />
+                    {/* Miniature Car Silhouette Driving on Road with Neon Glow */}
+                    <div className="mb-2 relative">
+                      {st.id === 1 && (
+                        <div className={`transition-all duration-300 ${isSelected ? 'scale-125 -translate-y-2' : 'scale-90 opacity-70 group-hover:opacity-100 group-hover:scale-105'}`}>
+                          <CarSedan className={`w-14 sm:w-20 h-auto ${isSelected ? 'filter drop-shadow-[0_0_15px_#00D2FF]' : ''}`} color={isSelected ? '#00D2FF' : '#64748B'} />
+                        </div>
                       )}
-
-                      {index === 0 && <CarSedan className={`w-14 sm:w-20 h-auto transition-colors ${isActive ? 'text-[#00D2FF] filter drop-shadow-[0_0_12px_#00D2FF]' : 'text-slate-600 opacity-60'}`} color={isActive ? '#00D2FF' : '#475569'} />}
-                      {index === 1 && <ElectricCar className={`w-14 sm:w-20 h-auto transition-colors ${isActive ? 'text-[#00FFA3] filter drop-shadow-[0_0_12px_#00FFA3]' : 'text-slate-600 opacity-60'}`} color={isActive ? '#00FFA3' : '#475569'} />}
-                      {index === 2 && <CarSedan className={`w-14 sm:w-20 h-auto transition-colors ${isActive ? 'text-[#00D2FF] filter drop-shadow-[0_0_12px_#00D2FF]' : 'text-slate-600 opacity-60'}`} color={isActive ? '#00D2FF' : '#475569'} />}
-                      {index === 3 && <BikeScooter className={`w-12 sm:w-16 h-auto transition-colors ${isActive ? 'text-[#00FFA3] filter drop-shadow-[0_0_12px_#00FFA3]' : 'text-slate-600 opacity-60'}`} color={isActive ? '#00FFA3' : '#475569'} />}
+                      {st.id === 2 && (
+                        <div className={`transition-all duration-300 ${isSelected ? 'scale-125 -translate-y-2' : 'scale-90 opacity-70 group-hover:opacity-100 group-hover:scale-105'}`}>
+                          <ElectricCar className={`w-14 sm:w-20 h-auto ${isSelected ? 'filter drop-shadow-[0_0_15px_#00FFA3]' : ''}`} color={isSelected ? '#00FFA3' : '#64748B'} />
+                        </div>
+                      )}
+                      {st.id === 3 && (
+                        <div className={`transition-all duration-300 ${isSelected ? 'scale-125 -translate-y-2' : 'scale-90 opacity-70 group-hover:opacity-100 group-hover:scale-105'}`}>
+                          <CarSedan className={`w-14 sm:w-20 h-auto ${isSelected ? 'filter drop-shadow-[0_0_15px_#00D2FF]' : ''}`} color={isSelected ? '#00D2FF' : '#64748B'} />
+                        </div>
+                      )}
+                      {st.id === 4 && (
+                        <div className={`transition-all duration-300 ${isSelected ? 'scale-125 -translate-y-2' : 'scale-90 opacity-70 group-hover:opacity-100 group-hover:scale-105'}`}>
+                          <BikeScooter className={`w-12 sm:w-16 h-auto ${isSelected ? 'filter drop-shadow-[0_0_15px_#F59E0B]' : ''}`} color={isSelected ? '#F59E0B' : '#64748B'} />
+                        </div>
+                      )}
                     </div>
 
-                    <span className={`text-xs font-space font-bold mt-2 px-2.5 py-0.5 rounded-full transition-colors ${
-                      isActive ? 'bg-[#00FFA3] text-black shadow-[0_0_12px_#00FFA3]' : 'text-gray-500 bg-slate-900/60'
-                    }`}>
-                      Step 0{step.num}
-                    </span>
-                  </motion.div>
+                    {/* Milestone Number Circle Node */}
+                    <div
+                      className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center font-extrabold text-sm sm:text-base transition-all duration-300 relative border-2 ${
+                        isSelected
+                          ? 'bg-gradient-to-br from-[#00D2FF] to-[#00FFA3] text-black border-white shadow-[0_0_25px_#00FFA3] scale-110 ring-4 ring-[#00FFA3]/30'
+                          : 'bg-[#09152b] border-cyan-500/40 text-gray-300 group-hover:border-[#00FFA3] group-hover:text-white group-hover:scale-105'
+                      }`}
+                    >
+                      {st.stepNum}
+                      {isSelected && (
+                        <span className="absolute -inset-1.5 rounded-full border border-[#00FFA3] animate-ping opacity-60" />
+                      )}
+                    </div>
+
+                    {/* Step Title Label Under Node */}
+                    <div className="text-center mt-3">
+                      <span className={`text-xs sm:text-sm font-bold block transition-colors ${
+                        isSelected ? 'text-[#00FFA3]' : 'text-gray-300 group-hover:text-white'
+                      }`}>
+                        {st.title}
+                      </span>
+                      <span className="text-[10px] text-gray-500 hidden sm:block font-space">
+                        {st.sub}
+                      </span>
+                    </div>
+                  </div>
                 );
               })}
             </div>
           </div>
-
-          {/* Active Step Detailed Description Box */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeStep}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.3 }}
-              className="mt-6 p-6 rounded-2xl bg-[#070e1c]/90 border border-cyan-500/25 backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-            >
-              <div>
-                <h4 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                  <span className="text-[#00FFA3]">Step {activeStep}:</span> {roadmapSteps[activeStep - 1].title} ({roadmapSteps[activeStep - 1].sub})
-                </h4>
-                <p className="text-xs sm:text-sm text-gray-300 max-w-2xl leading-relaxed font-sans">
-                  {roadmapSteps[activeStep - 1].details}
-                </p>
-              </div>
-
-              <button
-                onClick={() => navigate('/book-parking')}
-                className="px-5 py-2.5 rounded-xl bg-[#00FFA3]/15 hover:bg-[#00FFA3]/25 border border-[#00FFA3]/40 text-[#00FFA3] text-xs font-bold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer"
-              >
-                <span>Try Step {activeStep}</span>
-                <HiOutlineArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </motion.div>
-          </AnimatePresence>
-
         </div>
+
+        {/* 4 Cards Grid Showing Detailed Step Breakdown Directly on Background */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+          {highwaySteps.map((step) => {
+            const isSelected = selectedStep === step.id;
+            return (
+              <motion.div
+                key={step.id}
+                onClick={() => handleStepSelect(step.id)}
+                whileHover={{ y: -4 }}
+                className={`cyber-card p-5 cursor-pointer transition-all duration-300 relative overflow-hidden ${
+                  isSelected
+                    ? 'border-[#00FFA3] bg-[#0d1c38]/90 shadow-[0_0_30px_rgba(0,255,163,0.25)]'
+                    : 'border-cyan-500/20 hover:border-cyan-500/50'
+                }`}
+              >
+                {/* Header with Step Icon and Number */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
+                    isSelected
+                      ? 'bg-[#00FFA3]/15 border-[#00FFA3] text-[#00FFA3]'
+                      : 'bg-slate-900/80 border-cyan-500/30 text-[#00D2FF]'
+                  }`}>
+                    <step.icon className="w-5 h-5" />
+                  </div>
+                  <span className={`text-xs font-space font-extrabold px-2.5 py-0.5 rounded-full border ${
+                    isSelected
+                      ? 'bg-[#00FFA3] text-black border-[#00FFA3]'
+                      : 'text-gray-400 border-white/10'
+                  }`}>
+                    STEP {step.stepNum}
+                  </span>
+                </div>
+
+                <h3 className={`text-base font-bold mb-1 transition-colors ${
+                  isSelected ? 'text-[#00FFA3]' : 'text-white'
+                }`}>
+                  {step.title}
+                </h3>
+                <p className="text-xs text-cyan-300/80 font-space mb-2">
+                  {step.sub}
+                </p>
+                <p className="text-xs text-gray-400 font-sans leading-relaxed">
+                  {step.desc}
+                </p>
+
+                {/* Subtle Glow Stripe */}
+                {isSelected && (
+                  <div className="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-[#00D2FF] via-[#00FFA3] to-[#F59E0B]" />
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+
       </section>
 
       {/* =========================================================================
@@ -687,6 +730,7 @@ export default function Landing() {
               transition={{ duration: 0.5, delay: i * 0.12 }}
               className="cyber-card overflow-hidden flex flex-col justify-between group"
             >
+              {/* Device UI Mockup Window */}
               <div className="relative h-48 w-full bg-gradient-to-b from-[#09152b] to-[#060c18] border-b border-cyan-500/20 p-4 flex items-center justify-center overflow-hidden">
                 
                 {aud.type === 'mobile' && (
@@ -745,6 +789,7 @@ export default function Landing() {
                 </div>
               </div>
 
+              {/* Text Points & Details */}
               <div className="p-6 flex-1 flex flex-col justify-between">
                 <div>
                   <h3 className="text-xl font-bold text-white mb-4">
@@ -782,12 +827,6 @@ export default function Landing() {
           5. "WHAT PEOPLE SAY" (Testimonials in English)
           ========================================================================= */}
       <section className="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="absolute inset-0 pointer-events-none opacity-10 overflow-hidden flex items-center justify-around">
-          <div className="w-64 h-32 stroke-cyan-400">
-            <CarSedan className="w-full h-full" color="#00D2FF" />
-          </div>
-        </div>
-
         <div className="text-center max-w-2xl mx-auto mb-14 relative z-10">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -848,12 +887,6 @@ export default function Landing() {
               </div>
             </motion.div>
           ))}
-        </div>
-
-        <div className="flex items-center justify-center gap-2 mt-8">
-          <span className="w-6 h-1.5 rounded-full bg-[#00FFA3] shadow-[0_0_10px_#00FFA3]" />
-          <span className="w-2 h-1.5 rounded-full bg-gray-700" />
-          <span className="w-2 h-1.5 rounded-full bg-gray-700" />
         </div>
       </section>
 
@@ -922,7 +955,7 @@ export default function Landing() {
       </section>
 
       {/* =========================================================================
-          7. "READY TO GET STARTED?" (Glowing Blueprint Wireframe & Book Now CTA)
+          7. "READY TO GET STARTED?" (Glowing Blueprint Wireframe & Radiant Gold Button)
           ========================================================================= */}
       <section className="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#0a152d] via-[#091836] to-[#0a152d] border border-[#00D2FF]/30 p-10 sm:p-16 text-center shadow-[0_0_60px_rgba(0,210,255,0.2)]">
