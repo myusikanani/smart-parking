@@ -286,46 +286,45 @@ export default function Landing() {
     <div className="min-h-screen bg-[#080C15] text-white font-sora overflow-x-hidden selection:bg-[#00FFA3] selection:text-black relative">
 
       {/* =========================================================================
-          GLOBAL CONTINUOUS GLOWING NEON ROAD TRAILS CANVAS
+          GLOBAL CONTINUOUS GLOWING NEON ROAD TRAILS CANVAS (Softened for High Text Readability)
           ========================================================================= */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute inset-0 cyber-grid-floor opacity-35" />
-        <div className="absolute top-[-10%] left-[15%] w-[550px] h-[550px] bg-[#00D2FF]/10 rounded-full blur-[140px]" />
-        <div className="absolute top-[35%] right-[10%] w-[650px] h-[650px] bg-[#00FFA3]/08 rounded-full blur-[160px]" />
-        <div className="absolute bottom-[20%] left-[5%] w-[550px] h-[550px] bg-[#00D2FF]/08 rounded-full blur-[140px]" />
+        <div className="absolute inset-0 cyber-grid-floor opacity-20" />
+        <div className="absolute top-[-10%] left-[15%] w-[550px] h-[550px] bg-[#00D2FF]/06 rounded-full blur-[140px]" />
+        <div className="absolute top-[35%] right-[10%] w-[650px] h-[650px] bg-[#00FFA3]/05 rounded-full blur-[160px]" />
+        <div className="absolute bottom-[20%] left-[5%] w-[550px] h-[550px] bg-[#00D2FF]/05 rounded-full blur-[140px]" />
 
-        {/* Continuous Flowing SVG Light-Trail Paths (#00F2FE and #4FACFE) */}
-        <svg className="absolute inset-0 w-full h-full opacity-70" preserveAspectRatio="none" viewBox="0 0 1440 2800">
+        {/* Subtle, Soft Flowing SVG Light-Trail Paths (Opacity: 25%, Thinner 2px Stroke for Crisp Text Readability) */}
+        <svg className="absolute inset-0 w-full h-full opacity-25" preserveAspectRatio="none" viewBox="0 0 1440 2800">
           <defs>
             <linearGradient id="globalNeonTrail1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#00F2FE" stopOpacity="0.9" />
-              <stop offset="35%" stopColor="#4FACFE" stopOpacity="0.85" />
-              <stop offset="70%" stopColor="#00FFA3" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#00D2FF" stopOpacity="0.9" />
+              <stop offset="0%" stopColor="#00F2FE" stopOpacity="0.5" />
+              <stop offset="35%" stopColor="#4FACFE" stopOpacity="0.45" />
+              <stop offset="70%" stopColor="#00FFA3" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#00D2FF" stopOpacity="0.5" />
             </linearGradient>
 
             <linearGradient id="globalNeonTrail2" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#4FACFE" stopOpacity="0.7" />
-              <stop offset="50%" stopColor="#00F2FE" stopOpacity="0.85" />
-              <stop offset="100%" stopColor="#00FFA3" stopOpacity="0.7" />
+              <stop offset="0%" stopColor="#4FACFE" stopOpacity="0.35" />
+              <stop offset="50%" stopColor="#00F2FE" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#00FFA3" stopOpacity="0.35" />
             </linearGradient>
 
             <filter id="roadTrailGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="8" result="blur" />
+              <feGaussianBlur stdDeviation="4" result="blur" />
               <feMerge>
-                <feMergeNode in="blur" />
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
           </defs>
 
-          {/* Primary Main Highway Spine Path: Hero -> Steps -> CTA */}
+          {/* Primary Main Highway Spine Path: Hero -> Steps -> CTA (Subtle Background Flow) */}
           <path
             d="M 1150 280 C 850 480, 200 680, 240 1050 C 280 1420, 1200 1600, 1100 2050 C 1000 2450, 450 2550, 720 2750"
             fill="none"
             stroke="url(#globalNeonTrail1)"
-            strokeWidth="4"
+            strokeWidth="2"
             filter="url(#roadTrailGlow)"
             strokeDasharray="24 12"
             className="animate-road-flow"
@@ -336,7 +335,7 @@ export default function Landing() {
             d="M 1190 295 C 890 495, 240 695, 280 1065 C 320 1435, 1240 1615, 1140 2065 C 1040 2465, 490 2565, 760 2765"
             fill="none"
             stroke="url(#globalNeonTrail2)"
-            strokeWidth="1.8"
+            strokeWidth="1.2"
             filter="url(#roadTrailGlow)"
             strokeDasharray="16 8"
             className="animate-road-flow-fast"
