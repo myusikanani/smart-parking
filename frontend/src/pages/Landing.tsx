@@ -232,23 +232,6 @@ export default function Landing() {
   const [heroSlide, setHeroSlide] = useState(0);
   const [liveSlotCount, setLiveSlotCount] = useState<number | null>(null);
 
-  // Smooth Cyclic animation value for the Golden Car driving along the lower highway loop
-  const [goldCarProgress, setGoldCarProgress] = useState(0);
-
-  useEffect(() => {
-    let animId: number;
-    let start = performance.now();
-    const duration = 8000; // 8s loop
-
-    const step = (now: number) => {
-      setGoldCarProgress(((now - start) % duration) / duration);
-      animId = requestAnimationFrame(step);
-    };
-
-    animId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(animId);
-  }, []);
-
   // Fetch real available slots count from live backend on mount
   useEffect(() => {
     let isMounted = true;
@@ -269,18 +252,6 @@ export default function Landing() {
   const handleStepSelect = useCallback((stepId: number) => {
     setSelectedStep(stepId);
   }, []);
-
-  // Calculate Golden Car Position & Angle on the lower golden loop:
-  // Points: (100, 160) -> (450, 220) -> (850, 150) -> (1120, 190)
-  const getGoldCarPos = (p: number) => {
-    const x = 80 + p * (1100 - 80);
-    // Smooth Sine-curved highway trajectory
-    const y = 165 + Math.sin(p * Math.PI * 2) * 22;
-    const angle = Math.cos(p * Math.PI * 2) * 12;
-    return { x, y, angle };
-  };
-
-  const goldCar = getGoldCarPos(goldCarProgress);
 
   return (
     <div className="min-h-screen bg-[#080C15] text-white font-sora overflow-x-hidden selection:bg-[#00FFA3] selection:text-black relative">
@@ -524,7 +495,7 @@ export default function Landing() {
       </section>
 
       {/* =========================================================================
-          3. "FOUR SIMPLE STEPS" - DUAL HIGHWAY RUNWAY (CYAN + GOLDEN CAR TRACK)
+          3. "FOUR SIMPLE STEPS" - CLEAN CYAN HIGHWAY RUNWAY (4 MILESTONE NODES)
           ========================================================================= */}
       <section className="relative z-10 py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
         
@@ -556,19 +527,19 @@ export default function Landing() {
             transition={{ delay: 0.1 }}
             className="text-sm sm:text-base text-gray-400 font-sans"
           >
-            Dual-speed autonomous highway. Seamless navigation from online spot discovery to express departure.
+            Seamless navigation from online spot discovery to express departure.
           </motion.p>
         </div>
 
-        {/* DUAL HIGHWAY ROADWAY SVG CANVAS */}
-        <div className="relative w-full py-8 my-6">
+        {/* CYAN HIGHWAY ROADWAY SVG CANVAS */}
+        <div className="relative w-full py-6 my-4">
           
           {/* Ambient Road Glow Bed */}
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-36 bg-gradient-to-r from-[#00D2FF]/08 via-[#00FFA3]/12 to-[#F59E0B]/12 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-28 bg-gradient-to-r from-[#00D2FF]/10 via-[#00FFA3]/15 to-[#00D2FF]/10 rounded-full blur-3xl pointer-events-none" />
 
-          {/* SVG Dual Highway Surfaces (Top Cyan Track + Lower Radiant Golden Track) */}
-          <div className="relative w-full h-56 sm:h-64">
-            <svg viewBox="0 0 1200 240" className="w-full h-full" preserveAspectRatio="none">
+          {/* SVG Highway Surface */}
+          <div className="relative w-full h-44 sm:h-52">
+            <svg viewBox="0 0 1200 160" className="w-full h-full" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="highwayAsphalt" x1="0%" y1="0%" x2="100%" y2="0%">
                   <stop offset="0%" stopColor="#061226" />
@@ -583,34 +554,9 @@ export default function Landing() {
                   <stop offset="100%" stopColor="#00D2FF" />
                 </linearGradient>
 
-                {/* Radiant Golden Highway Gradient */}
-                <linearGradient id="goldTrailGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#F59E0B" />
-                  <stop offset="35%" stopColor="#FCD34D" />
-                  <stop offset="70%" stopColor="#F59E0B" />
-                  <stop offset="100%" stopColor="#D97706" />
-                </linearGradient>
-
-                {/* Metallic Golden Car Gradient */}
-                <linearGradient id="metallicGoldCarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#FEF08A" />
-                  <stop offset="35%" stopColor="#F59E0B" />
-                  <stop offset="85%" stopColor="#B45309" />
-                  <stop offset="100%" stopColor="#78350F" />
-                </linearGradient>
-
                 <filter id="roadGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
                   <feGaussianBlur stdDeviation="4" result="blur" />
                   <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-
-                <filter id="goldBeamGlow" x="-30%" y="-30%" width="160%" height="160%">
-                  <feGaussianBlur stdDeviation="6" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
                     <feMergeNode in="blur" />
                     <feMergeNode in="SourceGraphic" />
                   </feMerge>
@@ -650,79 +596,10 @@ export default function Landing() {
                 filter="url(#roadGlowFilter)"
                 className="animate-road-flow-fast"
               />
-
-              {/* 2. LOWER CURVED RADIANT GOLDEN RUNWAY RIBBON */}
-              <path
-                d="M 40 180 C 320 130, 580 230, 850 160 C 980 120, 1100 190, 1160 200"
-                fill="none"
-                stroke="#091426"
-                strokeWidth="38"
-                strokeLinecap="round"
-              />
-              {/* Glowing Amber Ribbon Outer Glow */}
-              <path
-                d="M 40 180 C 320 130, 580 230, 850 160 C 980 120, 1100 190, 1160 200"
-                fill="none"
-                stroke="url(#goldTrailGrad)"
-                strokeWidth="6"
-                strokeOpacity="0.4"
-                filter="url(#goldBeamGlow)"
-                strokeLinecap="round"
-              />
-              {/* Golden Dashed Speed Lane */}
-              <path
-                d="M 40 180 C 320 130, 580 230, 850 160 C 980 120, 1100 190, 1160 200"
-                fill="none"
-                stroke="url(#goldTrailGrad)"
-                strokeWidth="2.5"
-                strokeDasharray="14 6"
-                className="animate-road-flow"
-                filter="url(#roadGlowFilter)"
-              />
-
-              {/* =================================================================
-                  3. METALLIC GOLDEN CAR DRIVING ALONG GOLDEN TRACK
-                  ================================================================= */}
-              <g transform={`translate(${goldCar.x}, ${goldCar.y}) rotate(${goldCar.angle})`}>
-                {/* Trailing Amber Tail Streaks */}
-                <path d="M 28 0 L 90 -4 L 85 8 Z" fill="#F59E0B" opacity="0.3" filter="url(#goldBeamGlow)" />
-                <line x1="28" y1="0" x2="110" y2="2" stroke="#FBBF24" strokeWidth="2.5" strokeDasharray="6 4" filter="url(#goldBeamGlow)" />
-
-                {/* Ground Shadow */}
-                <ellipse cx="0" cy="6" rx="28" ry="9" fill="#000000" opacity="0.8" />
-                {/* Amber Radiant Underglow */}
-                <ellipse cx="0" cy="0" rx="28" ry="10" fill="#F59E0B" opacity="0.65" filter="url(#goldBeamGlow)" />
-
-                {/* Alloy Wheels */}
-                <rect x="-18" y="4" width="8" height="4" rx="1.5" fill="#18181b" stroke="#FBBF24" strokeWidth="0.8" />
-                <rect x="10" y="4" width="8" height="4" rx="1.5" fill="#18181b" stroke="#FBBF24" strokeWidth="0.8" />
-
-                {/* Metallic Golden Aerodynamic Body Profile */}
-                <path
-                  d="M -26 2 C -28 -2, -22 -8, -8 -10 C 3 -11, 16 -7, 24 1 C 28 4, 23 11, 15 12 C 0 14, -16 12, -26 2 Z"
-                  fill="url(#metallicGoldCarGrad)"
-                  stroke="#FCD34D"
-                  strokeWidth="1.2"
-                />
-
-                {/* Tinted Panoramic Glass */}
-                <path
-                  d="M -13 -1 C -15 -6, -5 -7, 1 -7 C 9 -7, 14 -4, 12 0 C 6 3, -3 3, -13 -1 Z"
-                  fill="#0c0a09"
-                  stroke="#FCD34D"
-                  strokeWidth="0.6"
-                />
-
-                {/* Dual Golden Xenon Headlights */}
-                <circle cx="-24" cy="1" r="2.2" fill="#FFFFFF" filter="url(#goldBeamGlow)" />
-                <circle cx="-20" cy="6" r="1.8" fill="#FFFFFF" filter="url(#goldBeamGlow)" />
-                <path d="M -24 1 L -80 -16 L -70 20 Z" fill="#FBBF24" opacity="0.3" />
-              </g>
-
             </svg>
 
             {/* 4 Interactive Milestone Nodes on Top Cyan Highway */}
-            <div className="absolute inset-x-0 top-6 max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-12 pointer-events-none">
+            <div className="absolute inset-x-0 top-3 max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-12 pointer-events-none">
               {realSteps.map((st) => {
                 const isSelected = selectedStep === st.id;
                 return (
