@@ -309,41 +309,61 @@ function IsometricLotContent() {
 }
 
 export default function ParkEaseHeroIsometric3D() {
+  const [hoveredData, setHoveredData] = useState(false);
+
   return (
-    <div className="relative w-full aspect-square max-w-[540px] mx-auto rounded-3xl overflow-hidden bg-gradient-to-b from-[#0a1224] to-[#060c18] border border-cyan-500/30 shadow-[0_0_50px_rgba(0,240,255,0.15)] group">
-      {/* Decorative Top Bar */}
-      <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
-        <div className="flex items-center gap-2 bg-[#081020]/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-cyan-500/20 text-[11px] font-mono text-cyan-300">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span>LIVE SENSOR RADAR</span>
+    <div 
+      onMouseEnter={() => setHoveredData(true)}
+      onMouseLeave={() => setHoveredData(false)}
+      className="relative w-full aspect-square max-w-[540px] mx-auto rounded-3xl overflow-hidden bg-gradient-to-b from-[#0a1428] via-[#070e1e] to-[#050a14] border border-cyan-500/30 shadow-[0_0_60px_rgba(0,210,255,0.2)] group"
+    >
+      {/* Perspective 3D Grid Overlay */}
+      <div className="absolute inset-0 cyber-grid-floor opacity-40 pointer-events-none" />
+
+      {/* Floating HUD Badges Matching Mockup (Top-Right) */}
+      <div className="absolute top-4 right-4 z-20 space-y-2 pointer-events-none">
+        <div className="bg-[#0b162c]/90 border border-emerald-400/60 px-3.5 py-1.5 rounded-xl shadow-[0_0_20px_rgba(0,255,163,0.3)] backdrop-blur-xl text-right">
+          <span className="text-[9px] font-mono text-emerald-300/80 uppercase tracking-widest block">Available Spaces</span>
+          <span className="text-base font-extrabold text-emerald-400 font-mono">120 🚗</span>
         </div>
-        <div className="bg-[#081020]/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-emerald-500/30 text-[11px] font-mono text-emerald-400">
-          BAY A-02 OPEN
+        <div className="bg-[#0b162c]/90 border border-cyan-400/50 px-3.5 py-1.5 rounded-xl shadow-[0_0_20px_rgba(0,210,255,0.25)] backdrop-blur-xl text-right">
+          <span className="text-[9px] font-mono text-cyan-300/80 uppercase tracking-widest block">Today's Bookings</span>
+          <span className="text-base font-extrabold text-cyan-400 font-mono">128 🚗</span>
+        </div>
+      </div>
+
+      {/* Top-Left Live Status */}
+      <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-none">
+        <div className="flex items-center gap-2 bg-[#081020]/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-cyan-500/30 text-[10px] font-mono text-cyan-300 shadow-lg">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span>RADAR // ACTIVE</span>
         </div>
       </div>
 
       {/* 3D Canvas Scene */}
       <Canvas shadows dpr={[1, 2]} className="w-full h-full cursor-grab active:cursor-grabbing">
         <PerspectiveCamera makeDefault position={[12, 14, 14]} fov={38} />
-        <ambientLight intensity={1.2} />
+        <ambientLight intensity={1.3} />
         <directionalLight position={[15, 25, 15]} intensity={1.8} castShadow />
-        <pointLight position={[0, 10, 0]} color="#00f0ff" intensity={2} distance={20} />
-        <pointLight position={[-6, 6, -6]} color="#10b981" intensity={2.5} distance={15} />
+        <pointLight position={[0, 10, 0]} color="#00d2ff" intensity={2.2} distance={22} />
+        <pointLight position={[-6, 6, -6]} color="#00ffa3" intensity={2.8} distance={16} />
+        <pointLight position={[6, 4, 6]} color="#ff3366" intensity={1.2} distance={12} />
 
         <IsometricLotContent />
       </Canvas>
 
+      {/* Bottom Live Sensor Telemetry Bar */}
+      <div className="absolute bottom-3 left-4 right-4 z-20 flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-gray-300 bg-[#070e1c]/90 border border-cyan-500/20 px-3.5 py-1.5 rounded-xl backdrop-blur-md shadow-lg pointer-events-none">
+        <span className="text-cyan-300 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          Node: #4092
+        </span>
+        <span className="text-gray-400 hidden sm:inline">Latency: <strong className="text-emerald-400">12ms</strong></span>
+        <span className="text-emerald-400 font-bold">Availability: 94%</span>
+      </div>
+
       {/* Flowing Ambient Light Trails on Bottom Border */}
       <div className="absolute -bottom-6 -left-6 -right-6 h-16 bg-gradient-to-t from-cyan-500/20 to-transparent blur-xl pointer-events-none" />
-      
-      {/* Interactive Tooltip on Bottom */}
-      <div className="absolute bottom-3 left-4 right-4 z-20 flex items-center justify-between text-[11px] font-mono text-gray-400 pointer-events-none">
-        <span className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-          AI Smart Pathfinding
-        </span>
-        <span className="text-cyan-400 font-bold">Auto-Assign: Active</span>
-      </div>
     </div>
   );
 }
