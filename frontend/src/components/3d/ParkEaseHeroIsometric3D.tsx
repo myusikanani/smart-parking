@@ -1,425 +1,424 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useRef, useMemo, Component, ReactNode, ErrorInfo } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { PerspectiveCamera, OrbitControls } from '@react-three/drei';
+import * as THREE from 'three';
 
-export default function ParkEaseHeroIsometric3D() {
-  const [carProgress, setCarProgress] = useState(0);
-  const [hoveredBay, setHoveredBay] = useState<string | null>(null);
+// Fallback Error Boundary
+interface Props {
+  children: ReactNode;
+}
+interface State {
+  hasError: boolean;
+}
+class WebGLErrorBoundary extends Component<Props, State> {
+  state: State = { hasError: false };
 
-  // Smooth cyclic car driving motion along the green navigation trajectory
-  useEffect(() => {
-    let animationFrameId: number;
-    let startTime = performance.now();
-    const cycleDuration = 6500; // 6.5s loop
+  static getDerivedStateFromError(_: Error): State {
+    return { hasError: true };
+  }
 
-    const updateCar = (now: number) => {
-      const elapsed = (now - startTime) % cycleDuration;
-      setCarProgress(elapsed / cycleDuration);
-      animationFrameId = requestAnimationFrame(updateCar);
-    };
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.warn('WebGL scene fallback engaged:', error, errorInfo);
+  }
 
-    animationFrameId = requestAnimationFrame(updateCar);
-    return () => cancelAnimationFrame(animationFrameId);
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-[#081224] text-cyan-400 font-mono text-sm p-4">
+          WebGL Rendering Active
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// 3D Styled Car Component
+function Car3D({
+  color = '#00F2FE',
+  position = [0, 0, 0] as [number, number, number],
+  rotation = [0, 0, 0] as [number, number, number],
+  headlights = true,
+  isDriving = false,
+}: {
+  color?: string;
+  position?: [number, number, number];
+  rotation?: [number, number, number];
+  headlights?: boolean;
+  isDriving?: boolean;
+}) {
+  return (
+    <group position={position} rotation={rotation}>
+      {/* Main Body */}
+      <mesh position={[0, 0.35, 0]} castShadow>
+        <boxGeometry args={[1.5, 0.45, 3.0]} />
+        <meshStandardMaterial
+          color={color}
+          metalness={0.8}
+          roughness={0.2}
+          emissive={isDriving ? color : '#000000'}
+          emissiveIntensity={isDriving ? 0.5 : 0}
+        />
+      </mesh>
+
+      {/* Cabin Roof */}
+      <mesh position={[0, 0.72, -0.15]} castShadow>
+        <boxGeometry args={[1.25, 0.4, 1.7]} />
+        <meshStandardMaterial color="#0f172a" metalness={0.9} roughness={0.1} />
+      </mesh>
+
+      {/* Front Windshield */}
+      <mesh position={[0, 0.7, 0.72]} rotation={[0.35, 0, 0]}>
+        <planeGeometry args={[1.15, 0.35]} />
+        <meshBasicMaterial color="#38bdf8" opacity={0.85} transparent />
+      </mesh>
+
+      {/* 4 Wheels */}
+      {[
+        [-0.8, 0.22, 0.9],
+        [0.8, 0.22, 0.9],
+        [-0.8, 0.22, -0.9],
+        [0.8, 0.22, -0.9],
+      ].map((wheelPos, i) => (
+        <mesh key={i} position={wheelPos as [number, number, number]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.24, 0.24, 0.2, 16]} />
+          <meshStandardMaterial color="#0b0f19" roughness={0.9} metalness={0.3} />
+        </mesh>
+      ))}
+
+      {/* Glowing Headlights */}
+      {headlights && (
+        <>
+          <mesh position={[-0.55, 0.38, 1.51]}>
+            <boxGeometry args={[0.22, 0.1, 0.05]} />
+            <meshBasicMaterial color="#ffffff" />
+          </mesh>
+          <mesh position={[0.55, 0.38, 1.51]}>
+            <boxGeometry args={[0.22, 0.1, 0.05]} />
+            <meshBasicMaterial color="#ffffff" />
+          </mesh>
+          {isDriving && (
+            <pointLight position={[0, 0.4, 2.2]} color="#ffffff" intensity={3.5} distance={8} />
+          )}
+        </>
+      )}
+
+      {/* Rear Taillights */}
+      <mesh position={[-0.55, 0.42, -1.51]}>
+        <boxGeometry args={[0.25, 0.08, 0.05]} />
+        <meshBasicMaterial color="#ef4444" />
+      </mesh>
+      <mesh position={[0.55, 0.42, -1.51]}>
+        <boxGeometry args={[0.25, 0.08, 0.05]} />
+        <meshBasicMaterial color="#ef4444" />
+      </mesh>
+      {isDriving && (
+        <pointLight position={[0, 0.4, -1.8]} color="#ef4444" intensity={2.5} distance={5} />
+      )}
+
+      {/* Neon Underglow */}
+      {isDriving && (
+        <pointLight position={[0, 0.08, 0]} color={color} intensity={3.5} distance={5} />
+      )}
+    </group>
+  );
+}
+
+// Glowing Navigation Green Trajectory Tube
+function NavigationGreenTrack() {
+  const lineMeshRef = useRef<THREE.Mesh>(null);
+
+  const curve = useMemo(() => {
+    return new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-8, 0.08, 6),
+      new THREE.Vector3(-4, 0.08, 5.5),
+      new THREE.Vector3(0, 0.08, 4.5),
+      new THREE.Vector3(2.5, 0.08, 2.5),
+      new THREE.Vector3(3.5, 0.08, -0.5),
+      new THREE.Vector3(2.5, 0.08, -3.2),
+      new THREE.Vector3(-0.5, 0.08, -3.8),
+      new THREE.Vector3(-3.5, 0.08, -3.8),
+    ]);
   }, []);
 
-  // Compute car position along the isometric spline:
-  // Points: (Entrance 80, 360) -> (Mid road 240, 310) -> (Turn 390, 240) -> (Turn 320, 180) -> (Target Bay A-02 215, 145)
-  const getCarPosAndAngle = (p: number) => {
-    let x: number, y: number, angle: number;
-    if (p < 0.28) {
-      // Segment 1: Drive in along lower lane
-      const t = p / 0.28;
-      x = 80 + t * (250 - 80);
-      y = 360 + t * (300 - 360);
-      angle = -20;
-    } else if (p < 0.52) {
-      // Segment 2: Curve up right aisle
-      const t = (p - 0.28) / 0.24;
-      x = 250 + t * (390 - 250);
-      y = 300 + t * (230 - 300);
-      angle = -28;
-    } else if (p < 0.76) {
-      // Segment 3: Curve left into upper row
-      const t = (p - 0.52) / 0.24;
-      x = 390 + t * (260 - 390);
-      y = 230 + t * (165 - 230);
-      angle = -150;
-    } else {
-      // Segment 4: Pull into Bay A-02 & hold
-      const t = Math.min((p - 0.76) / 0.15, 1);
-      x = 260 + t * (215 - 260);
-      y = 165 + t * (142 - 165);
-      angle = -155;
-    }
-    return { x, y, angle };
-  };
+  const tubeGeometry = useMemo(() => {
+    return new THREE.TubeGeometry(curve, 64, 0.16, 8, false);
+  }, [curve]);
 
-  const car = getCarPosAndAngle(carProgress);
+  useFrame(({ clock }) => {
+    if (lineMeshRef.current) {
+      const mat = lineMeshRef.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = 0.85 + Math.sin(clock.getElapsedTime() * 4) * 0.15;
+    }
+  });
 
   return (
-    <div className="relative w-full h-full min-h-[440px] lg:min-h-[520px] max-w-[620px] mx-auto rounded-3xl overflow-hidden bg-gradient-to-b from-[#0b162e] via-[#070e1e] to-[#040812] border border-[#00D2FF]/40 shadow-[0_0_60px_rgba(0,210,255,0.25)] flex flex-col justify-between p-4 select-none">
+    <group>
+      {/* Inner Vibrant Green Laser Core */}
+      <mesh ref={lineMeshRef} geometry={tubeGeometry}>
+        <meshBasicMaterial color="#00FFA3" transparent opacity={0.95} />
+      </mesh>
+      {/* Outer Cyan Ribbon */}
+      <mesh geometry={new THREE.TubeGeometry(curve, 64, 0.38, 8, false)}>
+        <meshBasicMaterial color="#00D2FF" transparent opacity={0.35} />
+      </mesh>
+    </group>
+  );
+}
+
+// Animated Driving Car Moving Along Curve
+function AnimatedDrivingCar() {
+  const carGroupRef = useRef<THREE.Group>(null);
+
+  const curve = useMemo(() => {
+    return new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-8, 0.06, 6),
+      new THREE.Vector3(-4, 0.06, 5.5),
+      new THREE.Vector3(0, 0.06, 4.5),
+      new THREE.Vector3(2.5, 0.06, 2.5),
+      new THREE.Vector3(3.5, 0.06, -0.5),
+      new THREE.Vector3(2.5, 0.06, -3.2),
+      new THREE.Vector3(-0.5, 0.06, -3.8),
+      new THREE.Vector3(-3.5, 0.06, -3.8),
+    ]);
+  }, []);
+
+  useFrame(({ clock }) => {
+    const time = clock.getElapsedTime();
+    const cycleDuration = 6.5;
+    const progress = (time % cycleDuration) / cycleDuration;
+
+    if (carGroupRef.current) {
+      if (progress < 0.8) {
+        const t = progress / 0.8;
+        const currentPos = curve.getPointAt(t);
+        const tangent = curve.getTangentAt(t);
+
+        carGroupRef.current.position.set(currentPos.x, currentPos.y, currentPos.z);
+        const angle = Math.atan2(tangent.x, tangent.z);
+        carGroupRef.current.rotation.y = angle;
+      } else {
+        const finalPos = curve.getPointAt(1.0);
+        carGroupRef.current.position.set(finalPos.x, finalPos.y, finalPos.z);
+        carGroupRef.current.rotation.y = Math.PI / 2;
+      }
+    }
+  });
+
+  return (
+    <group ref={carGroupRef}>
+      <Car3D color="#00FFA3" isDriving={true} />
+    </group>
+  );
+}
+
+// Target Bay A-02 Marker with Glowing Green Cones and Floor Reticle
+function TargetBayMarker({ position }: { position: [number, number, number] }) {
+  const ringRef = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    if (ringRef.current) {
+      ringRef.current.rotation.z = clock.getElapsedTime() * 0.8;
+    }
+  });
+
+  return (
+    <group position={position}>
+      {/* 4 Neon Emerald Cones */}
+      {[
+        [-1.2, 0, -1.9],
+        [1.2, 0, -1.9],
+        [-1.2, 0, 1.9],
+        [1.2, 0, 1.9],
+      ].map((conePos, i) => (
+        <group key={i} position={conePos as [number, number, number]}>
+          <mesh position={[0, 0.45, 0]}>
+            <coneGeometry args={[0.3, 0.9, 16]} />
+            <meshStandardMaterial
+              color="#00FFA3"
+              emissive="#00FFA3"
+              emissiveIntensity={1.8}
+              roughness={0.2}
+            />
+          </mesh>
+          <pointLight position={[0, 0.6, 0]} color="#00FFA3" intensity={2.5} distance={4} />
+        </group>
+      ))}
+
+      {/* Rotating Floor Target Ring */}
+      <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]}>
+        <ringGeometry args={[1.3, 1.55, 32]} />
+        <meshBasicMaterial color="#00FFA3" transparent opacity={0.9} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  );
+}
+
+// Isometric Parking Deck Scene
+function ParkingDeckScene() {
+  return (
+    <group position={[0, 0, 0]}>
+      {/* 1. Main Parking Floor Slab at y = -0.5 */}
+      <mesh position={[0, -0.5, 0]} receiveShadow>
+        <boxGeometry args={[20, 0.8, 16]} />
+        <meshStandardMaterial color="#0c1527" roughness={0.4} metalness={0.6} />
+      </mesh>
+
+      {/* Slab Perimeter Glowing Cyan Border */}
+      <mesh position={[0, -0.08, 0]}>
+        <boxGeometry args={[20.15, 0.06, 16.15]} />
+        <meshStandardMaterial
+          color="#00F2FE"
+          emissive="#00F2FE"
+          emissiveIntensity={0.8}
+          roughness={0.3}
+        />
+      </mesh>
+
+      {/* Immediate Visibility Test Mesh (Glowing Grid Center Marker) */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+        <planeGeometry args={[18, 14]} />
+        <meshBasicMaterial color="#0a1222" />
+      </mesh>
+
+      {/* Top Row Bay Dividers */}
+      {[-7, -3.5, 0, 3.5, 7].map((x, i) => (
+        <group key={`top-div-${i}`} position={[x, 0.04, -4]}>
+          <mesh position={[-1.2, 0, 0]}>
+            <boxGeometry args={[0.1, 0.04, 4.0]} />
+            <meshStandardMaterial
+              color="#00F2FE"
+              emissive="#00F2FE"
+              emissiveIntensity={0.6}
+            />
+          </mesh>
+          <mesh position={[1.2, 0, 0]}>
+            <boxGeometry args={[0.1, 0.04, 4.0]} />
+            <meshStandardMaterial
+              color="#00F2FE"
+              emissive="#00F2FE"
+              emissiveIntensity={0.6}
+            />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Bottom Row Bay Dividers */}
+      {[-7, -3.5, 0, 3.5, 7].map((x, i) => (
+        <group key={`bot-div-${i}`} position={[x, 0.04, 4]}>
+          <mesh position={[-1.2, 0, 0]}>
+            <boxGeometry args={[0.1, 0.04, 4.0]} />
+            <meshStandardMaterial
+              color="#00F2FE"
+              emissive="#00F2FE"
+              emissiveIntensity={0.6}
+            />
+          </mesh>
+          <mesh position={[1.2, 0, 0]}>
+            <boxGeometry args={[0.1, 0.04, 4.0]} />
+            <meshStandardMaterial
+              color="#00F2FE"
+              emissive="#00F2FE"
+              emissiveIntensity={0.6}
+            />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Parked Cars */}
+      <Car3D color="#0284c7" position={[-7, 0, -4]} rotation={[0, 0, 0]} headlights={false} />
+      <Car3D color="#f59e0b" position={[0, 0, -4]} rotation={[0, 0, 0]} headlights={false} />
+      <Car3D color="#334155" position={[3.5, 0, -4]} rotation={[0, 0, 0]} headlights={false} />
+      <Car3D color="#0ea5e9" position={[7, 0, -4]} rotation={[0, 0, 0]} headlights={false} />
+
+      <Car3D color="#64748b" position={[-7, 0, 4]} rotation={[0, Math.PI, 0]} headlights={false} />
+      <Car3D color="#10b981" position={[-3.5, 0, 4]} rotation={[0, Math.PI, 0]} headlights={false} />
+      <Car3D color="#475569" position={[3.5, 0, 4]} rotation={[0, Math.PI, 0]} headlights={false} />
+      <Car3D color="#0369a1" position={[7, 0, 4]} rotation={[0, Math.PI, 0]} headlights={false} />
+
+      {/* Target Bay A-02 */}
+      <TargetBayMarker position={[-3.5, 0, -3.8]} />
+
+      {/* Glowing Green Navigation Route Tube */}
+      <NavigationGreenTrack />
+
+      {/* Dynamic Animated Driving Car */}
+      <AnimatedDrivingCar />
+    </group>
+  );
+}
+
+export default function ParkEaseHeroIsometric3D() {
+  return (
+    <div className="relative w-full h-full min-h-[440px] lg:min-h-[520px] max-w-[620px] mx-auto rounded-3xl overflow-hidden bg-gradient-to-b from-[#0b162e] via-[#070e1e] to-[#040812] border border-[#00D2FF]/40 shadow-[0_0_60px_rgba(0,210,255,0.25)] flex flex-col justify-between select-none group">
       
-      {/* Background Cyber Grid Pattern */}
+      {/* Background Cyber Grid Floor */}
       <div className="absolute inset-0 cyber-grid-floor opacity-40 pointer-events-none" />
 
-      {/* Top HUD Row: Live Radar Beacon & Dual Floating Price Badges */}
-      <div className="relative z-20 flex items-start justify-between gap-2 pointer-events-none">
-        
-        {/* Live Radar Allocation Pill */}
+      {/* Top Floating Badges (€120 / €128 Price Badges) */}
+      <div className="absolute top-5 right-5 z-20 space-y-2 pointer-events-none">
+        <div className="bg-[#0b1730]/95 border border-[#00FFA3]/70 px-4 py-1.5 rounded-2xl shadow-[0_0_25px_rgba(0,255,163,0.35)] backdrop-blur-xl text-right">
+          <span className="text-[10px] font-space text-emerald-300 font-semibold tracking-wider block">Standard Space</span>
+          <span className="text-base font-extrabold text-[#00FFA3] font-mono tracking-wide">€120</span>
+        </div>
+        <div className="bg-[#0b1730]/95 border border-[#00D2FF]/60 px-4 py-1.5 rounded-2xl shadow-[0_0_20px_rgba(0,210,255,0.25)] backdrop-blur-xl text-right">
+          <span className="text-[10px] font-space text-cyan-300 font-semibold tracking-wider block">Reserved Spot</span>
+          <span className="text-base font-extrabold text-[#00D2FF] font-mono tracking-wide">€128</span>
+        </div>
+      </div>
+
+      {/* Top-Left Live Sensor Badge */}
+      <div className="absolute top-5 left-5 z-20 flex items-center gap-2 pointer-events-none">
         <div className="flex items-center gap-2 bg-[#071124]/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#00D2FF]/40 text-[11px] font-space text-[#00D2FF] shadow-[0_0_15px_rgba(0,210,255,0.2)]">
           <span className="w-2.5 h-2.5 rounded-full bg-[#00FFA3] animate-ping" />
           <span className="font-bold tracking-wide">RADAR // LIVE ALLOCATION</span>
         </div>
-
-        {/* Floating Price Badges (€120 / €128) */}
-        <div className="flex flex-col gap-2 items-end">
-          <div className="bg-[#09152b]/95 border border-[#00FFA3]/70 px-3.5 py-1 rounded-xl shadow-[0_0_20px_rgba(0,255,163,0.35)] backdrop-blur-xl flex items-center gap-2">
-            <span className="text-[10px] font-space text-emerald-300 font-semibold uppercase">Standard Space</span>
-            <span className="text-sm font-extrabold text-[#00FFA3] font-mono">€120</span>
-          </div>
-          <div className="bg-[#09152b]/95 border border-[#00D2FF]/60 px-3.5 py-1 rounded-xl shadow-[0_0_20px_rgba(0,210,255,0.25)] backdrop-blur-xl flex items-center gap-2">
-            <span className="text-[10px] font-space text-cyan-300 font-semibold uppercase">Reserved Spot</span>
-            <span className="text-sm font-extrabold text-[#00D2FF] font-mono">€128</span>
-          </div>
-        </div>
-
       </div>
 
       {/* =========================================================================
-          HIGH-FIDELITY 3D ISOMETRIC PARKING DECK (SVG ENGINE)
+          THREE.JS 3D ISOMETRIC PARKING CANVAS
           ========================================================================= */}
-      <div className="relative flex-1 w-full flex items-center justify-center my-auto min-h-[360px]">
-        <svg
-          viewBox="0 0 600 440"
-          className="w-full h-full max-h-[440px] drop-shadow-[0_15px_35px_rgba(0,0,0,0.8)]"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <defs>
-            {/* High Intensity Glow Filter */}
-            <filter id="laserGlow" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="5" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-
-            {/* Soft Ambient Glow */}
-            <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-
-            {/* Neon Green Path Gradient */}
-            <linearGradient id="neonGreenPath" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#00D2FF" stopOpacity="0.7" />
-              <stop offset="35%" stopColor="#00FFA3" stopOpacity="0.95" />
-              <stop offset="85%" stopColor="#00FFA3" stopOpacity="1" />
-              <stop offset="100%" stopColor="#10B981" stopOpacity="1" />
-            </linearGradient>
-
-            {/* Car Gradients */}
-            <linearGradient id="carBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#00FFA3" />
-              <stop offset="50%" stopColor="#00D2FF" />
-              <stop offset="100%" stopColor="#0284C7" />
-            </linearGradient>
-
-            <linearGradient id="bayTargetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#00FFA3" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#00D2FF" stopOpacity="0.05" />
-            </linearGradient>
-
-            <linearGradient id="deckFloorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#0e1b36" />
-              <stop offset="100%" stopColor="#080f1e" />
-            </linearGradient>
-
-            <linearGradient id="deckSideGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#050a14" />
-              <stop offset="100%" stopColor="#0b1730" />
-            </linearGradient>
-          </defs>
-
-          {/* 1. Isometric Slab Side Extrusions (3D Depth) */}
-          <polygon
-            points="50,220 300,370 300,395 50,245"
-            fill="url(#deckSideGrad)"
-            stroke="#00D2FF"
-            strokeWidth="0.8"
-            strokeOpacity="0.3"
-          />
-          <polygon
-            points="300,370 550,220 550,245 300,395"
-            fill="#040810"
-            stroke="#00D2FF"
-            strokeWidth="0.8"
-            strokeOpacity="0.2"
-          />
-
-          {/* 2. Top Isometric Deck Floor Plane */}
-          <polygon
-            points="300,70 550,220 300,370 50,220"
-            fill="url(#deckFloorGrad)"
-            stroke="#00D2FF"
-            strokeWidth="2"
-            strokeOpacity="0.5"
-          />
-
-          {/* 3. Isometric Grid Perspective Lines */}
-          <g stroke="#00D2FF" strokeWidth="0.75" strokeOpacity="0.15">
-            {/* Diagonals Left to Right */}
-            <line x1="100" y1="190" x2="350" y2="340" />
-            <line x1="150" y1="160" x2="400" y2="310" />
-            <line x1="200" y1="130" x2="450" y2="280" />
-            <line x1="250" y1="100" x2="500" y2="250" />
-            {/* Diagonals Right to Left */}
-            <line x1="500" y1="190" x2="250" y2="340" />
-            <line x1="450" y1="160" x2="200" y2="310" />
-            <line x1="400" y1="130" x2="150" y2="280" />
-            <line x1="350" y1="100" x2="100" y2="250" />
-          </g>
-
-          {/* 4. Driveway Center Lane Divider Lines (Dashed Neon) */}
-          <path
-            d="M 120 285 L 290 330 L 440 240 L 290 150"
-            fill="none"
-            stroke="#00D2FF"
-            strokeWidth="1.5"
-            strokeDasharray="8 6"
-            strokeOpacity="0.4"
-          />
-
-          {/* =================================================================
-              PARKING BAYS ROW A (Top/Left Row)
-              ================================================================= */}
-          
-          {/* Bay A-01 (Occupied by Cyan/Navy Sedan) */}
-          <g onMouseEnter={() => setHoveredBay('A-01')} onMouseLeave={() => setHoveredBay(null)} className="cursor-pointer">
-            <polygon
-              points="140,165 200,130 250,160 190,195"
-              fill={hoveredBay === 'A-01' ? '#00D2FF22' : '#0a172e'}
-              stroke="#00D2FF"
-              strokeWidth="1.2"
-              strokeOpacity="0.4"
+      <div className="relative w-full h-full min-h-[440px] flex-1">
+        <WebGLErrorBoundary>
+          <Canvas
+            shadows
+            dpr={[1, 2]}
+            className="w-full h-full cursor-grab active:cursor-grabbing"
+            style={{ width: '100%', height: '100%', minHeight: '440px' }}
+          >
+            {/* 1. Camera Settings */}
+            <PerspectiveCamera
+              makeDefault
+              position={[16, 18, 16]}
+              fov={42}
+              near={0.1}
+              far={1000}
             />
-            <text x="175" y="160" fill="#00D2FF" fontSize="9" fontFamily="monospace" opacity="0.6">A-01</text>
-            {/* Parked Sedan Car in A-01 */}
-            <g transform="translate(195, 160)">
-              <polygon points="-30,5 -5,-12 30,5 5,22" fill="#0284C7" />
-              <polygon points="-15,0 0,-10 18,-1 3,9" fill="#0f172a" />
-              {/* Headlights */}
-              <circle cx="-28" cy="7" r="2" fill="#38bdf8" />
-              <circle cx="-20" cy="12" r="2" fill="#38bdf8" />
-            </g>
-          </g>
-
-          {/* Bay A-02 (THE TARGET BAY - Glowing Green Target with Pulsing Cones) */}
-          <g onMouseEnter={() => setHoveredBay('A-02')} onMouseLeave={() => setHoveredBay(null)} className="cursor-pointer">
-            {/* Bay Floor Highlight */}
-            <polygon
-              points="205,125 265,90 315,120 255,155"
-              fill="url(#bayTargetGrad)"
-              stroke="#00FFA3"
-              strokeWidth="2.5"
-              filter="url(#laserGlow)"
-            />
-            {/* Bay Label */}
-            <text x="240" y="120" fill="#00FFA3" fontSize="10" fontWeight="bold" fontFamily="monospace">A-02</text>
-
-            {/* Target Reticle Floor Ring */}
-            <ellipse
-              cx="260"
-              cy="122"
-              rx="24"
-              ry="14"
-              fill="none"
-              stroke="#00FFA3"
-              strokeWidth="1.5"
-              strokeDasharray="4 3"
-              filter="url(#laserGlow)"
-              className="animate-spin origin-center"
-              style={{ transformOrigin: '260px 122px' }}
-            />
-
-            {/* 4 Glowing Neon Green Traffic Cones at Bay Corners */}
-            {/* Top-Left Cone */}
-            <g transform="translate(205, 125)">
-              <polygon points="-4,2 0,-12 4,2" fill="#00FFA3" filter="url(#softGlow)" />
-              <ellipse cx="0" cy="2" rx="4" ry="2" fill="#00FFA3" />
-            </g>
-            {/* Top-Right Cone */}
-            <g transform="translate(265, 90)">
-              <polygon points="-4,2 0,-12 4,2" fill="#00FFA3" filter="url(#softGlow)" />
-              <ellipse cx="0" cy="2" rx="4" ry="2" fill="#00FFA3" />
-            </g>
-            {/* Bottom-Right Cone */}
-            <g transform="translate(315, 120)">
-              <polygon points="-4,2 0,-12 4,2" fill="#00FFA3" filter="url(#softGlow)" />
-              <ellipse cx="0" cy="2" rx="4" ry="2" fill="#00FFA3" />
-            </g>
-            {/* Bottom-Left Cone */}
-            <g transform="translate(255, 155)">
-              <polygon points="-4,2 0,-12 4,2" fill="#00FFA3" filter="url(#softGlow)" />
-              <ellipse cx="0" cy="2" rx="4" ry="2" fill="#00FFA3" />
-            </g>
-
-            {/* Floating Price Tag Stem & Badge for Bay A-02 (€128) */}
-            <g transform="translate(285, 80)">
-              <line x1="0" y1="35" x2="0" y2="8" stroke="#00FFA3" strokeWidth="1.5" strokeDasharray="2 2" filter="url(#softGlow)" />
-              <circle cx="0" cy="35" r="3" fill="#00FFA3" filter="url(#laserGlow)" />
-              <rect x="-38" y="-12" width="76" height="20" rx="6" fill="#071828" stroke="#00FFA3" strokeWidth="1.5" filter="url(#laserGlow)" />
-              <text x="0" y="2" fill="#00FFA3" fontSize="10" fontWeight="bold" fontFamily="monospace" textAnchor="middle">BAY A-02 €128</text>
-            </g>
-          </g>
-
-          {/* Bay A-03 (Occupied by Amber Sports Car) */}
-          <g onMouseEnter={() => setHoveredBay('A-03')} onMouseLeave={() => setHoveredBay(null)} className="cursor-pointer">
-            <polygon
-              points="270,85 330,50 380,80 320,115"
-              fill={hoveredBay === 'A-03' ? '#F59E0B22' : '#0a172e'}
-              stroke="#00D2FF"
-              strokeWidth="1.2"
-              strokeOpacity="0.4"
-            />
-            <text x="305" y="80" fill="#00D2FF" fontSize="9" fontFamily="monospace" opacity="0.6">A-03</text>
-            {/* Amber Car in A-03 */}
-            <g transform="translate(325, 80)">
-              <polygon points="-28,4 -5,-11 28,4 5,19" fill="#D97706" />
-              <polygon points="-14,0 0,-9 16,-1 2,8" fill="#0f172a" />
-            </g>
-          </g>
-
-          {/* =================================================================
-              PARKING BAYS ROW B (Bottom/Right Row)
-              ================================================================= */}
-
-          {/* Bay B-01 (Open Bay with €120 Price Tag) */}
-          <g onMouseEnter={() => setHoveredBay('B-01')} onMouseLeave={() => setHoveredBay(null)} className="cursor-pointer">
-            <polygon
-              points="220,290 280,255 330,285 270,320"
-              fill={hoveredBay === 'B-01' ? '#00D2FF33' : '#0a1832'}
-              stroke="#00D2FF"
-              strokeWidth="1.5"
-              filter="url(#softGlow)"
-            />
-            <text x="260" y="285" fill="#00D2FF" fontSize="9" fontWeight="bold" fontFamily="monospace">B-01</text>
-
-            {/* Floating Price Tag for Bay B-01 (€120) */}
-            <g transform="translate(290, 235)">
-              <line x1="0" y1="45" x2="0" y2="8" stroke="#00D2FF" strokeWidth="1.5" strokeDasharray="2 2" />
-              <circle cx="0" cy="45" r="3" fill="#00D2FF" />
-              <rect x="-32" y="-12" width="64" height="20" rx="6" fill="#071828" stroke="#00D2FF" strokeWidth="1.5" filter="url(#softGlow)" />
-              <text x="0" y="2" fill="#00D2FF" fontSize="10" fontWeight="bold" fontFamily="monospace" textAnchor="middle">OPEN €120</text>
-            </g>
-          </g>
-
-          {/* Bay B-02 (Occupied by Emerald EV) */}
-          <g onMouseEnter={() => setHoveredBay('B-02')} onMouseLeave={() => setHoveredBay(null)} className="cursor-pointer">
-            <polygon
-              points="285,250 345,215 395,245 335,280"
-              fill={hoveredBay === 'B-02' ? '#10B98122' : '#0a172e'}
-              stroke="#00D2FF"
-              strokeWidth="1.2"
-              strokeOpacity="0.4"
-            />
-            <text x="325" y="245" fill="#00D2FF" fontSize="9" fontFamily="monospace" opacity="0.6">B-02</text>
-            {/* Parked EV Car */}
-            <g transform="translate(340, 245)">
-              <polygon points="-28,4 -5,-11 28,4 5,19" fill="#059669" />
-              <polygon points="-14,0 0,-9 16,-1 2,8" fill="#0f172a" />
-              <circle cx="15" cy="5" r="2.5" fill="#00FFA3" filter="url(#laserGlow)" />
-            </g>
-          </g>
-
-          {/* Bay B-03 (Occupied by Charcoal SUV) */}
-          <g onMouseEnter={() => setHoveredBay('B-03')} onMouseLeave={() => setHoveredBay(null)} className="cursor-pointer">
-            <polygon
-              points="350,210 410,175 460,205 400,240"
-              fill={hoveredBay === 'B-03' ? '#47556922' : '#0a172e'}
-              stroke="#00D2FF"
-              strokeWidth="1.2"
-              strokeOpacity="0.4"
-            />
-            <text x="390" y="205" fill="#00D2FF" fontSize="9" fontFamily="monospace" opacity="0.6">B-03</text>
-            <g transform="translate(405, 205)">
-              <polygon points="-30,5 -5,-12 30,5 5,22" fill="#334155" />
-              <polygon points="-15,0 0,-10 18,-1 3,9" fill="#0f172a" />
-            </g>
-          </g>
-
-          {/* =================================================================
-              5. GLOWING NEON GREEN ENTRY TRAJECTORY (SPLINE PATH)
-              ================================================================= */}
-          {/* Outer Wide Glowing Ribbon */}
-          <path
-            d="M 80 360 C 180 340, 240 310, 300 280 C 370 240, 400 210, 350 175 C 310 145, 260 145, 220 140"
-            fill="none"
-            stroke="#00FFA3"
-            strokeWidth="8"
-            strokeOpacity="0.25"
-            filter="url(#laserGlow)"
-            strokeLinecap="round"
-          />
-
-          {/* Inner Sharp Laser Core Path with Dash Flow Animation */}
-          <path
-            d="M 80 360 C 180 340, 240 310, 300 280 C 370 240, 400 210, 350 175 C 310 145, 260 145, 220 140"
-            fill="none"
-            stroke="url(#neonGreenPath)"
-            strokeWidth="3.5"
-            strokeDasharray="14 6"
-            className="animate-road-flow-fast"
-            filter="url(#laserGlow)"
-            strokeLinecap="round"
-          />
-
-          {/* Entrance Sensor Gate Post (Left) */}
-          <g transform="translate(75, 360)">
-            <line x1="0" y1="0" x2="0" y2="-24" stroke="#00D2FF" strokeWidth="2.5" />
-            <circle cx="0" cy="-24" r="3.5" fill="#00FFA3" filter="url(#laserGlow)" />
-            <line x1="0" y1="-12" x2="25" y2="-4" stroke="#FF3366" strokeWidth="2" strokeDasharray="3 2" />
-          </g>
-
-          {/* =================================================================
-              6. REAL-TIME MOVING 3D FUTURISTIC CAR
-              ================================================================= */}
-          <g transform={`translate(${car.x}, ${car.y}) rotate(${car.angle})`}>
-            {/* Neon Underglow */}
-            <ellipse cx="0" cy="0" rx="34" ry="16" fill="#00FFA3" opacity="0.6" filter="url(#laserGlow)" />
             
-            {/* Main Car Chassis */}
-            <polygon
-              points="-32,8 -6,-15 32,8 6,24"
-              fill="url(#carBodyGrad)"
-              stroke="#00FFA3"
-              strokeWidth="1.2"
+            {/* Orbit Controls with Strict Target [0, 0, 0] */}
+            <OrbitControls
+              enableZoom={false}
+              enablePan={false}
+              maxPolarAngle={Math.PI / 2.2}
+              minPolarAngle={Math.PI / 6}
+              target={[0, 0, 0]}
             />
-            {/* Aerodynamic Cabin / Windshield */}
-            <polygon
-              points="-16,2 0,-12 18,-2 4,12"
-              fill="#081426"
-              stroke="#38BDF8"
-              strokeWidth="1"
-            />
-            {/* Dual Front LED Headlights */}
-            <polygon points="-30,6 -26,3 -24,8 -28,10" fill="#FFFFFF" filter="url(#laserGlow)" />
-            <polygon points="-22,13 -18,10 -16,14 -20,17" fill="#FFFFFF" filter="url(#laserGlow)" />
-            {/* Headlight Beams */}
-            <polygon points="-30,6 -90,-10 -75,30 -22,13" fill="#00FFA3" opacity="0.25" />
 
-            {/* Rear Taillight Strip */}
-            <line x1="24" y1="12" x2="30" y2="7" stroke="#EF4444" strokeWidth="2.5" filter="url(#softGlow)" />
-          </g>
+            {/* 2. High-Intensity Lights */}
+            <ambientLight intensity={2.5} />
+            <directionalLight position={[15, 25, 15]} intensity={3.5} castShadow />
+            <pointLight position={[-10, 10, -10]} intensity={1.5} color="#00ffff" />
+            <pointLight position={[0, 8, 0]} intensity={2.5} color="#00FFA3" distance={25} />
+            <pointLight position={[-3.5, 3, -3.8]} intensity={3.0} color="#00FFA3" distance={10} />
 
-        </svg>
+            {/* 3. Visual Objects Scene */}
+            <ParkingDeckScene />
+          </Canvas>
+        </WebGLErrorBoundary>
       </div>
 
-      {/* Bottom Live Telemetry HUD Bar */}
-      <div className="relative z-20 flex items-center justify-between text-[11px] font-mono text-gray-200 bg-[#071022]/95 border border-[#00D2FF]/30 px-4 py-2 rounded-2xl backdrop-blur-md shadow-lg pointer-events-none">
+      {/* Bottom Live Sensor Telemetry Bar */}
+      <div className="absolute bottom-4 left-4 right-4 z-20 flex items-center justify-between text-[11px] font-mono text-gray-200 bg-[#071022]/95 border border-[#00D2FF]/30 px-4 py-2 rounded-2xl backdrop-blur-md shadow-lg pointer-events-none">
         <span className="text-cyan-300 flex items-center gap-1.5 font-bold">
           <span className="w-2 h-2 rounded-full bg-[#00FFA3] animate-pulse" />
           Sensor Node: #4092
