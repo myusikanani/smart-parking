@@ -339,14 +339,14 @@ export default function Landing() {
 
             {/* Bold Neon Glow Header */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] text-[#1A2B49] dark:text-white">
-              Park<span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00D2FF] via-[#00FFA3] to-[#00D2FF]">Ease</span>
+              Park <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00D2FF] via-[#00FFA3] to-[#00D2FF]">Smarter.</span>
               <br />
-              <span className="text-[#1A2B49] dark:text-white drop-shadow-sm dark:drop-shadow-[0_0_30px_rgba(0,210,255,0.3)]">Smart Parking</span>
+              <span className="text-[#1A2B49] dark:text-white drop-shadow-sm dark:drop-shadow-[0_0_30px_rgba(0,210,255,0.3)]">Move Faster.</span>
             </h1>
 
             {/* Subtitle with Real System Information */}
             <p className="text-base sm:text-lg text-slate-600 dark:text-gray-300 max-w-lg leading-relaxed font-sans">
-              Effortless multi-floor parking powered by IoT sensors, 3D navigation, dynamic QR gate access, and instant Razorpay checkout.
+              Experience hassle-free parking with real-time availability, interactive 3D navigation, and intelligent slot recommendations.
             </p>
 
             {/* Real Pricing Summary Pill Bar */}
