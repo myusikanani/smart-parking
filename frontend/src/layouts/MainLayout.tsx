@@ -79,7 +79,6 @@ const MainLayout = () => {
             </nav>
 
             <div className="flex items-center gap-2">
-              <ThemeToggle />
               <div className="relative" ref={notifRef}>
                 <button
                   onClick={() => { setNotifOpen(!notifOpen); setUserOpen(false); }}
@@ -114,7 +113,8 @@ const MainLayout = () => {
               </div>
 
               {loggedIn ? (
-                <div className="relative" ref={userRef}>
+                <div className="relative flex items-center gap-2" ref={userRef}>
+                  <ThemeToggle />
                   <button
                     onClick={() => { setUserOpen(!userOpen); setNotifOpen(false); }}
                     className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-cyan-500/10 transition-colors"
@@ -156,26 +156,29 @@ const MainLayout = () => {
                   </AnimatePresence>
                 </div>
               ) : (
-                <div className="hidden md:flex items-center gap-3">
-                  <Link
-                    to="/available-slots"
-                    title="Search Parking Slots"
-                    className="p-2 rounded-lg text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
-                  >
-                    <HiOutlineMagnifyingGlass className="w-5 h-5" />
-                  </Link>
-                  <Link
-                    to="/login"
-                    className="px-3 py-1.5 text-sm font-medium text-gray-300 hover:text-cyan-400 transition-colors"
-                  >
-                    Log In
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="px-4 py-1.5 text-sm font-semibold text-cyan-300 rounded-full border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all duration-300"
-                  >
-                    Register
-                  </Link>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="hidden md:flex items-center gap-3">
+                    <Link
+                      to="/available-slots"
+                      title="Search Parking Slots"
+                      className="p-2 rounded-lg text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
+                    >
+                      <HiOutlineMagnifyingGlass className="w-5 h-5" />
+                    </Link>
+                    <Link
+                      to="/login"
+                      className="px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+                    >
+                      Log In
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="px-4 py-1.5 text-sm font-semibold text-cyan-600 dark:text-cyan-300 rounded-full border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all duration-300"
+                    >
+                      Register
+                    </Link>
+                  </div>
+                  <ThemeToggle />
                 </div>
               )}
 

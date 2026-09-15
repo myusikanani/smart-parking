@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function ParkEaseHeroIsometric3D() {
+  const { isDark } = useTheme();
   const [carProgress, setCarProgress] = useState(0);
   const [hoveredBay, setHoveredBay] = useState<string | null>(null);
 
@@ -55,34 +57,50 @@ export default function ParkEaseHeroIsometric3D() {
   const car = getCarPosAndAngle(carProgress);
 
   return (
-    <div className="relative w-full h-full min-h-[440px] lg:min-h-[520px] max-w-[620px] mx-auto rounded-3xl overflow-hidden bg-gradient-to-b from-[#0b162e] via-[#070e1e] to-[#040812] border border-[#00D2FF]/40 shadow-[0_0_60px_rgba(0,210,255,0.25)] flex flex-col justify-between p-4 select-none">
+    <div className={`relative w-full h-full min-h-[440px] lg:min-h-[520px] max-w-[620px] mx-auto rounded-3xl overflow-hidden transition-all duration-300 border flex flex-col justify-between p-4 select-none ${
+      isDark
+        ? 'bg-gradient-to-b from-[#0b162e] via-[#070e1e] to-[#040812] border-[#00D2FF]/40 shadow-[0_0_60px_rgba(0,210,255,0.25)] text-white'
+        : 'bg-gradient-to-b from-white via-[#f8fafc] to-[#eef2f6] border-cyan-500/30 shadow-[0_10px_40px_rgba(0,210,255,0.15)] text-[#1A2B49]'
+    }`}>
       
       {/* Background Cyber Grid Pattern */}
-      <div className="absolute inset-0 cyber-grid-floor opacity-40 pointer-events-none" />
+      <div className={`absolute inset-0 cyber-grid-floor pointer-events-none ${isDark ? 'opacity-40' : 'opacity-25'}`} />
 
       {/* Top HUD Row: Live Radar Beacon & Dual Floating Price Badges */}
       <div className="relative z-20 flex items-start justify-between gap-2 pointer-events-none">
         
         {/* Live Radar Allocation Pill */}
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2 bg-[#071124]/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#00D2FF]/40 text-[11px] font-space text-[#00D2FF] shadow-[0_0_15px_rgba(0,210,255,0.2)]">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#00FFA3] animate-ping" />
+          <div className={`flex items-center gap-2 backdrop-blur-md px-3.5 py-1.5 rounded-full border text-[11px] font-space shadow-md ${
+            isDark
+              ? 'bg-[#071124]/90 border-[#00D2FF]/40 text-[#00D2FF] shadow-[0_0_15px_rgba(0,210,255,0.2)]'
+              : 'bg-white/90 border-cyan-500/40 text-cyan-700 shadow-sm'
+          }`}>
+            <span className={`w-2.5 h-2.5 rounded-full ${isDark ? 'bg-[#00FFA3]' : 'bg-emerald-500'} animate-ping`} />
             <span className="font-bold tracking-wide">FLOOR 1 // 3D DECK</span>
           </div>
-          <div className="text-[10px] font-mono text-gray-400 pl-2">
-            Target Bay: <strong className="text-[#00FFA3]">#C1B (Available)</strong>
+          <div className={`text-[10px] font-mono pl-2 ${isDark ? 'text-gray-400' : 'text-slate-500 font-medium'}`}>
+            Target Bay: <strong className={isDark ? 'text-[#00FFA3]' : 'text-emerald-600'}>#C1B (Available)</strong>
           </div>
         </div>
 
         {/* Floating Real Price Badges (₹30/hr & ₹25/hr) */}
         <div className="flex flex-col gap-2 items-end">
-          <div className="bg-[#09152b]/95 border border-[#00FFA3]/70 px-3.5 py-1.5 rounded-xl shadow-[0_0_20px_rgba(0,255,163,0.35)] backdrop-blur-xl flex items-center gap-2">
-            <span className="text-[10px] font-space text-emerald-300 font-semibold uppercase">Four-Wheeler</span>
-            <span className="text-sm font-extrabold text-[#00FFA3] font-mono">₹30 / hr</span>
+          <div className={`border px-3.5 py-1.5 rounded-xl shadow-md backdrop-blur-xl flex items-center gap-2 ${
+            isDark
+              ? 'bg-[#09152b]/95 border-[#00FFA3]/70 text-[#00FFA3] shadow-[0_0_20px_rgba(0,255,163,0.35)]'
+              : 'bg-white/95 border-emerald-500/50 text-emerald-800 shadow-sm'
+          }`}>
+            <span className={`text-[10px] font-space font-semibold uppercase ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>Four-Wheeler</span>
+            <span className={`text-sm font-extrabold font-mono ${isDark ? 'text-[#00FFA3]' : 'text-emerald-700'}`}>₹30 / hr</span>
           </div>
-          <div className="bg-[#09152b]/95 border border-[#00D2FF]/60 px-3.5 py-1.5 rounded-xl shadow-[0_0_20px_rgba(0,210,255,0.25)] backdrop-blur-xl flex items-center gap-2">
-            <span className="text-[10px] font-space text-cyan-300 font-semibold uppercase">EV Fast Charge</span>
-            <span className="text-sm font-extrabold text-[#00D2FF] font-mono">₹25 / hr</span>
+          <div className={`border px-3.5 py-1.5 rounded-xl shadow-md backdrop-blur-xl flex items-center gap-2 ${
+            isDark
+              ? 'bg-[#09152b]/95 border-[#00D2FF]/60 text-[#00D2FF] shadow-[0_0_20px_rgba(0,210,255,0.25)]'
+              : 'bg-white/95 border-cyan-500/50 text-cyan-800 shadow-sm'
+          }`}>
+            <span className={`text-[10px] font-space font-semibold uppercase ${isDark ? 'text-cyan-300' : 'text-cyan-700'}`}>EV Fast Charge</span>
+            <span className={`text-sm font-extrabold font-mono ${isDark ? 'text-[#00D2FF]' : 'text-cyan-700'}`}>₹25 / hr</span>
           </div>
         </div>
 
@@ -162,13 +180,13 @@ export default function ParkEaseHeroIsometric3D() {
             </linearGradient>
 
             <linearGradient id="deckFloorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#0e1b36" />
-              <stop offset="100%" stopColor="#080f1e" />
+              <stop offset="0%" stopColor={isDark ? "#0e1b36" : "#f1f5f9"} />
+              <stop offset="100%" stopColor={isDark ? "#080f1e" : "#e2e8f0"} />
             </linearGradient>
 
             <linearGradient id="deckSideGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#050a14" />
-              <stop offset="100%" stopColor="#0b1730" />
+              <stop offset="0%" stopColor={isDark ? "#050a14" : "#94a3b8"} />
+              <stop offset="100%" stopColor={isDark ? "#0b1730" : "#cbd5e1"} />
             </linearGradient>
           </defs>
 
@@ -176,29 +194,29 @@ export default function ParkEaseHeroIsometric3D() {
           <polygon
             points="50,220 300,370 300,395 50,245"
             fill="url(#deckSideGrad)"
-            stroke="#00D2FF"
+            stroke={isDark ? "#00D2FF" : "#0284C7"}
             strokeWidth="0.8"
-            strokeOpacity="0.3"
+            strokeOpacity={isDark ? "0.3" : "0.5"}
           />
           <polygon
             points="300,370 550,220 550,245 300,395"
-            fill="#040810"
-            stroke="#00D2FF"
+            fill={isDark ? "#040810" : "#64748b"}
+            stroke={isDark ? "#00D2FF" : "#0284C7"}
             strokeWidth="0.8"
-            strokeOpacity="0.2"
+            strokeOpacity={isDark ? "0.2" : "0.4"}
           />
 
           {/* 2. Top Isometric Deck Floor Plane */}
           <polygon
             points="300,70 550,220 300,370 50,220"
             fill="url(#deckFloorGrad)"
-            stroke="#00D2FF"
+            stroke={isDark ? "#00D2FF" : "#0284C7"}
             strokeWidth="2"
-            strokeOpacity="0.5"
+            strokeOpacity={isDark ? "0.5" : "0.6"}
           />
 
           {/* 3. Isometric Grid Perspective Lines */}
-          <g stroke="#00D2FF" strokeWidth="0.75" strokeOpacity="0.15">
+          <g stroke={isDark ? "#00D2FF" : "#0284C7"} strokeWidth="0.75" strokeOpacity={isDark ? "0.15" : "0.2"}>
             {/* Diagonals Left to Right */}
             <line x1="100" y1="190" x2="350" y2="340" />
             <line x1="150" y1="160" x2="400" y2="310" />
@@ -215,10 +233,10 @@ export default function ParkEaseHeroIsometric3D() {
           <path
             d="M 120 285 L 290 330 L 440 240 L 290 150"
             fill="none"
-            stroke="#00D2FF"
+            stroke={isDark ? "#00D2FF" : "#0284C7"}
             strokeWidth="1.5"
             strokeDasharray="8 6"
-            strokeOpacity="0.4"
+            strokeOpacity={isDark ? "0.4" : "0.6"}
           />
 
           {/* =================================================================
@@ -229,12 +247,12 @@ export default function ParkEaseHeroIsometric3D() {
           <g onMouseEnter={() => setHoveredBay('C1A')} onMouseLeave={() => setHoveredBay(null)} className="cursor-pointer">
             <polygon
               points="140,165 200,130 250,160 190,195"
-              fill={hoveredBay === 'C1A' ? '#00D2FF22' : '#0a172e'}
-              stroke="#00D2FF"
+              fill={hoveredBay === 'C1A' ? (isDark ? '#00D2FF22' : '#00D2FF33') : (isDark ? '#0a172e' : '#FFFFFF')}
+              stroke={isDark ? "#00D2FF" : "#0284C7"}
               strokeWidth="1.2"
-              strokeOpacity="0.4"
+              strokeOpacity={isDark ? "0.4" : "0.6"}
             />
-            <text x="175" y="160" fill="#00D2FF" fontSize="9" fontFamily="monospace" opacity="0.6">C1A</text>
+            <text x="175" y="160" fill={isDark ? "#00D2FF" : "#0284C7"} fontSize="9" fontFamily="monospace" opacity={isDark ? "0.6" : "0.9"}>C1A</text>
             
             {/* 3D Realistic Isometric Luxury Sedan in Bay C1A */}
             <g transform="translate(195, 160) rotate(-22)">
@@ -286,13 +304,13 @@ export default function ParkEaseHeroIsometric3D() {
             {/* Bay Floor Highlight */}
             <polygon
               points="205,125 265,90 315,120 255,155"
-              fill="url(#bayTargetGrad)"
+              fill={isDark ? "url(#bayTargetGrad)" : "rgba(0,255,163,0.18)"}
               stroke="#00FFA3"
               strokeWidth="2.5"
               filter="url(#laserGlow)"
             />
             {/* Bay Label */}
-            <text x="240" y="120" fill="#00FFA3" fontSize="10" fontWeight="bold" fontFamily="monospace">C1B</text>
+            <text x="240" y="120" fill={isDark ? "#00FFA3" : "#047857"} fontSize="10" fontWeight="bold" fontFamily="monospace">C1B</text>
 
             {/* Target Reticle Floor Ring */}
             <ellipse
@@ -329,10 +347,10 @@ export default function ParkEaseHeroIsometric3D() {
 
             {/* Floating Real Price Tag Stem & Badge for Bay C1B (₹30/hr) */}
             <g transform="translate(285, 80)">
-              <line x1="0" y1="35" x2="0" y2="8" stroke="#00FFA3" strokeWidth="1.5" strokeDasharray="2 2" filter="url(#softGlow)" />
-              <circle cx="0" cy="35" r="3" fill="#00FFA3" filter="url(#laserGlow)" />
-              <rect x="-38" y="-12" width="76" height="20" rx="6" fill="#071828" stroke="#00FFA3" strokeWidth="1.5" filter="url(#laserGlow)" />
-              <text x="0" y="2" fill="#00FFA3" fontSize="10" fontWeight="bold" fontFamily="monospace" textAnchor="middle">BAY C1B ₹30/h</text>
+              <line x1="0" y1="35" x2="0" y2="8" stroke={isDark ? "#00FFA3" : "#059669"} strokeWidth="1.5" strokeDasharray="2 2" filter="url(#softGlow)" />
+              <circle cx="0" cy="35" r="3" fill={isDark ? "#00FFA3" : "#059669"} filter="url(#laserGlow)" />
+              <rect x="-38" y="-12" width="76" height="20" rx="6" fill={isDark ? "#071828" : "#FFFFFF"} stroke={isDark ? "#00FFA3" : "#059669"} strokeWidth="1.5" filter="url(#laserGlow)" />
+              <text x="0" y="2" fill={isDark ? "#00FFA3" : "#047857"} fontSize="10" fontWeight="bold" fontFamily="monospace" textAnchor="middle">BAY C1B ₹30/h</text>
             </g>
           </g>
 
@@ -340,12 +358,12 @@ export default function ParkEaseHeroIsometric3D() {
           <g onMouseEnter={() => setHoveredBay('E1A')} onMouseLeave={() => setHoveredBay(null)} className="cursor-pointer">
             <polygon
               points="270,85 330,50 380,80 320,115"
-              fill={hoveredBay === 'E1A' ? '#10B98122' : '#0a172e'}
-              stroke="#00D2FF"
+              fill={hoveredBay === 'E1A' ? (isDark ? '#10B98122' : '#10B98133') : (isDark ? '#0a172e' : '#FFFFFF')}
+              stroke={isDark ? "#00D2FF" : "#0284C7"}
               strokeWidth="1.2"
-              strokeOpacity="0.4"
+              strokeOpacity={isDark ? "0.4" : "0.6"}
             />
-            <text x="305" y="80" fill="#00D2FF" fontSize="9" fontFamily="monospace" opacity="0.6">E1A</text>
+            <text x="305" y="80" fill={isDark ? "#00D2FF" : "#0284C7"} fontSize="9" fontFamily="monospace" opacity={isDark ? "0.6" : "0.9"}>E1A</text>
             
             {/* 3D Realistic Isometric Emerald EV in Bay E1A */}
             <g transform="translate(325, 80) rotate(-22)">
@@ -401,19 +419,19 @@ export default function ParkEaseHeroIsometric3D() {
           <g onMouseEnter={() => setHoveredBay('B1A')} onMouseLeave={() => setHoveredBay(null)} className="cursor-pointer">
             <polygon
               points="220,290 280,255 330,285 270,320"
-              fill={hoveredBay === 'B1A' ? '#00D2FF33' : '#0a1832'}
-              stroke="#00D2FF"
+              fill={hoveredBay === 'B1A' ? (isDark ? '#00D2FF33' : '#00D2FF44') : (isDark ? '#0a1832' : '#FFFFFF')}
+              stroke={isDark ? "#00D2FF" : "#0284C7"}
               strokeWidth="1.5"
               filter="url(#softGlow)"
             />
-            <text x="260" y="285" fill="#00D2FF" fontSize="9" fontWeight="bold" fontFamily="monospace">B1A</text>
+            <text x="260" y="285" fill={isDark ? "#00D2FF" : "#0284C7"} fontSize="9" fontWeight="bold" fontFamily="monospace">B1A</text>
 
             {/* Floating Price Tag for Bay B1A (₹10/hr) */}
             <g transform="translate(290, 235)">
-              <line x1="0" y1="45" x2="0" y2="8" stroke="#00D2FF" strokeWidth="1.5" strokeDasharray="2 2" />
-              <circle cx="0" cy="45" r="3" fill="#00D2FF" />
-              <rect x="-34" y="-12" width="68" height="20" rx="6" fill="#071828" stroke="#00D2FF" strokeWidth="1.5" filter="url(#softGlow)" />
-              <text x="0" y="2" fill="#00D2FF" fontSize="10" fontWeight="bold" fontFamily="monospace" textAnchor="middle">BIKE ₹10/h</text>
+              <line x1="0" y1="45" x2="0" y2="8" stroke={isDark ? "#00D2FF" : "#0284C7"} strokeWidth="1.5" strokeDasharray="2 2" />
+              <circle cx="0" cy="45" r="3" fill={isDark ? "#00D2FF" : "#0284C7"} />
+              <rect x="-34" y="-12" width="68" height="20" rx="6" fill={isDark ? "#071828" : "#FFFFFF"} stroke={isDark ? "#00D2FF" : "#0284C7"} strokeWidth="1.5" filter="url(#softGlow)" />
+              <text x="0" y="2" fill={isDark ? "#00D2FF" : "#0369A1"} fontSize="10" fontWeight="bold" fontFamily="monospace" textAnchor="middle">BIKE ₹10/h</text>
             </g>
           </g>
 
@@ -421,12 +439,12 @@ export default function ParkEaseHeroIsometric3D() {
           <g onMouseEnter={() => setHoveredBay('C1C')} onMouseLeave={() => setHoveredBay(null)} className="cursor-pointer">
             <polygon
               points="285,250 345,215 395,245 335,280"
-              fill={hoveredBay === 'C1C' ? '#F59E0B22' : '#0a172e'}
-              stroke="#00D2FF"
+              fill={hoveredBay === 'C1C' ? (isDark ? '#F59E0B22' : '#F59E0B33') : (isDark ? '#0a172e' : '#FFFFFF')}
+              stroke={isDark ? "#00D2FF" : "#0284C7"}
               strokeWidth="1.2"
-              strokeOpacity="0.4"
+              strokeOpacity={isDark ? "0.4" : "0.6"}
             />
-            <text x="325" y="245" fill="#00D2FF" fontSize="9" fontFamily="monospace" opacity="0.6">C1C</text>
+            <text x="325" y="245" fill={isDark ? "#00D2FF" : "#0284C7"} fontSize="9" fontFamily="monospace" opacity={isDark ? "0.6" : "0.9"}>C1C</text>
             
             {/* 3D Realistic Isometric Amber Sports Sedan in Bay C1C */}
             <g transform="translate(340, 245) rotate(-22)">
@@ -477,12 +495,12 @@ export default function ParkEaseHeroIsometric3D() {
           <g onMouseEnter={() => setHoveredBay('BUF-1A')} onMouseLeave={() => setHoveredBay(null)} className="cursor-pointer">
             <polygon
               points="350,210 410,175 460,205 400,240"
-              fill={hoveredBay === 'BUF-1A' ? '#47556922' : '#0a172e'}
-              stroke="#00D2FF"
+              fill={hoveredBay === 'BUF-1A' ? (isDark ? '#47556922' : '#47556933') : (isDark ? '#0a172e' : '#FFFFFF')}
+              stroke={isDark ? "#00D2FF" : "#0284C7"}
               strokeWidth="1.2"
-              strokeOpacity="0.4"
+              strokeOpacity={isDark ? "0.4" : "0.6"}
             />
-            <text x="390" y="205" fill="#00D2FF" fontSize="9" fontFamily="monospace" opacity="0.6">BUF-1</text>
+            <text x="390" y="205" fill={isDark ? "#00D2FF" : "#0284C7"} fontSize="9" fontFamily="monospace" opacity={isDark ? "0.6" : "0.9"}>BUF-1</text>
             
             {/* 3D Realistic Isometric Charcoal Executive Sedan in Bay BUF-1A */}
             <g transform="translate(405, 205) rotate(-22)">
@@ -555,7 +573,7 @@ export default function ParkEaseHeroIsometric3D() {
 
           {/* Entrance Sensor Gate Post (Left) */}
           <g transform="translate(75, 360)">
-            <line x1="0" y1="0" x2="0" y2="-24" stroke="#00D2FF" strokeWidth="2.5" />
+            <line x1="0" y1="0" x2="0" y2="-24" stroke={isDark ? "#00D2FF" : "#0284C7"} strokeWidth="2.5" />
             <circle cx="0" cy="-24" r="3.5" fill="#00FFA3" filter="url(#laserGlow)" />
             <line x1="0" y1="-12" x2="25" y2="-4" stroke="#FF3366" strokeWidth="2" strokeDasharray="3 2" />
           </g>
@@ -644,15 +662,19 @@ export default function ParkEaseHeroIsometric3D() {
       </div>
 
       {/* Bottom Live Telemetry HUD Bar */}
-      <div className="relative z-20 flex items-center justify-between text-[11px] font-mono text-gray-200 bg-[#071022]/95 border border-[#00D2FF]/30 px-4 py-2 rounded-2xl backdrop-blur-md shadow-lg pointer-events-none">
-        <span className="text-cyan-300 flex items-center gap-1.5 font-bold">
-          <span className="w-2 h-2 rounded-full bg-[#00FFA3] animate-pulse" />
+      <div className={`relative z-20 flex items-center justify-between text-[11px] font-mono border px-4 py-2 rounded-2xl backdrop-blur-md shadow-md pointer-events-none ${
+        isDark
+          ? 'bg-[#071022]/95 border-[#00D2FF]/30 text-gray-200 shadow-lg'
+          : 'bg-white/95 border-cyan-500/30 text-slate-700 shadow-sm'
+      }`}>
+        <span className={`${isDark ? 'text-cyan-300' : 'text-cyan-700'} flex items-center gap-1.5 font-bold`}>
+          <span className={`w-2 h-2 rounded-full ${isDark ? 'bg-[#00FFA3]' : 'bg-emerald-500'} animate-pulse`} />
           WebSocket: Live Sync
         </span>
-        <span className="text-gray-400 hidden sm:inline">
-          Latency: <strong className="text-[#00FFA3]">12ms</strong>
+        <span className={`${isDark ? 'text-gray-400' : 'text-slate-500'} hidden sm:inline`}>
+          Latency: <strong className={isDark ? 'text-[#00FFA3]' : 'text-emerald-600'}>12ms</strong>
         </span>
-        <span className="text-[#00FFA3] font-bold">
+        <span className={`${isDark ? 'text-[#00FFA3]' : 'text-emerald-600'} font-bold`}>
           3 Floors Connected
         </span>
       </div>

@@ -254,19 +254,19 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#080C15] text-white font-sora overflow-x-hidden selection:bg-[#00FFA3] selection:text-black relative">
+    <div className="min-h-screen bg-[#F5F7FA] dark:bg-[#080C15] text-[#1A2B49] dark:text-white font-sora overflow-x-hidden selection:bg-[#00FFA3] selection:text-black relative transition-colors duration-300">
 
       {/* =========================================================================
           GLOBAL CONTINUOUS GLOWING NEON ROAD TRAILS CANVAS (50% Opacity & Prominent Cyber Lines)
           ========================================================================= */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute inset-0 cyber-grid-floor opacity-25" />
-        <div className="absolute top-[-10%] left-[15%] w-[550px] h-[550px] bg-[#00D2FF]/10 rounded-full blur-[140px]" />
-        <div className="absolute top-[35%] right-[10%] w-[650px] h-[650px] bg-[#00FFA3]/08 rounded-full blur-[160px]" />
-        <div className="absolute bottom-[20%] left-[5%] w-[550px] h-[550px] bg-[#00D2FF]/08 rounded-full blur-[140px]" />
+        <div className="absolute top-[-10%] left-[15%] w-[550px] h-[550px] bg-[#00D2FF]/08 dark:bg-[#00D2FF]/10 rounded-full blur-[140px]" />
+        <div className="absolute top-[35%] right-[10%] w-[650px] h-[650px] bg-[#00FFA3]/06 dark:bg-[#00FFA3]/08 rounded-full blur-[160px]" />
+        <div className="absolute bottom-[20%] left-[5%] w-[550px] h-[550px] bg-[#00D2FF]/06 dark:bg-[#00D2FF]/08 rounded-full blur-[140px]" />
 
         {/* Prominent Flowing SVG Light-Trail Paths (Opacity: 50%, 3.5px & 2px Stroke) */}
-        <svg className="absolute inset-0 w-full h-full opacity-50" preserveAspectRatio="none" viewBox="0 0 1440 2800">
+        <svg className="absolute inset-0 w-full h-full opacity-40 dark:opacity-50" preserveAspectRatio="none" viewBox="0 0 1440 2800">
           <defs>
             <linearGradient id="globalNeonTrail1" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#00F2FE" stopOpacity="0.8" />
@@ -330,7 +330,7 @@ export default function Landing() {
             className="lg:col-span-6 space-y-6 text-left"
           >
             {/* Real Live Availability Pill */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#00D2FF]/10 border border-[#00D2FF]/30 text-[#00D2FF] text-xs font-space font-semibold tracking-wider uppercase shadow-[0_0_20px_rgba(0,210,255,0.25)]">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#00D2FF]/10 border border-[#00D2FF]/30 text-cyan-700 dark:text-[#00D2FF] text-xs font-space font-semibold tracking-wider uppercase shadow-sm dark:shadow-[0_0_20px_rgba(0,210,255,0.25)]">
               <span className="w-2 h-2 rounded-full bg-[#00FFA3] animate-ping" />
               <span>
                 {liveSlotCount !== null ? `${liveSlotCount} Real Slots Live on 3 Floors` : '36 Slots Live on 3 Floors'}
@@ -338,26 +338,26 @@ export default function Landing() {
             </div>
 
             {/* Bold Neon Glow Header */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] text-white">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] text-[#1A2B49] dark:text-white">
               Park<span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00D2FF] via-[#00FFA3] to-[#00D2FF]">Ease</span>
               <br />
-              <span className="text-white drop-shadow-[0_0_30px_rgba(0,210,255,0.3)]">Smart Parking</span>
+              <span className="text-[#1A2B49] dark:text-white drop-shadow-sm dark:drop-shadow-[0_0_30px_rgba(0,210,255,0.3)]">Smart Parking</span>
             </h1>
 
             {/* Subtitle with Real System Information */}
-            <p className="text-base sm:text-lg text-gray-300 max-w-lg leading-relaxed font-sans">
+            <p className="text-base sm:text-lg text-slate-600 dark:text-gray-300 max-w-lg leading-relaxed font-sans">
               Effortless multi-floor parking powered by IoT sensors, 3D navigation, dynamic QR gate access, and instant Razorpay checkout.
             </p>
 
             {/* Real Pricing Summary Pill Bar */}
             <div className="flex flex-wrap gap-2.5 pt-1">
-              <span className="text-xs font-mono px-3 py-1 rounded-lg bg-cyan-950/40 border border-cyan-500/30 text-cyan-300">
+              <span className="text-xs font-mono px-3 py-1 rounded-lg bg-white/90 dark:bg-cyan-950/40 border border-cyan-500/30 text-cyan-800 dark:text-cyan-300 shadow-sm">
                 Cars: <strong>₹30/hr</strong>
               </span>
-              <span className="text-xs font-mono px-3 py-1 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300">
+              <span className="text-xs font-mono px-3 py-1 rounded-lg bg-white/90 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 shadow-sm">
                 EV Fast Charge: <strong>₹25/hr</strong>
               </span>
-              <span className="text-xs font-mono px-3 py-1 rounded-lg bg-slate-900/60 border border-slate-700 text-gray-300">
+              <span className="text-xs font-mono px-3 py-1 rounded-lg bg-white/90 dark:bg-slate-900/60 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-gray-300 shadow-sm">
                 Bikes: <strong>₹10/hr</strong>
               </span>
             </div>
@@ -382,7 +382,7 @@ export default function Landing() {
 
               <button
                 onClick={() => navigate('/waiting-list')}
-                className="px-5 py-3 rounded-2xl text-xs sm:text-sm font-semibold text-gray-400 hover:text-white border border-white/10 hover:border-cyan-500/40 transition-all cursor-pointer backdrop-blur-md"
+                className="px-5 py-3 rounded-2xl text-xs sm:text-sm font-semibold text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white border border-slate-300 dark:border-white/10 hover:border-cyan-500/40 transition-all cursor-pointer backdrop-blur-md bg-white/60 dark:bg-transparent shadow-sm"
               >
                 Join Waitlist
               </button>
@@ -397,7 +397,7 @@ export default function Landing() {
                   className={`transition-all duration-300 rounded-full cursor-pointer ${
                     heroSlide === dot
                       ? 'w-6 h-2 bg-[#00FFA3] shadow-[0_0_12px_#00FFA3]'
-                      : 'w-2 h-2 bg-gray-700 hover:bg-gray-500'
+                      : 'w-2 h-2 bg-slate-300 dark:bg-gray-700 hover:bg-slate-400 dark:hover:bg-gray-500'
                   }`}
                   aria-label={`Slide ${dot + 1}`}
                 />
@@ -428,7 +428,7 @@ export default function Landing() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-3"
+            className="text-3xl sm:text-4xl font-extrabold text-[#1A2B49] dark:text-white tracking-tight mb-3"
           >
             Everything you need
           </motion.h2>
@@ -437,7 +437,7 @@ export default function Landing() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-sm sm:text-base text-gray-400 font-sans"
+            className="text-sm sm:text-base text-slate-600 dark:text-gray-400 font-sans"
           >
             Complete smart parking platform with real-time IoT sensors, multi-floor 3D maps, and Razorpay cashless payments.
           </motion.p>
@@ -466,7 +466,7 @@ export default function Landing() {
               <div>
                 {/* Card Top Row with Icon & Mini Status Badge */}
                 <div className="flex items-center justify-between mb-5">
-                  <div className="w-12 h-12 rounded-xl bg-[#09152b] border border-cyan-500/25 flex items-center justify-center shadow-lg group-hover:border-[#00FFA3]/50 group-hover:scale-110 transition-all">
+                  <div className="w-12 h-12 rounded-xl bg-cyan-50 dark:bg-[#09152b] border border-cyan-500/25 flex items-center justify-center shadow-md group-hover:border-[#00FFA3]/50 group-hover:scale-110 transition-all">
                     <card.icon className={`w-6 h-6 ${card.iconColor}`} />
                   </div>
                   <span className={`text-[10px] font-space font-bold tracking-wider px-2.5 py-1 rounded-full border ${card.badgeColor} flex items-center gap-1`}>
@@ -476,16 +476,16 @@ export default function Landing() {
                 </div>
 
                 {/* Card Title & Content */}
-                <h3 className="text-lg font-bold text-white mb-2 group-hover:text-[#00FFA3] transition-colors">
+                <h3 className="text-lg font-bold text-[#1A2B49] dark:text-white mb-2 group-hover:text-cyan-600 dark:group-hover:text-[#00FFA3] transition-colors">
                   {card.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-gray-400 leading-relaxed font-sans">
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-gray-400 leading-relaxed font-sans">
                   {card.description}
                 </p>
               </div>
 
               {/* Bottom Status Link */}
-              <div className="pt-5 mt-4 border-t border-white/5 flex items-center justify-between text-xs text-[#00D2FF] font-medium group-hover:text-[#00FFA3] transition-colors">
+              <div className="pt-5 mt-4 border-t border-slate-200 dark:border-white/5 flex items-center justify-between text-xs text-cyan-600 dark:text-[#00D2FF] font-medium group-hover:text-emerald-600 dark:group-hover:text-[#00FFA3] transition-colors">
                 <span onClick={() => navigate('/book-parking')} className="cursor-pointer">Explore feature</span>
                 <HiOutlineArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
               </div>
@@ -505,7 +505,7 @@ export default function Landing() {
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#00FFA3]/10 border border-[#00FFA3]/30 text-[#00FFA3] text-xs font-space font-bold tracking-wider uppercase mb-3 shadow-[0_0_15px_rgba(0,255,163,0.2)]"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#00FFA3]/10 border border-[#00FFA3]/30 text-emerald-700 dark:text-[#00FFA3] text-xs font-space font-bold tracking-wider uppercase mb-3 shadow-sm dark:shadow-[0_0_15px_rgba(0,255,163,0.2)]"
           >
             <span>Autonomous Journey Flow</span>
           </motion.div>
@@ -515,7 +515,7 @@ export default function Landing() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.05 }}
-            className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-3"
+            className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#1A2B49] dark:text-white tracking-tight mb-3"
           >
             Four simple steps
           </motion.h2>
@@ -525,7 +525,7 @@ export default function Landing() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-sm sm:text-base text-gray-400 font-sans"
+            className="text-sm sm:text-base text-slate-600 dark:text-gray-400 font-sans"
           >
             Seamless navigation from online spot discovery to express departure.
           </motion.p>
@@ -542,10 +542,10 @@ export default function Landing() {
             <svg viewBox="0 0 1200 160" className="w-full h-full" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="highwayAsphalt" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#061226" />
-                  <stop offset="30%" stopColor="#081832" />
-                  <stop offset="70%" stopColor="#081832" />
-                  <stop offset="100%" stopColor="#061226" />
+                  <stop offset="0%" stopColor="#0b172a" />
+                  <stop offset="30%" stopColor="#1e293b" />
+                  <stop offset="70%" stopColor="#1e293b" />
+                  <stop offset="100%" stopColor="#0b172a" />
                 </linearGradient>
 
                 <linearGradient id="cyanTrackBorder" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -637,7 +637,7 @@ export default function Landing() {
                       className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center font-extrabold text-sm sm:text-base transition-all duration-300 relative border-2 ${
                         isSelected
                           ? 'bg-gradient-to-br from-[#00D2FF] to-[#00FFA3] text-black border-white shadow-[0_0_25px_#00FFA3] scale-110 ring-4 ring-[#00FFA3]/30'
-                          : 'bg-[#09152b] border-cyan-500/40 text-gray-300 group-hover:border-[#00FFA3] group-hover:text-white group-hover:scale-105'
+                          : 'bg-white dark:bg-[#09152b] border-cyan-500/40 text-slate-700 dark:text-gray-300 group-hover:border-[#00FFA3] group-hover:text-slate-900 dark:group-hover:text-white group-hover:scale-105 shadow-sm'
                       }`}
                     >
                       {st.stepNum}
@@ -649,11 +649,11 @@ export default function Landing() {
                     {/* Step Title Label Under Node */}
                     <div className="text-center mt-2.5">
                       <span className={`text-xs sm:text-sm font-bold block transition-colors ${
-                        isSelected ? 'text-[#00FFA3]' : 'text-gray-300 group-hover:text-white'
+                        isSelected ? 'text-emerald-600 dark:text-[#00FFA3]' : 'text-slate-700 dark:text-gray-300 group-hover:text-slate-900 dark:group-hover:text-white'
                       }`}>
                         {st.title}
                       </span>
-                      <span className="text-[10px] text-gray-500 hidden sm:block font-space">
+                      <span className="text-[10px] text-slate-500 dark:text-gray-500 hidden sm:block font-space">
                         {st.sub}
                       </span>
                     </div>
@@ -675,7 +675,7 @@ export default function Landing() {
                 whileHover={{ y: -4 }}
                 className={`cyber-card p-5 cursor-pointer transition-all duration-300 relative overflow-hidden ${
                   isSelected
-                    ? 'border-[#00FFA3] bg-[#0d1c38]/90 shadow-[0_0_30px_rgba(0,255,163,0.25)]'
+                    ? 'border-[#00FFA3] bg-white dark:bg-[#0d1c38]/90 shadow-[0_0_30px_rgba(0,255,163,0.25)]'
                     : 'border-cyan-500/20 hover:border-cyan-500/50'
                 }`}
               >
@@ -683,29 +683,29 @@ export default function Landing() {
                 <div className="flex items-center justify-between mb-4">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
                     isSelected
-                      ? 'bg-[#00FFA3]/15 border-[#00FFA3] text-[#00FFA3]'
-                      : 'bg-slate-900/80 border-cyan-500/30 text-[#00D2FF]'
+                      ? 'bg-[#00FFA3]/15 border-[#00FFA3] text-emerald-600 dark:text-[#00FFA3]'
+                      : 'bg-cyan-50 dark:bg-slate-900/80 border-cyan-500/30 text-cyan-700 dark:text-[#00D2FF]'
                   }`}>
                     <step.icon className="w-5 h-5" />
                   </div>
                   <span className={`text-xs font-space font-extrabold px-2.5 py-0.5 rounded-full border ${
                     isSelected
                       ? 'bg-[#00FFA3] text-black border-[#00FFA3]'
-                      : 'text-gray-400 border-white/10'
+                      : 'text-slate-600 dark:text-gray-400 border-slate-300 dark:border-white/10'
                   }`}>
                     STEP {step.stepNum}
                   </span>
                 </div>
 
                 <h3 className={`text-base font-bold mb-1 transition-colors ${
-                  isSelected ? 'text-[#00FFA3]' : 'text-white'
+                  isSelected ? 'text-emerald-600 dark:text-[#00FFA3]' : 'text-[#1A2B49] dark:text-white'
                 }`}>
                   {step.title}
                 </h3>
-                <p className="text-xs text-cyan-300/80 font-space mb-2">
+                <p className="text-xs text-cyan-700 dark:text-cyan-300/80 font-space mb-2">
                   {step.sub}
                 </p>
-                <p className="text-xs text-gray-400 font-sans leading-relaxed">
+                <p className="text-xs text-slate-600 dark:text-gray-400 font-sans leading-relaxed">
                   {step.desc}
                 </p>
 
@@ -729,7 +729,7 @@ export default function Landing() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-3"
+            className="text-3xl sm:text-4xl font-extrabold text-[#1A2B49] dark:text-white tracking-tight mb-3"
           >
             Built for everyone
           </motion.h2>
@@ -738,7 +738,7 @@ export default function Landing() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-sm sm:text-base text-gray-400 font-sans"
+            className="text-sm sm:text-base text-slate-600 dark:text-gray-400 font-sans"
           >
             Tailored solutions designed for daily drivers, commercial parking administrators, and gate security staff.
           </motion.p>
@@ -755,11 +755,11 @@ export default function Landing() {
               className="cyber-card overflow-hidden flex flex-col justify-between group"
             >
               {/* Device UI Mockup Window */}
-              <div className="relative h-48 w-full bg-gradient-to-b from-[#09152b] to-[#060c18] border-b border-cyan-500/20 p-4 flex items-center justify-center overflow-hidden">
+              <div className="relative h-48 w-full bg-gradient-to-b from-slate-100 to-slate-200 dark:from-[#09152b] dark:to-[#060c18] border-b border-cyan-500/20 p-4 flex items-center justify-center overflow-hidden">
                 
                 {aud.type === 'mobile' && (
-                  <div className="w-32 h-40 bg-[#0a1122] rounded-2xl border-2 border-cyan-500/40 p-2 shadow-2xl flex flex-col justify-between relative group-hover:scale-105 transition-transform duration-300">
-                    <div className="flex items-center justify-between text-[8px] text-gray-400 font-mono">
+                  <div className="w-32 h-40 bg-white dark:bg-[#0a1122] rounded-2xl border-2 border-cyan-500/40 p-2 shadow-2xl flex flex-col justify-between relative group-hover:scale-105 transition-transform duration-300">
+                    <div className="flex items-center justify-between text-[8px] text-slate-500 dark:text-gray-400 font-mono">
                       <span>9:41</span>
                       <span className="text-[#00FFA3]">● 5G</span>
                     </div>
@@ -767,18 +767,18 @@ export default function Landing() {
                       <div className="w-8 h-8 rounded-full bg-[#00FFA3]/20 border border-[#00FFA3] flex items-center justify-center text-[#00FFA3] mx-auto mb-1 text-sm shadow-[0_0_10px_#00FFA3]">
                         ✓
                       </div>
-                      <span className="text-[9px] font-bold text-white block">Spot Confirmed</span>
-                      <span className="text-[8px] text-cyan-300 font-mono">Bay #C1B (Fl.1)</span>
+                      <span className="text-[9px] font-bold text-[#1A2B49] dark:text-white block">Spot Confirmed</span>
+                      <span className="text-[8px] text-cyan-600 dark:text-cyan-300 font-mono">Bay #C1B (Fl.1)</span>
                     </div>
                     <div className="w-full h-1.5 bg-[#00FFA3] rounded-full" />
                   </div>
                 )}
 
                 {aud.type === 'tablet' && (
-                  <div className="w-48 h-32 bg-[#0a1122] rounded-xl border-2 border-[#00D2FF]/40 p-2 shadow-2xl flex flex-col justify-between group-hover:scale-105 transition-transform duration-300">
-                    <div className="flex items-center justify-between text-[8px] text-gray-300 font-mono border-b border-white/10 pb-1">
-                      <span className="text-[#00D2FF]">OCCUPANCY RADAR</span>
-                      <span className="text-emerald-400">3 FLOORS LIVE</span>
+                  <div className="w-48 h-32 bg-white dark:bg-[#0a1122] rounded-xl border-2 border-[#00D2FF]/40 p-2 shadow-2xl flex flex-col justify-between group-hover:scale-105 transition-transform duration-300">
+                    <div className="flex items-center justify-between text-[8px] text-slate-700 dark:text-gray-300 font-mono border-b border-slate-200 dark:border-white/10 pb-1">
+                      <span className="text-cyan-700 dark:text-[#00D2FF]">OCCUPANCY RADAR</span>
+                      <span className="text-emerald-600 dark:text-emerald-400">3 FLOORS LIVE</span>
                     </div>
                     <div className="flex items-end gap-1.5 h-14 pt-2 px-1">
                       <div className="w-4 h-6 bg-cyan-500/60 rounded-t" />
@@ -788,19 +788,19 @@ export default function Landing() {
                       <div className="w-4 h-7 bg-cyan-500/60 rounded-t" />
                       <div className="w-4 h-11 bg-teal-400 rounded-t" />
                     </div>
-                    <span className="text-[7px] font-mono text-gray-400 text-center">Revenue: Razorpay Active</span>
+                    <span className="text-[7px] font-mono text-slate-500 dark:text-gray-400 text-center">Revenue: Razorpay Active</span>
                   </div>
                 )}
 
                 {aud.type === 'mobile-fleet' && (
-                  <div className="w-32 h-40 bg-[#0a1122] rounded-2xl border-2 border-[#00FFA3]/40 p-2 shadow-2xl flex flex-col justify-between relative group-hover:scale-105 transition-transform duration-300">
-                    <div className="flex items-center justify-between text-[8px] text-gray-400 font-mono">
-                      <span className="text-[#00FFA3]">GATE SCANNER</span>
-                      <span className="text-cyan-400">QR / LPR</span>
+                  <div className="w-32 h-40 bg-white dark:bg-[#0a1122] rounded-2xl border-2 border-[#00FFA3]/40 p-2 shadow-2xl flex flex-col justify-between relative group-hover:scale-105 transition-transform duration-300">
+                    <div className="flex items-center justify-between text-[8px] text-slate-500 dark:text-gray-400 font-mono">
+                      <span className="text-emerald-600 dark:text-[#00FFA3]">GATE SCANNER</span>
+                      <span className="text-cyan-700 dark:text-cyan-400">QR / LPR</span>
                     </div>
-                    <div className="p-1.5 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-center my-auto">
-                      <span className="text-[9px] font-bold text-white block">Auto Gate Lift</span>
-                      <span className="text-[8px] text-emerald-400 font-mono">&lt;0.3s Latency</span>
+                    <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/30 text-center my-auto">
+                      <span className="text-[9px] font-bold text-[#1A2B49] dark:text-white block">Auto Gate Lift</span>
+                      <span className="text-[8px] text-emerald-600 dark:text-emerald-400 font-mono">&lt;0.3s Latency</span>
                     </div>
                     <div className="w-full h-1.5 bg-[#00D2FF] rounded-full" />
                   </div>
@@ -816,14 +816,14 @@ export default function Landing() {
               {/* Text Points & Details */}
               <div className="p-6 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-4">
+                  <h3 className="text-xl font-bold text-[#1A2B49] dark:text-white mb-4">
                     {aud.title}
                   </h3>
 
                   <ul className="space-y-2.5">
                     {aud.points.map((point) => (
-                      <li key={point} className="flex items-start gap-2.5 text-xs sm:text-sm text-gray-300 font-sans">
-                        <span className="w-4 h-4 rounded-full bg-[#00FFA3]/10 border border-[#00FFA3]/30 flex items-center justify-center text-[#00FFA3] flex-shrink-0 mt-0.5">
+                      <li key={point} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-600 dark:text-gray-300 font-sans">
+                        <span className="w-4 h-4 rounded-full bg-[#00FFA3]/10 border border-[#00FFA3]/30 flex items-center justify-center text-emerald-600 dark:text-[#00FFA3] flex-shrink-0 mt-0.5">
                           <HiOutlineCheck className="w-3 h-3" />
                         </span>
                         <span>{point}</span>
@@ -832,10 +832,10 @@ export default function Landing() {
                   </ul>
                 </div>
 
-                <div className="pt-6 mt-6 border-t border-white/5">
+                <div className="pt-6 mt-6 border-t border-slate-200 dark:border-white/5">
                   <button
                     onClick={() => navigate('/available-slots')}
-                    className="w-full py-2.5 rounded-xl text-xs font-bold text-[#00D2FF] bg-[#00D2FF]/10 hover:bg-[#00D2FF]/20 border border-[#00D2FF]/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-2.5 rounded-xl text-xs font-bold text-cyan-700 dark:text-[#00D2FF] bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <span>View Live Slots</span>
                     <HiOutlineArrowRight className="w-3.5 h-3.5" />
@@ -856,7 +856,7 @@ export default function Landing() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-3"
+            className="text-3xl sm:text-4xl font-extrabold text-[#1A2B49] dark:text-white tracking-tight mb-3"
           >
             What our users say
           </motion.h2>
@@ -865,7 +865,7 @@ export default function Landing() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-sm sm:text-base text-gray-400 font-sans"
+            className="text-sm sm:text-base text-slate-600 dark:text-gray-400 font-sans"
           >
             Real feedback from daily commuters, EV drivers, and commercial facility directors.
           </motion.p>
@@ -888,25 +888,25 @@ export default function Landing() {
                       <HiOutlineStar key={idx} className="w-4 h-4 fill-[#00FFA3] text-[#00FFA3]" />
                     ))}
                   </div>
-                  <span className="text-xs font-space text-[#00D2FF] flex items-center gap-1 bg-[#00D2FF]/10 px-2.5 py-0.5 rounded-full border border-[#00D2FF]/25">
+                  <span className="text-xs font-space text-cyan-700 dark:text-[#00D2FF] flex items-center gap-1 bg-[#00D2FF]/10 px-2.5 py-0.5 rounded-full border border-[#00D2FF]/25">
                     🚗 Verified Booking
                   </span>
                 </div>
 
-                <p className="text-xs sm:text-sm text-gray-300 italic leading-relaxed mb-6 font-sans">
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-gray-300 italic leading-relaxed mb-6 font-sans">
                   "{t.quote}"
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 pt-4 border-t border-white/5">
+              <div className="flex items-center gap-3 pt-4 border-t border-slate-200 dark:border-white/5">
                 <img
                   src={t.avatar}
                   alt={t.name}
                   className="w-10 h-10 rounded-full object-cover border border-[#00FFA3]/40"
                 />
                 <div>
-                  <h4 className="text-sm font-bold text-white">{t.name}</h4>
-                  <p className="text-[11px] text-gray-400 font-space">{t.role}</p>
+                  <h4 className="text-sm font-bold text-[#1A2B49] dark:text-white">{t.name}</h4>
+                  <p className="text-[11px] text-slate-500 dark:text-gray-400 font-space">{t.role}</p>
                 </div>
               </div>
             </motion.div>
@@ -920,15 +920,15 @@ export default function Landing() {
       <section className="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
           <div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-2">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1A2B49] dark:text-white tracking-tight mb-2">
               Frequently asked questions
             </h2>
-            <p className="text-sm text-gray-400 font-sans">
+            <p className="text-sm text-slate-600 dark:text-gray-400 font-sans">
               All answers regarding booking, gate entry, pricing rates, and EV slots.
             </p>
           </div>
           
-          <div className="inline-flex items-center gap-2 self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-[#00D2FF]/10 border border-[#00D2FF]/30 text-[#00D2FF] text-xs font-space font-semibold shadow-md">
+          <div className="inline-flex items-center gap-2 self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-[#00D2FF]/10 border border-[#00D2FF]/30 text-cyan-700 dark:text-[#00D2FF] text-xs font-space font-semibold shadow-md">
             <span>🚗 Smart FAQs</span>
           </div>
         </div>
@@ -945,13 +945,13 @@ export default function Landing() {
                   onClick={() => setOpenFaq(isOpen ? null : index)}
                   className="w-full text-left p-5 flex items-center justify-between gap-4 cursor-pointer"
                 >
-                  <span className="text-sm sm:text-base font-semibold text-gray-200 hover:text-white transition-colors">
+                  <span className="text-sm sm:text-base font-semibold text-[#1A2B49] dark:text-gray-200 hover:text-cyan-600 dark:hover:text-white transition-colors">
                     {faq.q}
                   </span>
                   <motion.div
                     animate={{ rotate: isOpen ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
-                    className="flex-shrink-0 w-7 h-7 rounded-full bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-400"
+                    className="flex-shrink-0 w-7 h-7 rounded-full bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-600 dark:text-cyan-400"
                   >
                     <HiOutlineChevronDown className="w-4 h-4" />
                   </motion.div>
@@ -966,7 +966,7 @@ export default function Landing() {
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
                       className="overflow-hidden"
                     >
-                      <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-gray-400 leading-relaxed border-t border-white/5 font-sans">
+                      <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-slate-600 dark:text-gray-400 leading-relaxed border-t border-slate-200 dark:border-white/5 font-sans">
                         {faq.a}
                       </div>
                     </motion.div>
@@ -983,8 +983,8 @@ export default function Landing() {
           ========================================================================= */}
       <section className="relative z-10 py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
         
-        {/* Outer Banner Wrapper with Royal Ocean Blue Ambient Lighting */}
-        <div className="relative rounded-[2.5rem] overflow-hidden bg-gradient-to-r from-[#031435] via-[#07245c] to-[#041a45] border border-[#00D2FF]/30 p-6 sm:p-12 shadow-[0_0_80px_rgba(2,132,199,0.35)]">
+        {/* Outer Banner Wrapper with Royal Ocean Blue / Clean Light-Glass Ambient Lighting */}
+        <div className="relative rounded-[2.5rem] overflow-hidden bg-gradient-to-r from-[#EFF6FF] via-[#E0F2FE] to-[#F0FDFA] dark:from-[#031435] dark:via-[#07245c] dark:to-[#041a45] border border-cyan-500/30 p-6 sm:p-12 shadow-[0_10px_40px_rgba(2,132,199,0.15)] dark:shadow-[0_0_80px_rgba(2,132,199,0.35)]">
           
           {/* Luminous Glowing Electric-Blue Swoosh Light-Trail streaming from Golden Car to Top-Right */}
           <svg
@@ -1076,36 +1076,36 @@ export default function Landing() {
           </div>
 
           {/* Inner Centered Glassmorphic Elevated Card */}
-          <div className="relative z-20 max-w-3xl mx-auto rounded-3xl bg-[#091e4a]/75 border border-[#00D2FF]/25 backdrop-blur-2xl p-8 sm:p-12 text-center shadow-[0_20px_50px_rgba(0,0,0,0.55)]">
+          <div className="relative z-20 max-w-3xl mx-auto rounded-3xl bg-white/90 dark:bg-[#091e4a]/75 border border-cyan-500/25 backdrop-blur-2xl p-8 sm:p-12 text-center shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.55)]">
             
             {/* Top Glowing Wireframe Car Front Icon */}
             <div className="flex items-center justify-center mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-[#0a2355] border border-cyan-400/40 flex items-center justify-center text-cyan-300 shadow-[0_0_25px_rgba(0,210,255,0.35)]">
+              <div className="w-14 h-14 rounded-2xl bg-cyan-50 dark:bg-[#0a2355] border border-cyan-400/40 flex items-center justify-center text-cyan-600 dark:text-cyan-300 shadow-md dark:shadow-[0_0_25px_rgba(0,210,255,0.35)]">
                 <svg viewBox="0 0 32 32" className="w-8 h-8 fill-none stroke-current" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   {/* Roof & Windshield */}
                   <path d="M 9 13 L 11 7 C 11.5 5.5, 20.5 5.5, 21 7 L 23 13 Z" />
                   {/* Body Contour */}
                   <path d="M 6 13 C 5 14, 5 19, 5 21 C 5 23, 7 24, 8 24 L 24 24 C 25 24, 27 23, 27 21 C 27 19, 27 14, 26 13 Z" />
                   {/* Headlights */}
-                  <circle cx="9" cy="18" r="1.5" className="fill-cyan-300" />
-                  <circle cx="23" cy="18" r="1.5" className="fill-cyan-300" />
+                  <circle cx="9" cy="18" r="1.5" className="fill-cyan-500 dark:fill-cyan-300" />
+                  <circle cx="23" cy="18" r="1.5" className="fill-cyan-500 dark:fill-cyan-300" />
                   {/* Front Grille */}
                   <line x1="13" y1="20" x2="19" y2="20" />
                   <line x1="14" y1="22" x2="18" y2="22" />
                   {/* Wheels */}
-                  <rect x="4" y="21" width="2" height="4" rx="1" className="fill-cyan-400" />
-                  <rect x="26" y="21" width="2" height="4" rx="1" className="fill-cyan-400" />
+                  <rect x="4" y="21" width="2" height="4" rx="1" className="fill-cyan-600 dark:fill-cyan-400" />
+                  <rect x="26" y="21" width="2" height="4" rx="1" className="fill-cyan-600 dark:fill-cyan-400" />
                 </svg>
               </div>
             </div>
 
             {/* Headline */}
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight mb-3">
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-[#1A2B49] dark:text-white tracking-tight mb-3">
               Ready to get started?
             </h2>
 
             {/* Subtitle */}
-            <p className="text-xs sm:text-sm text-gray-300 max-w-lg mx-auto leading-relaxed mb-8 font-sans">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-gray-300 max-w-lg mx-auto leading-relaxed mb-8 font-sans">
               Join thousands of smart commuters and facility owners on the connected smart parking network.
             </p>
 
@@ -1114,7 +1114,7 @@ export default function Landing() {
               
               {/* Concentric Sonic / Radio Pulse Arcs on Left */}
               <div className="flex items-center gap-1 opacity-70">
-                <svg viewBox="0 0 24 36" className="w-5 h-8 text-amber-400/80">
+                <svg viewBox="0 0 24 36" className="w-5 h-8 text-amber-500/80 dark:text-amber-400/80">
                   <path d="M 18 4 C 10 10, 10 26, 18 32" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   <path d="M 10 9 C 5 13, 5 23, 10 27" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" opacity="0.6" />
                 </svg>
