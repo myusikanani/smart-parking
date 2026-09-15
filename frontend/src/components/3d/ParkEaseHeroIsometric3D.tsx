@@ -150,6 +150,12 @@ export default function ParkEaseHeroIsometric3D() {
               <stop offset="100%" stopColor="#92400E" />
             </linearGradient>
 
+            <linearGradient id="charcoalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#64748B" />
+              <stop offset="60%" stopColor="#334155" />
+              <stop offset="100%" stopColor="#1E293B" />
+            </linearGradient>
+
             <linearGradient id="bayTargetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#00FFA3" stopOpacity="0.25" />
               <stop offset="100%" stopColor="#00D2FF" stopOpacity="0.05" />
@@ -219,7 +225,7 @@ export default function ParkEaseHeroIsometric3D() {
               PARKING BAYS ROW A (Top/Left Row)
               ================================================================= */}
           
-          {/* Bay C1A (Four-Wheeler - Occupied by Aerodynamic Blue Sedan) */}
+          {/* Bay C1A (Four-Wheeler - Occupied by 3D Volumetric Blue Sports Sedan) */}
           <g onMouseEnter={() => setHoveredBay('C1A')} onMouseLeave={() => setHoveredBay(null)} className="cursor-pointer">
             <polygon
               points="140,165 200,130 250,160 190,195"
@@ -230,28 +236,48 @@ export default function ParkEaseHeroIsometric3D() {
             />
             <text x="175" y="160" fill="#00D2FF" fontSize="9" fontFamily="monospace" opacity="0.6">C1A</text>
             
-            {/* Sleek Curved Luxury Sedan in C1A */}
+            {/* 3D Realistic Isometric Luxury Sedan in Bay C1A */}
             <g transform="translate(195, 160) rotate(-22)">
-              <ellipse cx="0" cy="5" rx="26" ry="10" fill="#000000" opacity="0.6" />
-              {/* Tires */}
-              <rect x="-18" y="4" width="7" height="4" rx="1.5" fill="#0f172a" stroke="#00D2FF" strokeWidth="0.6" />
-              <rect x="11" y="4" width="7" height="4" rx="1.5" fill="#0f172a" stroke="#00D2FF" strokeWidth="0.6" />
-              {/* Curvature Body */}
-              <path
-                d="M -24 3 C -26 -1, -20 -7, -8 -9 C 3 -10, 15 -6, 23 1 C 26 4, 21 11, 14 12 C 0 14, -15 12, -24 3 Z"
-                fill="url(#blueSedanGrad)"
-                stroke="#38BDF8"
-                strokeWidth="1"
-              />
-              {/* Tinted Roof Glass */}
-              <path
-                d="M -12 -1 C -14 -6, -5 -7, 1 -7 C 9 -7, 14 -4, 12 0 C 6 3, -3 3, -12 -1 Z"
-                fill="#030814"
-                stroke="#38BDF8"
-                strokeWidth="0.6"
-              />
-              {/* LED Headlight Beam */}
-              <circle cx="-22" cy="1" r="1.8" fill="#FFFFFF" />
+              {/* 1. Ground Contact Multi-Stage Shadow */}
+              <ellipse cx="0" cy="14" rx="34" ry="12" fill="#000000" opacity="0.65" filter="url(#softGlow)" />
+              <ellipse cx="0" cy="11" rx="26" ry="8" fill="#000000" opacity="0.85" />
+
+              {/* 2. 4 3D Isometric Wheels with Glowing Cyan Calipers */}
+              <g transform="translate(-18, 12)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#38BDF8" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#38BDF8" />
+              </g>
+              <g transform="translate(-8, 17)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#38BDF8" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#38BDF8" />
+              </g>
+              <g transform="translate(14, -2)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#38BDF8" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#38BDF8" />
+              </g>
+              <g transform="translate(24, 3)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#38BDF8" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#38BDF8" />
+              </g>
+
+              {/* 3. Lower Chassis (Side Extrusion for 3D Volume) */}
+              <path d="M -24 8 L 8 20 L 28 8 L -4 -4 Z" fill="#040b17" stroke="#0284C7" strokeWidth="0.8" />
+              <path d="M -24 8 L -24 3 L 8 15 L 8 20 Z" fill="#0284C7" />
+              <path d="M 8 20 L 8 15 L 28 3 L 28 8 Z" fill="#0369A1" />
+
+              {/* 4. Main Hood & Upper Bodywork */}
+              <path d="M -24 3 L 8 15 L 28 3 L -4 -9 Z" fill="url(#blueSedanGrad)" stroke="#38BDF8" strokeWidth="1.2" />
+
+              {/* 5. 3D Slanted Greenhouse Cabin & Windshield */}
+              <polygon points="-10,2 4,8 14,2 0,-4" fill="#020617" stroke="#38BDF8" strokeWidth="0.9" />
+              <polygon points="-8,1 -1,4 5,-1 -2,-3" fill="#38BDF8" opacity="0.4" />
+
+              {/* 6. Dual Projector LED Headlights */}
+              <circle cx="-21" cy="4.5" r="2" fill="#FFFFFF" />
+              <circle cx="-16" cy="7.5" r="2" fill="#FFFFFF" />
+
+              {/* 7. Neon Red Brake Light Bar */}
+              <line x1="22" y1="5" x2="27" y2="2" stroke="#EF4444" strokeWidth="2.5" filter="url(#softGlow)" />
             </g>
           </g>
 
@@ -310,7 +336,7 @@ export default function ParkEaseHeroIsometric3D() {
             </g>
           </g>
 
-          {/* Bay E1A (EV Fast Charge Bay - Occupied by Emerald Sports EV) */}
+          {/* Bay E1A (EV Fast Charge Bay - Occupied by 3D Emerald Sports EV) */}
           <g onMouseEnter={() => setHoveredBay('E1A')} onMouseLeave={() => setHoveredBay(null)} className="cursor-pointer">
             <polygon
               points="270,85 330,50 380,80 320,115"
@@ -321,28 +347,49 @@ export default function ParkEaseHeroIsometric3D() {
             />
             <text x="305" y="80" fill="#00D2FF" fontSize="9" fontFamily="monospace" opacity="0.6">E1A</text>
             
-            {/* Sleek Curved EV in E1A */}
+            {/* 3D Realistic Isometric Emerald EV in Bay E1A */}
             <g transform="translate(325, 80) rotate(-22)">
-              <ellipse cx="0" cy="5" rx="26" ry="10" fill="#000000" opacity="0.6" />
-              {/* Tires */}
-              <rect x="-18" y="4" width="7" height="4" rx="1.5" fill="#0f172a" stroke="#00FFA3" strokeWidth="0.6" />
-              <rect x="11" y="4" width="7" height="4" rx="1.5" fill="#0f172a" stroke="#00FFA3" strokeWidth="0.6" />
-              {/* Body */}
-              <path
-                d="M -24 3 C -26 -1, -20 -7, -8 -9 C 3 -10, 15 -6, 23 1 C 26 4, 21 11, 14 12 C 0 14, -15 12, -24 3 Z"
-                fill="url(#evGreenGrad)"
-                stroke="#00FFA3"
-                strokeWidth="1"
-              />
-              {/* Panoramic Roof */}
-              <path
-                d="M -12 -1 C -14 -6, -5 -7, 1 -7 C 9 -7, 14 -4, 12 0 C 6 3, -3 3, -12 -1 Z"
-                fill="#030814"
-                stroke="#00FFA3"
-                strokeWidth="0.6"
-              />
-              {/* Green EV Charging Halo */}
-              <circle cx="15" cy="5" r="3" fill="#00FFA3" filter="url(#laserGlow)" />
+              {/* 1. Ground Contact Multi-Stage Shadow */}
+              <ellipse cx="0" cy="14" rx="34" ry="12" fill="#000000" opacity="0.65" filter="url(#softGlow)" />
+              <ellipse cx="0" cy="11" rx="26" ry="8" fill="#000000" opacity="0.85" />
+
+              {/* 2. 4 3D Isometric Wheels with Glowing Emerald Calipers */}
+              <g transform="translate(-18, 12)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#00FFA3" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#00FFA3" />
+              </g>
+              <g transform="translate(-8, 17)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#00FFA3" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#00FFA3" />
+              </g>
+              <g transform="translate(14, -2)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#00FFA3" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#00FFA3" />
+              </g>
+              <g transform="translate(24, 3)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#00FFA3" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#00FFA3" />
+              </g>
+
+              {/* 3. Lower Chassis */}
+              <path d="M -24 8 L 8 20 L 28 8 L -4 -4 Z" fill="#040b17" stroke="#059669" strokeWidth="0.8" />
+              <path d="M -24 8 L -24 3 L 8 15 L 8 20 Z" fill="#059669" />
+              <path d="M 8 20 L 8 15 L 28 3 L 28 8 Z" fill="#064E3B" />
+
+              {/* 4. Main Hood & Upper Bodywork */}
+              <path d="M -24 3 L 8 15 L 28 3 L -4 -9 Z" fill="url(#evGreenGrad)" stroke="#00FFA3" strokeWidth="1.2" />
+
+              {/* 5. 3D Slanted Greenhouse Cabin & Windshield */}
+              <polygon points="-10,2 4,8 14,2 0,-4" fill="#020617" stroke="#00FFA3" strokeWidth="0.9" />
+              <polygon points="-8,1 -1,4 5,-1 -2,-3" fill="#34D399" opacity="0.4" />
+
+              {/* 6. Dual Projector LED Headlights */}
+              <circle cx="-21" cy="4.5" r="2" fill="#FFFFFF" />
+              <circle cx="-16" cy="7.5" r="2" fill="#FFFFFF" />
+
+              {/* 7. EV Charging Pulse Halo & Neon Red Brake Bar */}
+              <circle cx="18" cy="8" r="3.5" fill="#00FFA3" filter="url(#laserGlow)" className="animate-ping" />
+              <line x1="22" y1="5" x2="27" y2="2" stroke="#EF4444" strokeWidth="2.5" filter="url(#softGlow)" />
             </g>
           </g>
 
@@ -370,7 +417,7 @@ export default function ParkEaseHeroIsometric3D() {
             </g>
           </g>
 
-          {/* Bay C1C (Occupied by Amber Sports Coupe) */}
+          {/* Bay C1C (Occupied by 3D Amber Sports Sedan) */}
           <g onMouseEnter={() => setHoveredBay('C1C')} onMouseLeave={() => setHoveredBay(null)} className="cursor-pointer">
             <polygon
               points="285,250 345,215 395,245 335,280"
@@ -381,27 +428,52 @@ export default function ParkEaseHeroIsometric3D() {
             />
             <text x="325" y="245" fill="#00D2FF" fontSize="9" fontFamily="monospace" opacity="0.6">C1C</text>
             
-            {/* Amber Sports Coupe */}
+            {/* 3D Realistic Isometric Amber Sports Sedan in Bay C1C */}
             <g transform="translate(340, 245) rotate(-22)">
-              <ellipse cx="0" cy="5" rx="26" ry="10" fill="#000000" opacity="0.6" />
-              <rect x="-18" y="4" width="7" height="4" rx="1.5" fill="#0f172a" stroke="#F59E0B" strokeWidth="0.6" />
-              <rect x="11" y="4" width="7" height="4" rx="1.5" fill="#0f172a" stroke="#F59E0B" strokeWidth="0.6" />
-              <path
-                d="M -24 3 C -26 -1, -20 -7, -8 -9 C 3 -10, 15 -6, 23 1 C 26 4, 21 11, 14 12 C 0 14, -15 12, -24 3 Z"
-                fill="url(#amberSportsGrad)"
-                stroke="#FBBF24"
-                strokeWidth="1"
-              />
-              <path
-                d="M -12 -1 C -14 -6, -5 -7, 1 -7 C 9 -7, 14 -4, 12 0 C 6 3, -3 3, -12 -1 Z"
-                fill="#030814"
-                stroke="#FBBF24"
-                strokeWidth="0.6"
-              />
+              {/* 1. Ground Contact Multi-Stage Shadow */}
+              <ellipse cx="0" cy="14" rx="34" ry="12" fill="#000000" opacity="0.65" filter="url(#softGlow)" />
+              <ellipse cx="0" cy="11" rx="26" ry="8" fill="#000000" opacity="0.85" />
+
+              {/* 2. 4 3D Isometric Wheels with Glowing Amber Calipers */}
+              <g transform="translate(-18, 12)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#F59E0B" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#F59E0B" />
+              </g>
+              <g transform="translate(-8, 17)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#F59E0B" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#F59E0B" />
+              </g>
+              <g transform="translate(14, -2)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#F59E0B" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#F59E0B" />
+              </g>
+              <g transform="translate(24, 3)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#F59E0B" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#F59E0B" />
+              </g>
+
+              {/* 3. Lower Chassis */}
+              <path d="M -24 8 L 8 20 L 28 8 L -4 -4 Z" fill="#040b17" stroke="#D97706" strokeWidth="0.8" />
+              <path d="M -24 8 L -24 3 L 8 15 L 8 20 Z" fill="#D97706" />
+              <path d="M 8 20 L 8 15 L 28 3 L 28 8 Z" fill="#92400E" />
+
+              {/* 4. Main Hood & Upper Bodywork */}
+              <path d="M -24 3 L 8 15 L 28 3 L -4 -9 Z" fill="url(#amberSportsGrad)" stroke="#FBBF24" strokeWidth="1.2" />
+
+              {/* 5. 3D Slanted Greenhouse Cabin & Windshield */}
+              <polygon points="-10,2 4,8 14,2 0,-4" fill="#020617" stroke="#FBBF24" strokeWidth="0.9" />
+              <polygon points="-8,1 -1,4 5,-1 -2,-3" fill="#FDE047" opacity="0.4" />
+
+              {/* 6. Dual Projector LED Headlights */}
+              <circle cx="-21" cy="4.5" r="2" fill="#FFFFFF" />
+              <circle cx="-16" cy="7.5" r="2" fill="#FFFFFF" />
+
+              {/* 7. Neon Red Brake Light Bar */}
+              <line x1="22" y1="5" x2="27" y2="2" stroke="#EF4444" strokeWidth="2.5" filter="url(#softGlow)" />
             </g>
           </g>
 
-          {/* Bay BUF-1A (Dedicated Emergency Buffer Slot - Occupied by Executive Charcoal Sedan) */}
+          {/* Bay BUF-1A (Dedicated Emergency Buffer Slot - Occupied by 3D Executive Charcoal Sedan) */}
           <g onMouseEnter={() => setHoveredBay('BUF-1A')} onMouseLeave={() => setHoveredBay(null)} className="cursor-pointer">
             <polygon
               points="350,210 410,175 460,205 400,240"
@@ -412,22 +484,48 @@ export default function ParkEaseHeroIsometric3D() {
             />
             <text x="390" y="205" fill="#00D2FF" fontSize="9" fontFamily="monospace" opacity="0.6">BUF-1</text>
             
+            {/* 3D Realistic Isometric Charcoal Executive Sedan in Bay BUF-1A */}
             <g transform="translate(405, 205) rotate(-22)">
-              <ellipse cx="0" cy="5" rx="26" ry="10" fill="#000000" opacity="0.6" />
-              <rect x="-18" y="4" width="7" height="4" rx="1.5" fill="#0f172a" stroke="#00D2FF" strokeWidth="0.6" />
-              <rect x="11" y="4" width="7" height="4" rx="1.5" fill="#0f172a" stroke="#00D2FF" strokeWidth="0.6" />
-              <path
-                d="M -24 3 C -26 -1, -20 -7, -8 -9 C 3 -10, 15 -6, 23 1 C 26 4, 21 11, 14 12 C 0 14, -15 12, -24 3 Z"
-                fill="#334155"
-                stroke="#64748B"
-                strokeWidth="1"
-              />
-              <path
-                d="M -12 -1 C -14 -6, -5 -7, 1 -7 C 9 -7, 14 -4, 12 0 C 6 3, -3 3, -12 -1 Z"
-                fill="#030814"
-                stroke="#64748B"
-                strokeWidth="0.6"
-              />
+              {/* 1. Ground Contact Multi-Stage Shadow */}
+              <ellipse cx="0" cy="14" rx="34" ry="12" fill="#000000" opacity="0.65" filter="url(#softGlow)" />
+              <ellipse cx="0" cy="11" rx="26" ry="8" fill="#000000" opacity="0.85" />
+
+              {/* 2. 4 3D Isometric Wheels with Cyan Glowing Calipers */}
+              <g transform="translate(-18, 12)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#00D2FF" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#00D2FF" />
+              </g>
+              <g transform="translate(-8, 17)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#00D2FF" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#00D2FF" />
+              </g>
+              <g transform="translate(14, -2)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#00D2FF" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#00D2FF" />
+              </g>
+              <g transform="translate(24, 3)">
+                <rect x="-4" y="-3" width="8" height="6" rx="2" fill="#0b0f19" stroke="#00D2FF" strokeWidth="1" />
+                <circle cx="0" cy="0" r="1.5" fill="#00D2FF" />
+              </g>
+
+              {/* 3. Lower Chassis */}
+              <path d="M -24 8 L 8 20 L 28 8 L -4 -4 Z" fill="#040b17" stroke="#475569" strokeWidth="0.8" />
+              <path d="M -24 8 L -24 3 L 8 15 L 8 20 Z" fill="#334155" />
+              <path d="M 8 20 L 8 15 L 28 3 L 28 8 Z" fill="#1E293B" />
+
+              {/* 4. Main Hood & Upper Bodywork */}
+              <path d="M -24 3 L 8 15 L 28 3 L -4 -9 Z" fill="url(#charcoalGrad)" stroke="#94A3B8" strokeWidth="1.2" />
+
+              {/* 5. 3D Slanted Greenhouse Cabin & Windshield */}
+              <polygon points="-10,2 4,8 14,2 0,-4" fill="#020617" stroke="#94A3B8" strokeWidth="0.9" />
+              <polygon points="-8,1 -1,4 5,-1 -2,-3" fill="#CBD5E1" opacity="0.35" />
+
+              {/* 6. Dual Projector LED Headlights */}
+              <circle cx="-21" cy="4.5" r="2" fill="#FFFFFF" />
+              <circle cx="-16" cy="7.5" r="2" fill="#FFFFFF" />
+
+              {/* 7. Neon Red Brake Light Bar */}
+              <line x1="22" y1="5" x2="27" y2="2" stroke="#EF4444" strokeWidth="2.5" filter="url(#softGlow)" />
             </g>
           </g>
 

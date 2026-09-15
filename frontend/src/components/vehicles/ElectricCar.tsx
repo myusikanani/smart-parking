@@ -18,62 +18,82 @@ const ElectricCar = ({ className = '', color = '#10b981', animate = false }: Pro
     <defs>
       <linearGradient id="evBody" x1="20" y1="40" x2="240" y2="100" gradientUnits="userSpaceOnUse">
         <stop stopColor={color} />
-        <stop offset="1" stopColor={color} stopOpacity="0.5" />
+        <stop offset="1" stopColor={color} stopOpacity="0.6" />
       </linearGradient>
       <linearGradient id="evRoof" x1="80" y1="15" x2="180" y2="50" gradientUnits="userSpaceOnUse">
-        <stop stopColor={color} stopOpacity="0.8" />
-        <stop offset="1" stopColor={color} stopOpacity="0.4" />
+        <stop stopColor="#06121e" />
+        <stop offset="1" stopColor="#030811" />
       </linearGradient>
       <filter id="evGlow">
-        <feGaussianBlur stdDeviation="4" result="blur" />
+        <feGaussianBlur stdDeviation="3.5" result="blur" />
         <feComposite in="SourceGraphic" in2="blur" operator="over" />
       </filter>
     </defs>
 
     <motion.g filter="url(#evGlow)">
+      {/* Ground Contact Shadow */}
+      <ellipse cx="130" cy="100" rx="105" ry="12" fill="#000000" opacity="0.6" />
+
+      {/* Aerodynamic Low-Slung Sports EV Body Profile */}
       <path
-        d="M30 75 Q30 65 40 60 L65 55 Q75 30 95 22 L165 20 Q185 22 195 55 L225 60 Q240 65 245 75 L245 85 Q245 95 235 95 L40 95 Q30 95 30 85 Z"
+        d="M 22 82 C 22 74, 32 68, 48 64 L 75 58 C 90 32, 115 22, 142 20 L 175 22 C 205 26, 222 56, 235 62 L 244 72 C 248 78, 246 88, 236 90 L 40 90 C 28 90, 22 88, 22 82 Z"
         fill="url(#evBody)"
         stroke={color}
-        strokeWidth="2"
+        strokeWidth="1.8"
       />
 
+      {/* Cyber Neon Accents & EV Lighting Line */}
+      <path d="M 45 66 C 85 64, 175 64, 235 68" stroke="#00FFA3" strokeWidth="1" opacity="0.5" />
+      <path d="M 40 82 L 235 82" stroke={color} strokeWidth="1.2" opacity="0.5" />
+
+      {/* Sleek Panoramic Canopy */}
       <path
-        d="M80 55 Q85 28 105 20 L160 18 Q180 20 190 55"
+        d="M 82 56 C 92 30, 114 24, 142 23 L 172 24 C 196 28, 210 48, 218 56 Z"
         fill="url(#evRoof)"
         stroke={color}
-        strokeWidth="1.5"
-        opacity="0.7"
+        strokeWidth="1.2"
+        opacity="0.95"
       />
 
-      <path d="M100 55 L108 25 L155 23 L165 55" fill="none" stroke={color} strokeWidth="1.5" opacity="0.5" />
+      {/* Emerald Reflection Highlight */}
+      <path
+        d="M 88 53 C 96 33, 112 27, 138 26 L 150 26 C 128 32, 110 44, 102 53 Z"
+        fill="#34D399"
+        opacity="0.4"
+      />
 
-      <rect x="82" y="28" width="22" height="22" rx="3" fill={color} stroke={color} strokeWidth="1" opacity="0.4" />
-      <rect x="110" y="26" width="35" height="24" rx="3" fill={color} stroke={color} strokeWidth="1" opacity="0.4" />
-      <rect x="150" y="28" width="22" height="22" rx="3" fill={color} stroke={color} strokeWidth="1" opacity="0.4" />
+      {/* Pillar Dividers */}
+      <line x1="145" y1="24" x2="148" y2="56" stroke={color} strokeWidth="1.2" opacity="0.5" />
+      <line x1="185" y1="26" x2="192" y2="56" stroke={color} strokeWidth="1.2" opacity="0.5" />
 
-      <circle cx="65" cy="95" r="18" stroke={color} strokeWidth="3" fill="#0a0a0f" />
+      {/* Front Wheel & Alloy Rim */}
+      <circle cx="68" cy="90" r="17" stroke={color} strokeWidth="2.5" fill="#090d16" />
+      <circle cx="68" cy="90" r="11" stroke="#00FFA3" strokeWidth="1" fill="#0f172a" opacity="0.8" />
       <motion.g {...(animate ? wheelSpin : {})}>
-        <circle cx="65" cy="95" r="10" stroke={color} strokeWidth="1.5" fill="none" opacity="0.5" />
-        <line x1="65" y1="85" x2="65" y2="105" stroke={color} strokeWidth="1" opacity="0.4" />
-        <line x1="55" y1="95" x2="75" y2="95" stroke={color} strokeWidth="1" opacity="0.4" />
+        <circle cx="68" cy="90" r="6" stroke={color} strokeWidth="1.5" fill="none" />
+        <line x1="68" y1="79" x2="68" y2="101" stroke={color} strokeWidth="1.2" opacity="0.6" />
+        <line x1="57" y1="90" x2="79" y2="90" stroke={color} strokeWidth="1.2" opacity="0.6" />
       </motion.g>
 
-      <circle cx="205" cy="95" r="18" stroke={color} strokeWidth="3" fill="#0a0a0f" />
+      {/* Rear Wheel & Alloy Rim */}
+      <circle cx="202" cy="90" r="17" stroke={color} strokeWidth="2.5" fill="#090d16" />
+      <circle cx="202" cy="90" r="11" stroke="#00FFA3" strokeWidth="1" fill="#0f172a" opacity="0.8" />
       <motion.g {...(animate ? wheelSpin : {})}>
-        <circle cx="205" cy="95" r="10" stroke={color} strokeWidth="1.5" fill="none" opacity="0.5" />
-        <line x1="205" y1="85" x2="205" y2="105" stroke={color} strokeWidth="1" opacity="0.4" />
-        <line x1="195" y1="95" x2="215" y2="95" stroke={color} strokeWidth="1" opacity="0.4" />
+        <circle cx="202" cy="90" r="6" stroke={color} strokeWidth="1.5" fill="none" />
+        <line x1="202" y1="79" x2="202" y2="101" stroke={color} strokeWidth="1.2" opacity="0.6" />
+        <line x1="191" y1="90" x2="213" y2="90" stroke={color} strokeWidth="1.2" opacity="0.6" />
       </motion.g>
 
-      <rect x="25" y="72" width="14" height="8" rx="3" fill="#06b6d4" opacity="0.9" />
-      <rect x="235" y="72" width="12" height="8" rx="3" fill="#ef4444" opacity="0.9" />
+      {/* Front LED Projector Light */}
+      <path d="M 23 76 L 36 74 L 33 80 Z" fill="#ffffff" filter="url(#evGlow)" />
+      <circle cx="28" cy="76" r="2.5" fill="#ffffff" />
 
-      <rect x="115" y="60" width="18" height="10" rx="5" stroke={color} strokeWidth="1.5" fill={color} opacity="0.2" />
-      <text x="124" y="68" textAnchor="middle" fill={color} fontSize="6" fontWeight="bold">⚡</text>
+      {/* Continuous Neon Red Rear Light Bar */}
+      <path d="M 238 72 L 244 76 L 241 80" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" filter="url(#evGlow)" />
 
-      <path d="M20 78 L30 78" stroke={color} strokeWidth="2" strokeLinecap="round" opacity="0.5" />
-      <path d="M15 82 L30 82" stroke={color} strokeWidth="1.5" strokeLinecap="round" opacity="0.3" />
+      {/* EV Charging Badge */}
+      <rect x="125" y="64" width="16" height="8" rx="4" stroke={color} strokeWidth="1.2" fill={color} opacity="0.25" />
+      <text x="133" y="70" textAnchor="middle" fill="#00FFA3" fontSize="5" fontWeight="bold">⚡</text>
     </motion.g>
   </motion.svg>
 );
