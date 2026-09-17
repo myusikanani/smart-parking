@@ -86,6 +86,7 @@ app.use('/api/security', require('./routes/security'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/realtime', require('./routes/realtime'));
 app.use('/api/layout', require('./routes/layout'));
+app.use('/api/locations', require('./routes/locations'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/subscriptions', require('./routes/subscriptions'));
 

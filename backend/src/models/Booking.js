@@ -11,6 +11,11 @@ const bookingSchema = new mongoose.Schema({
     ref: 'ParkingSlot',
     required: true
   },
+  locationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ParkingLocation',
+    index: true
+  },
   vehicleNumber: {
     type: String,
     required: true

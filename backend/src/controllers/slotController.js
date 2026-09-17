@@ -60,11 +60,12 @@ exports.getSlots = async (req, res) => {
     }
 
     const filter = {};
-    if (req.query.category) filter.category = req.query.category;
-    if (req.query.floor) filter.floor = req.query.floor;
-    if (req.query.status) filter.status = req.query.status;
+    if (req.query.locationId && req.query.locationId !== 'all') filter.locationId = req.query.locationId;
+    if (req.query.category && req.query.category !== 'all') filter.category = req.query.category;
+    if (req.query.floor && req.query.floor !== 'all') filter.floor = req.query.floor;
+    if (req.query.status && req.query.status !== 'all') filter.status = req.query.status;
 
-    const slots = await ParkingSlot.find(filter).sort({ floor: 1, number: 1 });
+    const slots = await ParkingSlot.find(filter).populate('locationId', 'name area address city').sort({ floor: 1, number: 1 });
     res.status(200).json({ success: true, count: slots.length, slots });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -133,8 +134,9 @@ exports.getAvailableSlots = async (req, res) => {
   try {
     await ensureBufferSlots();
     const filter = {};
-    if (req.query.category) filter.category = req.query.category;
-    if (req.query.floor) filter.floor = req.query.floor;
+    if (req.query.locationId && req.query.locationId !== 'all') filter.locationId = req.query.locationId;
+    if (req.query.category && req.query.category !== 'all') filter.category = req.query.category;
+    if (req.query.floor && req.query.floor !== 'all') filter.floor = req.query.floor;
 
     const startTime = req.query.startTime ? new Date(String(req.query.startTime)) : null;
     const endTime = req.query.endTime ? new Date(String(req.query.endTime)) : null;

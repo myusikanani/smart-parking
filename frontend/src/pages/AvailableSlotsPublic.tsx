@@ -15,9 +15,11 @@ import {
   HiOutlineSquares2X2,
   HiOutlineRectangleGroup,
   HiOutlineMapPin,
+  HiOutlineBuildingStorefront,
   HiOutlineArrowRight
 } from 'react-icons/hi2';
-import { slotApi, layoutApi, aiApi } from '../services/api';
+import { slotApi, layoutApi, aiApi, locationApi } from '../services/api';
+import type { ParkingLocationItem } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import InteractiveFloorMap from '../components/InteractiveFloorMap';
 import type { ParkingSlotItem } from '../components/InteractiveFloorMap';
@@ -37,6 +39,7 @@ interface Slot {
   features?: string[];
   x?: number;
   z?: number;
+  locationId?: string;
 }
 
 const categories = [
@@ -61,10 +64,29 @@ const AvailableSlotsPublic = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const [locations, setLocations] = useState<ParkingLocationItem[]>([]);
+  const [selectedLocationId, setSelectedLocationId] = useState<string>('all');
+  const [selectedArea, setSelectedArea] = useState<string>('all');
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [layoutItemsByFloor, setLayoutItemsByFloor] = useState<Record<number, ThreeDLayoutItem[]>>({});
+
+  // Load locations on mount
+  useEffect(() => {
+    locationApi
+      .getAll({ all: 'true' })
+      .then((res) => {
+        if (res.locations) setLocations(res.locations);
+      })
+      .catch((err) => console.error('Error fetching locations:', err));
+  }, []);
+
+  const distinctAreas = useMemo(() => {
+    const s = new Set<string>();
+    locations.forEach((l) => { if (l.area) s.add(l.area); });
+    return Array.from(s);
+  }, [locations]);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,7 +102,11 @@ const AvailableSlotsPublic = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await slotApi.getAll();
+      const params: Record<string, string> = {};
+      if (selectedLocationId && selectedLocationId !== 'all') {
+        params.locationId = selectedLocationId;
+      }
+      const res = await slotApi.getAll(params);
       const raw = (res.slots || []) as unknown as Record<string, unknown>[];
       const mapped: Slot[] = raw.map((s) => ({
         _id: String(s._id || s.id || ''),
@@ -93,16 +119,17 @@ const AvailableSlotsPublic = () => {
         features: (s.features as string[]) || ['cctv', 'covered'],
         x: s.x !== undefined && s.x !== null ? Number(s.x) : undefined,
         z: s.z !== undefined && s.z !== null ? Number(s.z) : undefined,
+        locationId: String(s.locationId || ''),
       }));
       setSlots(mapped);
 
-      // Load the real admin-designed layout (gates/lanes/zones) for every floor
+      // Load the real admin-designed layout for active location & floor
       const floors = Array.from(new Set(mapped.map((s) => s.floor)));
       const layouts: Record<number, ThreeDLayoutItem[]> = {};
       await Promise.all(
         floors.map(async (floor) => {
           try {
-            const res2 = await layoutApi.getByFloor(floor);
+            const res2 = await layoutApi.getByFloor(floor, selectedLocationId !== 'all' ? selectedLocationId : undefined);
             const items = (res2.layout?.items || []) as Record<string, unknown>[];
             layouts[floor] = items
               .filter((it) => it.type !== 'slot')
@@ -117,7 +144,7 @@ const AvailableSlotsPublic = () => {
                 floor,
               }));
           } catch {
-            // Layout is optional decoration — ignore floors without one
+            // Layout is optional decoration
           }
         })
       );
@@ -153,7 +180,7 @@ const AvailableSlotsPublic = () => {
       socketService.off('slot-updated');
       socketService.off('vehicle-motion');
     };
-  }, []);
+  }, [selectedLocationId]);
 
   // Smart Search: query the backend so vehicle numbers & booking IDs also
   // resolve to physical slots (client filter alone can't do that).
@@ -431,7 +458,71 @@ const AvailableSlotsPublic = () => {
         </motion.div>
 
         {/* 3. SEARCH & SMART FILTER BAR */}
-        <motion.div variants={itemVariants} className="glass-card p-6 rounded-3xl space-y-6">
+        <motion.div variants={itemVariants} className="glass-card p-6 rounded-3xl space-y-5">
+          {/* Multi-Location & Area Selector Header */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--border)]">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-[var(--text-secondary)] flex items-center gap-1">
+                <HiOutlineMapPin className="w-4 h-4 text-cyan-400" /> Area:
+              </span>
+              <button
+                onClick={() => {
+                  setSelectedArea('all');
+                  setSelectedLocationId('all');
+                }}
+                className={`px-3 py-1 rounded-xl text-xs font-semibold transition ${
+                  selectedArea === 'all'
+                    ? 'bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20'
+                    : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-white border border-[var(--border)]'
+                }`}
+              >
+                All Surat Areas
+              </button>
+              {distinctAreas.map((area) => (
+                <button
+                  key={area}
+                  onClick={() => {
+                    setSelectedArea(area);
+                    const matching = locations.find((l) => l.area === area);
+                    if (matching) setSelectedLocationId(matching._id);
+                  }}
+                  className={`px-3 py-1 rounded-xl text-xs font-semibold transition ${
+                    selectedArea === area
+                      ? 'bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20'
+                      : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-white border border-[var(--border)]'
+                  }`}
+                >
+                  {area}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[var(--text-secondary)] flex items-center gap-1">
+                <HiOutlineBuildingStorefront className="w-4 h-4 text-pink-400" /> Mall:
+              </span>
+              <select
+                value={selectedLocationId}
+                onChange={(e) => {
+                  setSelectedLocationId(e.target.value);
+                  const found = locations.find((l) => l._id === e.target.value);
+                  if (found) setSelectedArea(found.area);
+                  else if (e.target.value === 'all') setSelectedArea('all');
+                }}
+                className="px-3 py-1.5 bg-[var(--input-bg)] border border-[var(--border)] rounded-xl text-xs font-bold text-white focus:outline-none focus:border-cyan-500"
+              >
+                <option value="all">🏢 All Facilities (Combined Campus)</option>
+                {locations
+                  .filter((loc) => selectedArea === 'all' || loc.area === selectedArea)
+                  .map((loc) => (
+                    <option key={loc._id} value={loc._id}>
+                      {loc.name} ({loc.area})
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             
             {/* Search Input */}

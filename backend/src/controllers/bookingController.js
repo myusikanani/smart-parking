@@ -113,6 +113,7 @@ exports.createBooking = async (req, res) => {
       booking = await Booking.create({
         user: req.user.id,
         slot: slot._id,
+        locationId: slot.locationId || req.body.locationId || null,
         vehicleNumber: vehicleNumber.trim().toUpperCase(),
         startTime: validStartTime.toISOString(),
         endTime: validEndTime.toISOString(),
@@ -124,7 +125,7 @@ exports.createBooking = async (req, res) => {
         qrCode: null
       });
 
-      await booking.populate('slot');
+      await booking.populate([{ path: 'slot' }, { path: 'locationId' }]);
 
       emitSlotUpdate({ slotId: slot._id, status: 'reserved' });
       emitBookingUpdate({ bookingId: booking._id, status: 'pending' });
@@ -141,6 +142,7 @@ exports.createBooking = async (req, res) => {
         id: 'bk_' + Date.now(),
         user: req.user ? req.user.id : 'demo-user',
         slot: slot,
+        locationId: slot.locationId || null,
         slotNumber: slot.number,
         vehicleNumber: vehicleNumber.trim().toUpperCase(),
         startTime: validStartTime.toISOString(),
@@ -176,7 +178,8 @@ exports.getMyBookings = async (req, res) => {
     }
 
     const bookings = await Booking.find(filter)
-      .populate('slot', 'number category floor')
+      .populate('slot', 'number category floor locationId')
+      .populate('locationId')
       .sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, count: bookings.length, bookings });
@@ -188,7 +191,11 @@ exports.getMyBookings = async (req, res) => {
 exports.getBookingById = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
-      .populate('slot')
+      .populate({
+        path: 'slot',
+        populate: { path: 'locationId' }
+      })
+      .populate('locationId')
       .populate('user', 'name email phone');
 
     if (!booking) {
@@ -196,6 +203,8 @@ exports.getBookingById = async (req, res) => {
     }
 
     if (
+      booking.user &&
+      booking.user._id &&
       booking.user._id.toString() !== req.user.id &&
       req.user.role !== 'admin' &&
       req.user.role !== 'security'
@@ -525,7 +534,13 @@ exports.getDynamicQR = async (req, res) => {
       });
     }
 
-    const booking = await Booking.findById(id).populate('slot');
+    const booking = await Booking.findById(id)
+      .populate({
+        path: 'slot',
+        populate: { path: 'locationId' }
+      })
+      .populate('locationId');
+
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
@@ -533,6 +548,8 @@ exports.getDynamicQR = async (req, res) => {
     if (req.user?.role === 'user' && booking.user && booking.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, message: 'Not authorized to view this booking pass' });
     }
+
+    const loc = booking.locationId || (booking.slot && booking.slot.locationId) || null;
 
     const { token, expiresIn, rotationInterval } = generateDynamicQRToken(booking._id.toString());
     const dynamicQrDataUrl = await qrcode.toDataURL(token);
@@ -547,9 +564,19 @@ exports.getDynamicQR = async (req, res) => {
         id: booking._id,
         vehicleNumber: booking.vehicleNumber,
         slotNumber: booking.slot?.number || 'A-01',
+        floor: booking.slot?.floor || 1,
         status: booking.status,
         startTime: booking.startTime,
-        endTime: booking.endTime
+        endTime: booking.endTime,
+        location: loc ? {
+          id: loc._id,
+          name: loc.name,
+          area: loc.area,
+          city: loc.city,
+          address: loc.address,
+          latitude: loc.latitude,
+          longitude: loc.longitude
+        } : null
       }
     });
   } catch (error) {

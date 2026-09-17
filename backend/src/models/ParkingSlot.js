@@ -35,6 +35,11 @@ const parkingSlotSchema = new mongoose.Schema({
     required: true,
     default: 2000
   },
+  locationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ParkingLocation',
+    index: true
+  },
   location: {
     type: String,
     default: 'City Center Hub (Downtown)'

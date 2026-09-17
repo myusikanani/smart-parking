@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
   HiOutlineCalendarDays,
   HiOutlineClock,
@@ -21,8 +21,10 @@ import {
   HiOutlineArrowLeft,
   HiOutlineArrowRight,
   HiOutlineMapPin,
+  HiOutlineBuildingStorefront,
 } from 'react-icons/hi2';
-import { slotApi, bookingApi, authApi, layoutApi } from '../services/api';
+import { slotApi, bookingApi, authApi, layoutApi, locationApi } from '../services/api';
+import type { ParkingLocationItem } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import type { User } from '../context/AuthContext';
 import { CarSedan, ElectricCar, BikeScooter, AccessibleCar } from '../components/vehicles';
@@ -69,9 +71,75 @@ const timeSlots = [
 
 const BookParking = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  const locationState = location.state as { locationId?: string; preSelectedSlotId?: string; category?: string } | null;
+  const initialLocationId = locationState?.locationId || searchParams.get('locationId') || '';
+
   const { user, token, updateUser } = useAuth();
   const { toast } = useToast();
   const isLoggedIn = Boolean(user && token);
+
+  // Locations State
+  const [locations, setLocations] = useState<ParkingLocationItem[]>([]);
+  const [selectedLocationId, setSelectedLocationId] = useState<string>(initialLocationId);
+  const [detectingGps, setDetectingGps] = useState(false);
+  const [nearestSuggestion, setNearestSuggestion] = useState<{ name: string; distance: string; locId: string } | null>(null);
+
+  // Fetch Locations list
+  useEffect(() => {
+    locationApi
+      .getAll({ all: 'true' })
+      .then((res) => {
+        const locs = res.locations || [];
+        setLocations(locs);
+        if (!selectedLocationId && locs.length > 0) {
+          setSelectedLocationId(locs[0]._id);
+        }
+      })
+      .catch((err) => console.error('Error loading locations:', err));
+  }, []);
+
+  // Quick GPS Proximity detection
+  const handleDetectNearestGps = () => {
+    if (!navigator.geolocation) {
+      toast('Geolocation is not supported by your browser.', 'error');
+      return;
+    }
+    setDetectingGps(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const res = await locationApi.getNearby({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            radius: 15,
+            vehicleType: category,
+          });
+          const best = res.recommended || (res.locations && res.locations[0]);
+          if (best) {
+            setSelectedLocationId(best._id);
+            setNearestSuggestion({
+              name: best.name,
+              distance: best.distanceFormatted || 'Nearby',
+              locId: best._id,
+            });
+            toast(`📍 Nearest Facility Detected: ${best.name} (${best.distanceFormatted || ''})`, 'success');
+          }
+        } catch (err) {
+          toast('Failed to search nearby facilities.', 'error');
+        } finally {
+          setDetectingGps(false);
+        }
+      },
+      (err) => {
+        setDetectingGps(false);
+        toast(`GPS Error: ${err.message}`, 'error');
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
 
   // 3-STEP WIZARD STATE (Step 1: Vehicle & Schedule -> Step 2: Bay Selection -> Step 3: Review & Pay)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -89,10 +157,10 @@ const BookParking = () => {
   const todayStr = fmtLocal(new Date());
   const [date, setDate] = useState(initialSlot.date);
   const [selectedTime, setSelectedTime] = useState(initialSlot.time);
-  const [category, setCategory] = useState('four-wheeler');
+  const [category, setCategory] = useState(locationState?.category || 'four-wheeler');
   const [selectedHours, setSelectedHours] = useState(2);
   const [vehicleNumber, setVehicleNumber] = useState((user?.vehicleNumber || 'MH-12-AB-3456').trim().toUpperCase());
-  const [selectedSlotId, setSelectedSlotId] = useState<string>('');
+  const [selectedSlotId, setSelectedSlotId] = useState<string>(locationState?.preSelectedSlotId || '');
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
 
   // Collapsed Vehicle Garage State
@@ -262,6 +330,7 @@ const BookParking = () => {
       try {
         const params: Record<string, string> = {};
         if (date) params.date = date;
+        if (selectedLocationId && selectedLocationId !== 'all') params.locationId = selectedLocationId;
         // Time-window aware availability: fetch slots free for the
         // selected date/time window (backend checks booking overlaps).
         if (date && selectedTime) {
@@ -307,7 +376,7 @@ const BookParking = () => {
       }
     })();
     return () => { isMounted = false; };
-  }, [category, date, selectedTime, selectedHours]);
+  }, [category, date, selectedTime, selectedHours, selectedLocationId]);
 
   const isEmergencySlot = (s: Slot) => {
     return Boolean(
@@ -316,6 +385,11 @@ const BookParking = () => {
       (s.features && s.features.includes('emergency_buffer'))
     );
   };
+
+  const activeLocation = useMemo(
+    () => locations.find((l) => l._id === selectedLocationId) || null,
+    [locations, selectedLocationId]
+  );
 
   const selectedSlot = useMemo(
     () =>
@@ -337,9 +411,9 @@ const BookParking = () => {
     }
   }, [selectedSlot?.floor]);
 
-  // Load custom 3D layout from MongoDB for active deck floor
+  // Load custom 3D layout from MongoDB for active deck floor & location
   useEffect(() => {
-    layoutApi.getByFloor(deckFloor)
+    layoutApi.getByFloor(deckFloor, selectedLocationId || undefined)
       .then((res) => {
         if (res.layout && Array.isArray(res.layout.items)) {
           const nonSlots: ThreeDLayoutItem[] = res.layout.items
@@ -432,6 +506,7 @@ const BookParking = () => {
 
       const res = await bookingApi.create({
         slotId: slotIdToSend,
+        locationId: selectedLocationId || undefined,
         vehicleNumber: cleanVehiclePlate,
         startTime: startDateObj.toISOString(),
         endTime: endDateObj.toISOString(),
@@ -581,6 +656,76 @@ const BookParking = () => {
             exit={{ opacity: 0, y: -15 }}
             className="space-y-6"
           >
+            {/* 1.1 PARKING FACILITY & MALL SELECTOR */}
+            <div className="glass-card p-5 sm:p-6 rounded-2xl border border-cyan-500/30 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    <HiOutlineBuildingStorefront className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-white">
+                      1. Select Parking Facility & Mall
+                    </h3>
+                    <p className="text-xs text-gray-400">
+                      Choose a facility in Katargam, Varachha, Adajan, or Vesu.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleDetectNearestGps}
+                  disabled={detectingGps}
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-xs font-bold transition shadow-md"
+                >
+                  <HiOutlineMapPin className={`w-4 h-4 ${detectingGps ? 'animate-spin' : ''}`} />
+                  <span>{detectingGps ? 'Detecting GPS...' : '📍 Auto-Detect Nearest'}</span>
+                </button>
+              </div>
+
+              {nearestSuggestion && (
+                <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-300 flex items-center justify-between">
+                  <span>📍 Nearest GPS Suggested: <strong>{nearestSuggestion.name}</strong> ({nearestSuggestion.distance})</span>
+                  <span className="text-[10px] text-emerald-400 font-bold">✓ Selected</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {locations.map((loc) => {
+                  const isSelected = selectedLocationId === loc._id;
+                  return (
+                    <button
+                      key={loc._id}
+                      type="button"
+                      onClick={() => setSelectedLocationId(loc._id)}
+                      className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                        isSelected
+                          ? 'bg-cyan-950/80 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
+                          : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.07] text-gray-300'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1.5">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                            {loc.area}
+                          </span>
+                          {isSelected && <span className="text-cyan-400 font-bold text-xs">✓ Selected</span>}
+                        </div>
+                        <p className="text-sm font-bold text-white line-clamp-1">{loc.name}</p>
+                        <p className="text-[11px] text-gray-400 mt-1 line-clamp-1">{loc.address}</p>
+                      </div>
+
+                      <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-gray-400">
+                        <span>{loc.operatingHours || '24/7 Open'}</span>
+                        <span className="text-emerald-400 font-semibold">{loc.totalFloors || 3} Floors</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* CATEGORY SELECTION CARDS */}
             <div className="space-y-2">
               <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">
@@ -1057,6 +1202,20 @@ const BookParking = () => {
 
               {/* Itemized Review List */}
               <div className="space-y-3 text-sm">
+                <div className="flex justify-between py-2 border-b border-white/5">
+                  <span className="text-gray-400 flex items-center gap-1.5">
+                    <HiOutlineBuildingStorefront className="w-4 h-4 text-cyan-400" /> Facility / Mall
+                  </span>
+                  <div className="text-right">
+                    <span className="font-bold text-white">
+                      {activeLocation?.name || 'ParkSmart Prime'}
+                    </span>
+                    <p className="text-[11px] text-cyan-400 font-medium">
+                      📍 {activeLocation?.area || 'Surat'} {activeLocation?.address ? `• ${activeLocation.address}` : ''}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="flex justify-between py-2 border-b border-white/5">
                   <span className="text-gray-400 flex items-center gap-1.5">
                     <HiOutlineMapPin className="w-4 h-4 text-cyan-400" /> Reserved Bay

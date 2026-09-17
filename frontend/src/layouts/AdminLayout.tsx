@@ -28,6 +28,7 @@ import {
   HiOutlineChevronDown,
   HiOutlineSparkles,
   HiOutlineCube,
+  HiOutlineBuildingStorefront,
 } from 'react-icons/hi2';
 import { CarSedan } from '../components/vehicles';
 import ThemeToggle from '../components/ThemeToggle';
@@ -43,6 +44,7 @@ const overviewItems: NavItem[] = [
 ];
 
 const operationsItems: NavItem[] = [
+  { to: '/admin/locations', label: 'Parking Locations', icon: HiOutlineBuildingStorefront },
   { to: '/admin/slots', label: 'Manage Slots', icon: HiOutlineRectangleStack },
   { to: '/admin/bookings', label: 'Manage Bookings', icon: HiOutlineCalendarDays },
   { to: '/admin/users', label: 'Manage Users', icon: HiOutlineUsers },

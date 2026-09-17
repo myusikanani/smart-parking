@@ -24,6 +24,7 @@ const LayoutItemSchema = new mongoose.Schema({
 const LayoutSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, default: 'Campus Main Layout' },
+    locationId: { type: mongoose.Schema.Types.ObjectId, ref: 'ParkingLocation', index: true },
     floor: { type: Number, required: true, default: 1 },
     items: [LayoutItemSchema],
   },

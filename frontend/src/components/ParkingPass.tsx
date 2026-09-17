@@ -9,9 +9,12 @@ import {
   HiOutlineArrowRight,
   HiOutlinePhone,
   HiOutlineBuildingOffice2,
+  HiOutlineBuildingStorefront,
   HiOutlineUser,
   HiOutlineTruck,
-  HiOutlineCheckCircle
+  HiOutlineCheckCircle,
+  HiOutlineMapPin,
+  HiOutlineArrowTopRightOnSquare
 } from 'react-icons/hi2';
 import Badge from './ui/Badge';
 import { bookingApi } from '../services/api';
@@ -64,6 +67,18 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
     .replace('-', ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
+  const locObj = (rawBooking.locationId as Record<string, unknown>) || (slotObj.locationId as Record<string, unknown>) || null;
+  const facilityName = String(locObj?.name || 'ParkSmart Prime');
+  const facilityArea = String(locObj?.area || 'Surat');
+  const facilityAddress = String(locObj?.address || '');
+  const locLat = locObj?.latitude;
+  const locLng = locObj?.longitude;
+  const mapsUrl = locLat && locLng
+    ? `https://www.google.com/maps/dir/?api=1&destination=${locLat},${locLng}`
+    : facilityAddress
+    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(facilityAddress + ', ' + facilityArea)}`
+    : null;
+
   const userObj = typeof rawBooking.user === 'object' && rawBooking.user !== null ? (rawBooking.user as Record<string, unknown>) : null;
   const driverName: string = String(booking.userName || userObj?.name || user?.name || 'Registered Driver');
 
@@ -112,8 +127,8 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
               <span className="text-sm font-extrabold text-white tracking-wide block">
                 ParkSmart Gate Pass
               </span>
-              <span className="text-[10px] text-cyan-200 tracking-wider font-semibold">
-                DIGITAL RFID &amp; QR ACCESS
+              <span className="text-[10px] text-cyan-200 tracking-wider font-semibold flex items-center gap-1">
+                <span>📍 {facilityName} ({facilityArea})</span>
               </span>
             </div>
           </div>
@@ -128,7 +143,7 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
             <p className="text-[10px] uppercase font-bold tracking-wider text-cyan-300">Reserved Bay</p>
             <p className="text-xl font-black font-mono text-white tracking-wide">{slotNum}</p>
             <p className="text-[11px] text-white/80 flex items-center gap-1 mt-0.5">
-              <HiOutlineBuildingOffice2 className="w-3.5 h-3.5 text-cyan-300" />
+              <HiOutlineBuildingStorefront className="w-3.5 h-3.5 text-cyan-300" />
               Floor {floorNum} • {categoryStr}
             </p>
           </div>
@@ -167,6 +182,21 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
             </p>
           </div>
         </div>
+
+        {mapsUrl && (
+          <div className="mt-3">
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-2 px-3 rounded-lg bg-black/30 hover:bg-black/50 border border-white/20 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+            >
+              <HiOutlineMapPin className="w-3.5 h-3.5 text-cyan-300" />
+              <span>Get Directions to {facilityName}</span>
+              <HiOutlineArrowTopRightOnSquare className="w-3 h-3 text-cyan-300" />
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Ticket perforations */}

@@ -359,11 +359,108 @@ export const securityApi = {
 };
 
 export const layoutApi = {
-  getByFloor: (floor: number) =>
-    api.get<{ success: boolean; layout: { name: string; floor: number; items: Array<Record<string, unknown>> } }>(`/layout/${floor}`),
+  getByFloor: (floor: number, locationId?: string) => {
+    const query = locationId && locationId !== 'all' ? `?locationId=${locationId}` : '';
+    return api.get<{ success: boolean; layout: { name: string; floor: number; locationId?: string; items: Array<Record<string, unknown>> } }>(`/layout/${floor}${query}`);
+  },
 
-  save: (data: { floor: number; items: Array<Record<string, unknown>>; name?: string }) =>
+  save: (data: { floor: number; items: Array<Record<string, unknown>>; name?: string; locationId?: string }) =>
     api.post<{ success: boolean; message: string; layout: Record<string, unknown> }>('/layout/save', data),
+};
+
+export interface LocationStats {
+  totalSlots: number;
+  availableSlots: number;
+  occupiedSlots: number;
+  reservedSlots: number;
+  carsTotal: number;
+  carsAvailable: number;
+  bikesTotal: number;
+  bikesAvailable: number;
+  evTotal: number;
+  evAvailable: number;
+  disabledTotal: number;
+  disabledAvailable: number;
+}
+
+export interface ParkingLocationItem {
+  _id: string;
+  name: string;
+  code?: string;
+  area: string;
+  city: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  location?: { type: string; coordinates: [number, number] };
+  description?: string;
+  contactNumber?: string;
+  amenities: string[];
+  image?: string;
+  totalFloors: number;
+  status: 'active' | 'inactive' | 'maintenance';
+  operatingHours?: string;
+  stats?: LocationStats;
+  distanceMeters?: number;
+  distanceFormatted?: string;
+  categoryAvailable?: number;
+  categoryTotal?: number;
+  isCategoryFull?: boolean;
+  isTotalFull?: boolean;
+  occupancyRate?: number;
+}
+
+export interface NearbyLocationsResponse {
+  success: boolean;
+  count: number;
+  userCoordinates?: { latitude: number; longitude: number };
+  searchRadiusKm?: number;
+  vehicleType?: string;
+  recommended: ParkingLocationItem | null;
+  nearestFull: ParkingLocationItem | null;
+  recommendationReason?: string;
+  recommendationHighlights?: string[];
+  locations: ParkingLocationItem[];
+}
+
+export interface AreaItem {
+  name: string;
+  count: number;
+  city: string;
+  latitude: number;
+  longitude: number;
+}
+
+export const locationApi = {
+  getAll: (params?: Record<string, string>) => {
+    const query = params ? '?' + new URLSearchParams(params).toString() : '';
+    return api.get<{ success: boolean; count: number; locations: ParkingLocationItem[] }>(`/locations${query}`);
+  },
+
+  getNearby: (params: { lat: number; lng: number; radius?: number; vehicleType?: string }) => {
+    const q: Record<string, string> = {
+      lat: String(params.lat),
+      lng: String(params.lng),
+      radius: String(params.radius || 10),
+      vehicleType: params.vehicleType || 'all',
+    };
+    return api.get<NearbyLocationsResponse>(`/locations/nearby?${new URLSearchParams(q).toString()}`);
+  },
+
+  getAreas: () =>
+    api.get<{ success: boolean; count: number; areas: AreaItem[] }>('/locations/areas'),
+
+  getById: (id: string) =>
+    api.get<{ success: boolean; location: ParkingLocationItem & { floors?: Array<{ floor: number; slots: Record<string, unknown>[]; total: number; available: number }> } }>(`/locations/${id}`),
+
+  create: (data: Record<string, unknown>) =>
+    api.post<{ success: boolean; message: string; location: ParkingLocationItem }>('/locations', data),
+
+  update: (id: string, data: Record<string, unknown>) =>
+    api.put<{ success: boolean; message: string; location: ParkingLocationItem }>(`/locations/${id}`, data),
+
+  delete: (id: string) =>
+    api.delete<{ success: boolean; message: string }>(`/locations/${id}`),
 };
 
 export const aiApi = {

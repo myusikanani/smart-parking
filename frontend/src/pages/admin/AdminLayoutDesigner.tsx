@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
 import type { FC } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   HiOutlinePlus,
   HiOutlineTrash,
   HiOutlineCloudArrowUp,
   HiOutlineSparkles,
   HiOutlineCheckCircle,
+  HiOutlineBuildingStorefront,
+  HiOutlineMapPin,
 } from 'react-icons/hi2';
 import ThreeDParkingCanvas from '../../components/ThreeDParkingCanvas';
 import type { ThreeDSlotData, ThreeDLayoutItem } from '../../components/ThreeDParkingCanvas';
-import { layoutApi } from '../../services/api';
+import { layoutApi, locationApi } from '../../services/api';
+import type { ParkingLocationItem } from '../../services/api';
 
 interface LayoutItem {
   id: string;
@@ -23,6 +27,11 @@ interface LayoutItem {
 }
 
 export const AdminLayoutDesigner: FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialLocParam = searchParams.get('locationId') || '';
+
+  const [locations, setLocations] = useState<ParkingLocationItem[]>([]);
+  const [selectedLocationId, setSelectedLocationId] = useState<string>(initialLocParam);
   const [activeFloor, setActiveFloor] = useState<number>(1);
   const [items, setItems] = useState<LayoutItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -30,12 +39,26 @@ export const AdminLayoutDesigner: FC = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  // Fetch Layout for Floor directly from MongoDB
+  // Fetch Locations list
+  useEffect(() => {
+    locationApi
+      .getAll({ all: 'true' })
+      .then((res) => {
+        const locs = res.locations || [];
+        setLocations(locs);
+        if (!selectedLocationId && locs.length > 0) {
+          setSelectedLocationId(locs[0]._id);
+        }
+      })
+      .catch((err) => console.error('Error fetching locations:', err));
+  }, []);
+
+  // Fetch Layout for Floor & Location directly from MongoDB
   const fetchLayout = async () => {
     setLoading(true);
     setMessage('');
     try {
-      const res = await layoutApi.getByFloor(activeFloor);
+      const res = await layoutApi.getByFloor(activeFloor, selectedLocationId || undefined);
       if (res.layout && Array.isArray(res.layout.items)) {
         setItems(res.layout.items as unknown as LayoutItem[]);
       }
@@ -47,11 +70,20 @@ export const AdminLayoutDesigner: FC = () => {
   };
 
   useEffect(() => {
-    fetchLayout();
-  }, [activeFloor]);
+    if (selectedLocationId || locations.length === 0) {
+      fetchLayout();
+    }
+  }, [activeFloor, selectedLocationId]);
+
+  const handleLocationChange = (locId: string) => {
+    setSelectedLocationId(locId);
+    searchParams.set('locationId', locId);
+    setSearchParams(searchParams);
+  };
 
   // Selected item object
   const selectedItem = items.find((it) => it.id === selectedId);
+  const currentLocation = locations.find((l) => l._id === selectedLocationId);
 
   // Add New Slot
   const handleAddSlot = (category: string = 'four-wheeler') => {
@@ -100,20 +132,20 @@ export const AdminLayoutDesigner: FC = () => {
     );
   };
 
-  // Save Layout to MongoDB & Auto-sync Slots System-wide (No LocalStorage)
+  // Save Layout to MongoDB & Auto-sync Slots
   const handleSave = async () => {
     setSaving(true);
     setMessage('');
     try {
-      // 1. Save 3D Layout structure and auto-sync ParkingSlot in MongoDB
       const res = await layoutApi.save({
         floor: activeFloor,
+        locationId: selectedLocationId || undefined,
         items: items as unknown as Array<Record<string, unknown>>,
-        name: `Campus Parking Floor ${activeFloor}`,
+        name: currentLocation ? `${currentLocation.name} Floor ${activeFloor}` : `Floor ${activeFloor} Layout`,
       });
 
       const slotCount = items.filter((it) => it.type === 'slot').length;
-      setMessage(`✅ ${res.message || `Floor ${activeFloor} layout & ${slotCount} slots synced live across all dashboards!`}`);
+      setMessage(`✅ ${res.message || `Floor ${activeFloor} layout & ${slotCount} slots synced live in MongoDB!`}`);
     } catch (err) {
       setMessage('Failed to save layout.');
     } finally {
@@ -153,17 +185,33 @@ export const AdminLayoutDesigner: FC = () => {
       <div className="glass-card p-6 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-xs font-bold text-cyan-400 mb-2">
-            <HiOutlineSparkles className="w-4 h-4" /> 3D Campus Layout Designer
+            <HiOutlineSparkles className="w-4 h-4" /> Multi-Mall 3D Floor Layout Designer
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text)]">
             Admin <span className="neon-text">Parking Designer</span>
           </h1>
           <p className="text-xs text-[var(--text-secondary)]">
-            Visually place slots, EV bays, driving lanes, entrance, and exit gates with real X, Y, Z coordinates.
+            Design floor bays, EV zones, driving lanes, and exit gates per facility with real 3D coordinates.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          {/* Facility / Mall Switcher */}
+          <div className="flex items-center gap-1.5 bg-[var(--bg-elevated)] px-3 py-1.5 rounded-xl border border-[var(--border)]">
+            <HiOutlineBuildingStorefront className="w-4 h-4 text-cyan-400" />
+            <select
+              value={selectedLocationId}
+              onChange={(e) => handleLocationChange(e.target.value)}
+              className="bg-transparent text-xs font-bold text-white focus:outline-none"
+            >
+              {locations.map((l) => (
+                <option key={l._id} value={l._id} className="bg-gray-900 text-white">
+                  {l.name} ({l.area})
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Floor Switcher */}
           <div className="flex items-center gap-1 bg-[var(--bg-elevated)] p-1 rounded-xl border border-[var(--border)]">
             {[1, 2, 3].map((f) => (
@@ -198,10 +246,8 @@ export const AdminLayoutDesigner: FC = () => {
 
       {/* Main Grid: Left Toolbar & Control Panel, Right 3D Canvas */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
         {/* Left Admin Control Panel */}
         <div className="space-y-4">
-          
           {/* Add Elements Toolbox */}
           <div className="glass-card p-5 rounded-3xl space-y-3">
             <h3 className="text-sm font-bold text-[var(--text)] border-b border-[var(--border)] pb-2 flex items-center gap-2">

@@ -29,6 +29,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import NotFound from './pages/NotFound';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import ManageLocations from './pages/admin/ManageLocations';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageSlots from './pages/admin/ManageSlots';
 import ManageBookings from './pages/admin/ManageBookings';
@@ -108,6 +109,7 @@ export default function App() {
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
+          <Route path="locations" element={<ManageLocations />} />
           <Route path="users" element={<ManageUsers />} />
           <Route path="slots" element={<ManageSlots />} />
           <Route path="bookings" element={<ManageBookings />} />
