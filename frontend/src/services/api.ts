@@ -52,7 +52,14 @@ const request = async <T = ApiResponse>(
     try {
       data = JSON.parse(text);
     } catch {
-      data = { message: text };
+      // If the response is HTML (e.g. 404 Cannot POST or 500 error page from server)
+      if (text.startsWith('<')) {
+        const titleMatch = text.match(/<pre>(.*?)<\/pre>/i) || text.match(/<title>(.*?)<\/title>/i);
+        const cleanMsg = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, '') : `Request failed (${response.status})`;
+        data = { message: cleanMsg };
+      } else {
+        data = { message: text };
+      }
     }
   }
 
@@ -100,8 +107,8 @@ export const authApi = {
   verifyTwoFactor: (userId: string, code: string) =>
     api.post<{ success: boolean; token: string; user: Record<string, unknown> }>('/auth/verify-2fa', { userId, code }),
 
-  register: (name: string, email: string, phone: string, password: string, role?: string, vehicleNumber?: string) =>
-    api.post<{ success: boolean; token?: string; user?: Record<string, unknown>; requiresTwoFactorSetup?: boolean; qrCodeUrl?: string; secret?: string; userId?: string; message?: string }>('/auth/register', { name, email, phone, password, role, vehicleNumber }),
+  register: (name: string, email: string, phone: string, password: string, role?: string, vehicleNumber?: string, vehicleType?: string) =>
+    api.post<{ success: boolean; token?: string; user?: Record<string, unknown>; requiresTwoFactorSetup?: boolean; qrCodeUrl?: string; secret?: string; userId?: string; message?: string }>('/auth/register', { name, email, phone, password, role, vehicleNumber, vehicleType }),
 
   getMe: () =>
     api.get<{ success: boolean; user: Record<string, unknown> }>('/auth/me'),

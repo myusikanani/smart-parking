@@ -31,14 +31,18 @@ function DashboardSceneContent() {
 
       {/* GLOWING PARKING PEDESTAL PLATFORM */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
-        <cylinderGeometry args={[4.5, 4.8, 0.3, 32]} />
-        <meshStandardMaterial color="#0f172a" metalness={0.9} roughness={0.1} />
+        <circleGeometry args={[4.2, 64]} />
+        <meshStandardMaterial color="#38bdf8" transparent opacity={0.15} metalness={0.8} roughness={0.2} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, 0]}>
+        <cylinderGeometry args={[4.2, 4.4, 0.15, 48]} />
+        <meshStandardMaterial color="#0284c7" transparent opacity={0.25} metalness={0.9} roughness={0.1} />
       </mesh>
 
       {/* PULSING OUTER NEON RING */}
-      <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
-        <ringGeometry args={[4.6, 4.85, 64]} />
-        <meshBasicMaterial color="#06b6d4" side={THREE.DoubleSide} transparent opacity={0.8} />
+      <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
+        <ringGeometry args={[4.25, 4.45, 64]} />
+        <meshBasicMaterial color="#06b6d4" side={THREE.DoubleSide} transparent opacity={0.85} />
       </mesh>
 
       {/* FLOATING REALISTIC PARKED VEHICLE WITH METALLIC SHINE */}
@@ -60,8 +64,8 @@ function DashboardSceneContent() {
 
 export function DashboardHero3D() {
   return (
-    <div className="relative w-full h-[320px] sm:h-[380px] rounded-3xl overflow-hidden border border-[var(--border)] shadow-2xl bg-slate-950">
-      <Canvas camera={{ position: [0, 6, 12], fov: 45 }}>
+    <div className="relative w-full h-[320px] sm:h-[380px] rounded-3xl overflow-hidden border border-[var(--border)] shadow-xl bg-gradient-to-br from-slate-50 via-cyan-50/30 to-blue-50/50 dark:from-[#09152b] dark:via-[#0c1e3d] dark:to-slate-950">
+      <Canvas gl={{ alpha: true }} camera={{ position: [0, 4.5, 10], fov: 42 }}>
         <DashboardSceneContent />
       </Canvas>
     </div>

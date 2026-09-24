@@ -41,9 +41,25 @@ export default function MonthlySubscriptions() {
   // Subscribe modal state
   const [selectedPlan, setSelectedPlan] = useState<'silver' | 'gold_vip' | 'corporate_fleet' | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-  const [vehicleInput, setVehicleInput] = useState(user?.vehicleNumber || 'MH-12-AB-3456');
+  const [vehicleInput, setVehicleInput] = useState(() => (user?.vehicleNumber || (user?.vehicles && user.vehicles[0]) || '').trim().toUpperCase());
   const [subscribing, setSubscribing] = useState(false);
   const [subscribeSuccess, setSubscribeSuccess] = useState('');
+
+  // Sync vehicle whenever user auth loads
+  useEffect(() => {
+    if (user?.vehicleNumber) {
+      setVehicleInput(user.vehicleNumber.trim().toUpperCase());
+    } else if (user?.vehicles && user.vehicles.length > 0) {
+      setVehicleInput(String(user.vehicles[0]).trim().toUpperCase());
+    }
+  }, [user?.vehicleNumber, user?.vehicles]);
+
+  const openSubscribeModal = (planId: 'silver' | 'gold_vip' | 'corporate_fleet') => {
+    const defaultPlate = (user?.vehicleNumber || (user?.vehicles && user.vehicles[0]) || '').trim().toUpperCase();
+    setVehicleInput(defaultPlate);
+    setSelectedPlan(planId);
+    setError('');
+  };
 
   const fetchSubscriptions = useCallback(async () => {
     setLoading(true);
@@ -71,6 +87,7 @@ export default function MonthlySubscriptions() {
     setSubscribing(true);
     setError('');
     try {
+      const defaultPlate = (user?.vehicleNumber || (user?.vehicles && user.vehicles[0]) || 'GJ-05-AB-1234').trim().toUpperCase();
       const vehicleList = vehicleInput
         .split(',')
         .map((v) => v.trim().toUpperCase())
@@ -78,20 +95,21 @@ export default function MonthlySubscriptions() {
 
       const res = await subscriptionApi.create({
         planType: selectedPlan,
-        vehicleNumbers: vehicleList.length > 0 ? vehicleList : [user?.vehicleNumber || 'MH-12-AB-3456'],
+        vehicleNumbers: vehicleList.length > 0 ? vehicleList : [defaultPlate],
         billingCycle
       });
 
       if (res.success) {
-        setSubscribeSuccess(`Pass Activated: Subscribed to ${res.subscription.planName || 'Monthly Pass'}!`);
+        setSubscribeSuccess(`Pass Activated: Subscribed to ${res.subscription?.planName || 'Monthly Pass'}!`);
         setTimeout(() => {
           setSelectedPlan(null);
           setSubscribeSuccess('');
           fetchSubscriptions();
         }, 1500);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Subscription failed. Please try again.');
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Subscription failed. Please check connection and try again.';
+      setError(errMsg);
     } finally {
       setSubscribing(false);
     }
@@ -326,7 +344,7 @@ export default function MonthlySubscriptions() {
                   </button>
                 ) : (
                   <button
-                    onClick={() => setSelectedPlan(plan.id)}
+                    onClick={() => openSubscribeModal(plan.id)}
                     className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
                       plan.popular
                         ? 'btn-neon shadow-lg shadow-cyan-500/30'
@@ -370,8 +388,8 @@ export default function MonthlySubscriptions() {
 
               <div className="space-y-3 text-xs">
                 <div>
-                  <label className="block font-semibold text-gray-400 mb-1">
-                    Registered Vehicle Plate(s) (comma separated for multi-vehicle):
+                  <label className="block font-semibold text-gray-300 mb-1">
+                    Registered Vehicle Plate (Auto-detected from your account):
                   </label>
                   <input
                     type="text"
@@ -380,7 +398,25 @@ export default function MonthlySubscriptions() {
                     placeholder="e.g. GJ-01-AB-1234, MH-12-XY-9999"
                     className="input-neon w-full px-4 py-2.5 font-mono uppercase rounded-xl"
                   />
-                  <span className="text-[10px] text-gray-500 mt-1 block">
+                  
+                  {/* QUICK SELECT CHIPS FOR SAVED VEHICLES */}
+                  {user?.vehicles && user.vehicles.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      <span className="text-[10px] text-gray-400 font-semibold">Your Registered Vehicles:</span>
+                      {user.vehicles.map((v) => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setVehicleInput(String(v).trim().toUpperCase())}
+                          className="px-2 py-0.5 rounded bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 font-mono text-[10px] font-bold transition cursor-pointer"
+                        >
+                          🚗 {v}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <span className="text-[10px] text-gray-500 mt-1.5 block">
                     These vehicles will be whitelisted on all ANPR barrier entrance cameras.
                   </span>
                 </div>

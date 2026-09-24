@@ -8,7 +8,7 @@ const { send2FAEmailCode, sendResetPasswordEmail } = require('../utils/emailServ
 const { logAudit } = require('../utils/auditLogger');
 
 const registerUser = async (req, res) => {
-  const { name, email, phone, password, vehicleNumber } = req.body;
+  const { name, email, phone, password, vehicleNumber, vehicleType } = req.body;
 
   // Admin accounts can only be created/promoted by an existing admin
   // through Manage Users — never via public registration.
@@ -27,6 +27,7 @@ const registerUser = async (req, res) => {
 
     const userRole = req.body.role === 'security' ? 'security' : 'user';
     const cleanPlate = vehicleNumber ? String(vehicleNumber).trim().toUpperCase() : '';
+    const cleanVehicleType = ['4-wheeler', '2-wheeler', 'ev', 'accessible'].includes(vehicleType) ? vehicleType : '4-wheeler';
 
     if (userRole === 'user' && !cleanPlate) {
       return res.status(400).json({
@@ -58,6 +59,7 @@ const registerUser = async (req, res) => {
       password,
       role: userRole,
       vehicleNumber: cleanPlate,
+      vehicleType: cleanVehicleType,
       vehicles: cleanPlate ? [cleanPlate] : []
     });
 
@@ -66,7 +68,7 @@ const registerUser = async (req, res) => {
     await Notification.create({
       user: user._id,
       title: 'Welcome to ParkSmart',
-      message: `Welcome ${user.name}! Your primary vehicle ${cleanPlate || 'plate'} has been verified.`,
+      message: `Welcome ${user.name}! Your primary vehicle ${cleanPlate || 'plate'} (${cleanVehicleType}) has been verified.`,
       type: 'info'
     });
 
@@ -80,6 +82,7 @@ const registerUser = async (req, res) => {
         phone: user.phone,
         role: user.role,
         vehicleNumber: user.vehicleNumber,
+        vehicleType: user.vehicleType,
         vehicles: user.vehicles || []
       }
     });
@@ -87,6 +90,7 @@ const registerUser = async (req, res) => {
     console.warn('DB Register Error (using demo fallback):', error.message);
     const userRole = req.body.role === 'admin' || req.body.role === 'security' ? req.body.role : 'user';
     const cleanPlate = vehicleNumber ? String(vehicleNumber).trim().toUpperCase() : 'MH-12-AB-3456';
+    const cleanVehicleType = ['4-wheeler', '2-wheeler', 'ev', 'accessible'].includes(vehicleType) ? vehicleType : '4-wheeler';
     return res.status(201).json({
       success: true,
       token: `demo-token-${Date.now()}`,
@@ -97,6 +101,7 @@ const registerUser = async (req, res) => {
         phone: phone || '9876543210',
         role: userRole,
         vehicleNumber: cleanPlate,
+        vehicleType: cleanVehicleType,
         vehicles: [cleanPlate]
       }
     });
@@ -198,6 +203,7 @@ const loginUser = async (req, res) => {
         phone: user.phone,
         role: user.role,
         vehicleNumber: user.vehicleNumber || '',
+        vehicleType: user.vehicleType || '4-wheeler',
         vehicles: user.vehicles || (user.vehicleNumber ? [user.vehicleNumber] : []),
         twoFactorEnabled: user.twoFactorEnabled
       }
@@ -216,6 +222,7 @@ const loginUser = async (req, res) => {
         phone: '9876543210',
         role: userRole,
         vehicleNumber: 'MH-12-AB-3456',
+        vehicleType: '4-wheeler',
         vehicles: ['MH-12-AB-3456'],
         twoFactorEnabled: false
       }

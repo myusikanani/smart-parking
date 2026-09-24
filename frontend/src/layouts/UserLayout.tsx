@@ -177,7 +177,7 @@ const UserLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-gray-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] flex flex-col font-sans">
       {/* MOBILE BACKDROP */}
       <AnimatePresence>
         {mobileOpen && (
@@ -199,7 +199,7 @@ const UserLayout = () => {
       >
         <div>
           {/* LOGO BAR */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-white/5">
+          <div className="flex items-center justify-between h-16 px-4 border-b border-[var(--border)]">
             {!collapsed && (
               <Link to="/" className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-cyan-500/30 relative overflow-hidden">
@@ -236,7 +236,7 @@ const UserLayout = () => {
             {/* 1. PARKING SECTION */}
             <div className="space-y-1">
               {!collapsed && (
-                <p className="px-3 text-[10px] font-mono uppercase tracking-wider text-cyan-400/70 font-bold mb-1.5">
+                <p className="px-3 text-[10px] font-mono uppercase tracking-wider text-cyan-600 dark:text-cyan-400/70 font-bold mb-1.5">
                   PARKING
                 </p>
               )}
@@ -250,12 +250,12 @@ const UserLayout = () => {
                     onClick={() => setMobileOpen(false)}
                     className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 ${
                       isActive
-                        ? 'bg-cyan-500/20 text-cyan-300 font-semibold border-l-4 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
-                        : 'text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/5'
+                        ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 font-semibold border-l-4 border-cyan-500 shadow-sm'
+                        : 'text-slate-600 dark:text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-500/5'
                     }`}
                     title={collapsed ? item.label : undefined}
                   >
-                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-cyan-400' : ''}`} />
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-cyan-500' : ''}`} />
                     {!collapsed && <span className="truncate">{item.label}</span>}
                   </Link>
                 );
@@ -263,9 +263,9 @@ const UserLayout = () => {
             </div>
 
             {/* 2. ACCOUNT SECTION */}
-            <div className="space-y-1 pt-2 border-t border-white/5">
+            <div className="space-y-1 pt-2 border-t border-[var(--border)]">
               {!collapsed && (
-                <p className="px-3 text-[10px] font-mono uppercase tracking-wider text-gray-400/80 font-bold mb-1.5">
+                <p className="px-3 text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-gray-400/80 font-bold mb-1.5">
                   ACCOUNT
                 </p>
               )}
@@ -279,12 +279,12 @@ const UserLayout = () => {
                     onClick={() => setMobileOpen(false)}
                     className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 ${
                       isActive
-                        ? 'bg-cyan-500/20 text-cyan-300 font-semibold border-l-4 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
-                        : 'text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/5'
+                        ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 font-semibold border-l-4 border-cyan-500 shadow-sm'
+                        : 'text-slate-600 dark:text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-500/5'
                     }`}
                     title={collapsed ? item.label : undefined}
                   >
-                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-cyan-400' : ''}`} />
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-cyan-500' : ''}`} />
                     {!collapsed && <span className="truncate">{item.label}</span>}
                   </Link>
                 );
@@ -292,12 +292,12 @@ const UserLayout = () => {
             </div>
 
             {/* 3. MORE FEATURES (COLLAPSIBLE SECTION) */}
-            <div className="space-y-1 pt-2 border-t border-white/5">
+            <div className="space-y-1 pt-2 border-t border-[var(--border)]">
               {!collapsed ? (
                 <button
                   type="button"
                   onClick={() => setMoreOpen(!moreOpen)}
-                  className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-pink-400/80 hover:text-pink-300 font-bold rounded-lg hover:bg-white/5 transition"
+                  className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-pink-600 dark:text-pink-400/80 hover:text-pink-700 dark:hover:text-pink-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition"
                 >
                   <span className="flex items-center gap-1.5">
                     <span>MORE FEATURES</span>
@@ -308,7 +308,7 @@ const UserLayout = () => {
                   />
                 </button>
               ) : (
-                <div className="h-px bg-white/10 my-1" />
+                <div className="h-px bg-[var(--border)] my-1" />
               )}
 
               {(moreOpen || collapsed) && (
@@ -327,12 +327,12 @@ const UserLayout = () => {
                         onClick={() => setMobileOpen(false)}
                         className={`flex items-center gap-3 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 ${
                           isActive
-                            ? 'bg-pink-500/20 text-pink-300 font-semibold border-l-4 border-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.2)]'
-                            : 'text-gray-400 hover:text-pink-300 hover:bg-pink-500/5'
+                            ? 'bg-pink-500/15 text-pink-700 dark:text-pink-300 font-semibold border-l-4 border-pink-500 shadow-sm'
+                            : 'text-slate-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-300 hover:bg-pink-500/5'
                         }`}
                         title={collapsed ? item.label : undefined}
                       >
-                        <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-pink-400' : ''}`} />
+                        <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-pink-500' : ''}`} />
                         {!collapsed && <span className="truncate">{item.label}</span>}
                       </Link>
                     );
@@ -344,10 +344,10 @@ const UserLayout = () => {
         </div>
 
         {/* LOGOUT BUTTON AT SIDEBAR BOTTOM */}
-        <div className="p-3 border-t border-white/5">
+        <div className="p-3 border-t border-[var(--border)]">
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-pink-400 hover:bg-pink-500/10 border border-pink-500/20 transition-all ${
+            className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-pink-600 dark:text-pink-400 hover:bg-pink-500/10 border border-pink-500/20 transition-all ${
               collapsed ? 'px-0' : ''
             }`}
             title={collapsed ? 'Logout' : undefined}
@@ -465,7 +465,7 @@ const UserLayout = () => {
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-cyan-500/25 uppercase">
                 {user?.name?.slice(0, 2) || 'US'}
               </div>
-              <span className="text-sm font-medium hidden md:block text-gray-200">{user?.name || 'User'}</span>
+              <span className="text-sm font-medium hidden md:block text-[var(--text)]">{user?.name || 'User'}</span>
               <HiOutlineChevronDown className="w-4 h-4 text-gray-500" />
             </button>
 
@@ -481,13 +481,13 @@ const UserLayout = () => {
                   <Link
                     to="/profile"
                     onClick={() => setUserOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-cyan-500/5 text-gray-200 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-cyan-500/5 text-[var(--text)] transition-colors"
                   >
                     <HiOutlineUser className="w-4 h-4 text-cyan-400" /> My Profile
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm hover:bg-cyan-500/5 text-pink-400 transition-colors"
+                    className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm hover:bg-cyan-500/5 text-pink-500 transition-colors"
                   >
                     <HiOutlineArrowRightOnRectangle className="w-4 h-4" /> Logout
                   </button>
@@ -500,7 +500,7 @@ const UserLayout = () => {
 
       {/* MAIN CONTENT CANVAS (PUSHED BY SIDEBAR WIDTH) */}
       <main
-        className={`flex-1 pt-20 pb-12 transition-all duration-300 grid-bg relative overflow-hidden ${
+        className={`flex-1 pt-20 pb-12 transition-all duration-300 grid-bg bg-[var(--bg)] relative overflow-hidden ${
           collapsed ? 'lg:ml-16' : 'lg:ml-64'
         }`}
       >

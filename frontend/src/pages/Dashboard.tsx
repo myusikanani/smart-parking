@@ -280,10 +280,10 @@ const Dashboard = () => {
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Welcome back, <span className="neon-text">{user?.name || 'Driver'}</span>
             </h1>
-            <p className="mt-2 text-sm sm:text-base text-gray-400">
+            <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-gray-400">
               Manage your smart parking passes, view live slot availability, and track your parking sessions in real time.
             </p>
 
@@ -328,14 +328,14 @@ const Dashboard = () => {
                     </span>
                     {statusBadge(String(activeOrNextPass.status))}
                   </div>
-                  <h3 className="text-xl font-bold text-white mt-0.5">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">
                     Slot #{String(activeOrNextPass.slotNumber || 'A-01')} &middot;{' '}
-                    <span className="font-mono text-cyan-300">
+                    <span className="font-mono text-cyan-600 dark:text-cyan-300">
                       {String(activeOrNextPass.vehicleNumber || 'MH-12-AB-3456')}
                     </span>
                   </h3>
-                  <p className="text-xs text-gray-400 mt-1 flex items-center gap-2">
-                    <HiOutlineClock className="w-3.5 h-3.5 text-cyan-400" />
+                  <p className="text-xs text-slate-600 dark:text-gray-400 mt-1 flex items-center gap-2">
+                    <HiOutlineClock className="w-3.5 h-3.5 text-cyan-500" />
                     <span>
                       {String(activeOrNextPass.startTime || '').split('T')[0]} &middot;{' '}
                       {String(activeOrNextPass.startTime || '').split('T')[1]?.slice(0, 5) || '10:00'} -{' '}
@@ -357,14 +357,14 @@ const Dashboard = () => {
             </div>
           </div>
         ) : (
-          <div className="glass-card p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-white/10">
+          <div className="glass-card p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-[var(--border)]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-500">
                 <HiOutlineSparkles className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-200">No active parking sessions right now</p>
-                <p className="text-xs text-gray-400">Reserve your spot ahead of time to guarantee hassle-free entry.</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-gray-200">No active parking sessions right now</p>
+                <p className="text-xs text-slate-500 dark:text-gray-400">Reserve your spot ahead of time to guarantee hassle-free entry.</p>
               </div>
             </div>
             <button
@@ -386,19 +386,19 @@ const Dashboard = () => {
             style={{ boxShadow: `0 0 20px ${stat.glow}` }}
           >
             <div className="flex items-center justify-between mb-3">
-              <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${stat.iconBg} border border-white/10 group-hover:scale-110 transition-transform`}>
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${stat.iconBg} border border-[var(--border)] group-hover:scale-110 transition-transform`}>
                 {stat.icon}
               </div>
               {stat.live && (
                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] font-bold text-emerald-400 uppercase">Live</span>
+                  <span className="text-[10px] font-bold text-emerald-500 uppercase">Live</span>
                 </div>
               )}
             </div>
-            <p className="text-xs text-gray-400 font-medium">{stat.title}</p>
-            <p className="text-2xl font-bold text-white mt-0.5 tracking-tight">{stat.value}</p>
-            <p className="text-[11px] text-gray-500 mt-1">{stat.subtext}</p>
+            <p className="text-xs text-slate-500 dark:text-gray-400 font-medium">{stat.title}</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white mt-0.5 tracking-tight">{stat.value}</p>
+            <p className="text-[11px] text-slate-400 dark:text-gray-500 mt-1">{stat.subtext}</p>
           </div>
         ))}
       </motion.div>
@@ -409,11 +409,11 @@ const Dashboard = () => {
         <motion.div variants={itemVariants} className="lg:col-span-2 glass-card p-5 sm:p-6 rounded-2xl">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <HiOutlineArrowTrendingUp className="w-5 h-5 text-cyan-400" />
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <HiOutlineArrowTrendingUp className="w-5 h-5 text-cyan-500" />
                 Monthly Spending & Bookings
               </h2>
-              <p className="text-xs text-gray-400">Overview of parking expenditure over recent months</p>
+              <p className="text-xs text-slate-500 dark:text-gray-400">Overview of parking expenditure over recent months</p>
             </div>
             <span className="badge-neon text-xs font-mono">2026 Analytics</span>
           </div>
@@ -455,23 +455,23 @@ const Dashboard = () => {
         <motion.div variants={itemVariants} className="glass-card p-5 sm:p-6 rounded-2xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <HiOutlineChartBar className="w-5 h-5 text-pink-400" />
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <HiOutlineChartBar className="w-5 h-5 text-pink-500" />
                 Peak Hours Forecast
               </h2>
             </div>
-            <p className="text-xs text-gray-400 mb-4">
+            <p className="text-xs text-slate-500 dark:text-gray-400 mb-4">
               Check traffic intensity to plan your parking arrival time smoothly.
             </p>
 
             <div className="space-y-3.5">
               {peakHours.map((ph, i) => (
-                <div key={i} className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-1.5">
+                <div key={i} className="p-3 rounded-xl bg-slate-100/80 dark:bg-white/5 border border-slate-200 dark:border-white/5 space-y-1.5">
                   <div className="flex items-center justify-between text-xs font-semibold">
-                    <span className="text-gray-300">{ph.time}</span>
+                    <span className="text-slate-700 dark:text-gray-300">{ph.time}</span>
                     <span className={ph.color}>{ph.status} ({ph.load}%)</span>
                   </div>
-                  <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-slate-200 dark:bg-gray-800 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
                         ph.load > 80 ? 'bg-pink-500 shadow-[0_0_8px_#ec4899]' : ph.load > 50 ? 'bg-amber-400' : 'bg-emerald-400'
@@ -484,8 +484,8 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-white/10 text-center">
-            <p className="text-xs text-cyan-400 flex items-center justify-center gap-1.5">
+          <div className="mt-4 pt-4 border-t border-[var(--border)] text-center">
+            <p className="text-xs text-cyan-600 dark:text-cyan-400 flex items-center justify-center gap-1.5">
               <HiOutlineShieldCheck className="w-4 h-4" />
               EV & Accessible slots reserved guaranteed
             </p>
@@ -498,15 +498,15 @@ const Dashboard = () => {
         <div className="lg:col-span-2 glass-card p-5 sm:p-6 rounded-2xl">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <HiOutlineListBullet className="w-5 h-5 text-cyan-400" />
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <HiOutlineListBullet className="w-5 h-5 text-cyan-500" />
                 Recent Booking Activity
               </h2>
-              <p className="text-xs text-gray-400">Your latest parking sessions and payment history</p>
+              <p className="text-xs text-slate-500 dark:text-gray-400">Your latest parking sessions and payment history</p>
             </div>
             <button
               onClick={() => navigate('/booking-history')}
-              className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
+              className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:underline transition-colors"
             >
               View All History &rarr;
             </button>
@@ -516,7 +516,7 @@ const Dashboard = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead>
-                  <tr className="border-b border-white/10 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  <tr className="border-b border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                     <th className="pb-3">Slot</th>
                     <th className="pb-3">Vehicle</th>
                     <th className="pb-3">Date</th>
@@ -525,28 +525,28 @@ const Dashboard = () => {
                     <th className="pb-3 text-center">Pass</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                   {recentRows.map((row, idx) => (
                     <tr key={idx} className="hover:bg-cyan-500/5 transition-colors">
-                      <td className="py-3.5 font-bold text-cyan-300">
+                      <td className="py-3.5 font-bold text-cyan-600 dark:text-cyan-300">
                         Slot #{String(row.slotNumber)}
                       </td>
-                      <td className="py-3.5 font-mono text-xs text-gray-300">
+                      <td className="py-3.5 font-mono text-xs text-slate-700 dark:text-gray-300">
                         {String(row.vehicleNumber)}
                       </td>
-                      <td className="py-3.5 text-xs text-gray-400">
+                      <td className="py-3.5 text-xs text-slate-500 dark:text-gray-400">
                         {String(row.date)}
                       </td>
                       <td className="py-3.5">
                         {statusBadge(String(row.status))}
                       </td>
-                      <td className="py-3.5 text-right font-semibold text-emerald-400">
+                      <td className="py-3.5 text-right font-semibold text-emerald-500">
                         ₹{String(row.amount)}
                       </td>
                       <td className="py-3.5 text-center">
                         <button
                           onClick={() => handleOpenPass(row.rawBooking)}
-                          className="p-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 transition-colors"
+                          className="p-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 transition-colors"
                           title="View Digital Pass"
                         >
                           <HiOutlineQrCode className="w-4 h-4" />
@@ -558,7 +558,7 @@ const Dashboard = () => {
               </table>
             </div>
           ) : (
-            <div className="py-12 text-center text-gray-500">
+            <div className="py-12 text-center text-slate-400 dark:text-gray-500">
               <HiOutlineCalendarDays className="w-12 h-12 mx-auto opacity-30 mb-2" />
               <p className="text-sm font-semibold">No booking records found</p>
               <p className="text-xs">Your future parking reservations will appear here.</p>
@@ -569,11 +569,11 @@ const Dashboard = () => {
         {/* Quick Action Command Center */}
         <div className="glass-card p-5 sm:p-6 rounded-2xl flex flex-col justify-between">
           <div>
-            <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-              <HiOutlineSparkles className="w-5 h-5 text-amber-400" />
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
+              <HiOutlineSparkles className="w-5 h-5 text-amber-500" />
               Quick Actions
             </h2>
-            <p className="text-xs text-gray-400 mb-5">Frequent user shortcuts & gate control</p>
+            <p className="text-xs text-slate-500 dark:text-gray-400 mb-5">Frequent user shortcuts & gate control</p>
 
             <div className="space-y-3">
               <button
@@ -597,6 +597,7 @@ const Dashboard = () => {
                 </span>
                 <span>&rarr;</span>
               </button>
+
 
               <button
                 onClick={() => navigate('/available-slots')}

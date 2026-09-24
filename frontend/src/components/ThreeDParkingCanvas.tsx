@@ -276,34 +276,34 @@ const ThreeDParkingBay: FC<{
       {/* EV Charging Station Pillar */}
       {slot.category === 'ev' && <ThreeDEVStation position={[1.3, 0, -1.8]} />}
 
-      {/* Floating 3D HTML Label */}
+      {/* Floating 3D HTML Label — Flattened Elevation & Reduced Scale (0.48) to avoid overlap */}
       {showLabel && (
-      <Html position={[0, 1.8, 0]} center distanceFactor={25}>
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            onSelect?.(slot);
-          }}
-          className={`cursor-pointer px-2.5 py-1 rounded-xl text-[10px] font-extrabold font-mono flex items-center gap-1.5 shadow-xl transition-all ${
-            isRecommended
-              ? 'bg-blue-600 text-white border-2 border-blue-400 animate-bounce scale-110 shadow-[0_0_20px_rgba(59,130,246,0.8)]'
-              : isHighlighted
-              ? 'bg-amber-500 text-slate-950 border-2 border-amber-300 animate-bounce scale-110 shadow-[0_0_20px_rgba(245,158,11,0.8)]'
-              : isSelected
-              ? 'bg-cyan-500 text-slate-950 border-2 border-white font-bold scale-110'
-              : slot.status === 'occupied'
-              ? 'bg-slate-900/90 text-red-400 border border-red-500/40'
-              : 'bg-slate-900/90 text-emerald-400 border border-emerald-500/40 hover:scale-105'
-          }`}
-        >
-          <span>{slot.number}</span>
-          {isRecommended && <span>⭐ AI</span>}
-          {isHighlighted && !isRecommended && <span>🔍</span>}
-          {slot.category === 'ev' && <span>⚡</span>}
-          {slot.category === 'vip' && <span>👑</span>}
-          {slot.category === 'disabled' && <span>♿</span>}
-        </div>
-      </Html>
+        <Html position={[0, 0.45, 0]} center distanceFactor={36}>
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect?.(slot);
+            }}
+            className={`cursor-pointer select-none origin-center scale-[0.48] px-2 py-0.5 rounded-lg text-[10px] font-extrabold font-mono flex items-center gap-1 shadow-lg transition-all ${
+              isRecommended
+                ? 'bg-blue-600 text-white border border-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.8)] scale-[0.55]'
+                : isHighlighted
+                ? 'bg-amber-500 text-slate-950 border border-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.8)] scale-[0.55]'
+                : isSelected
+                ? 'bg-cyan-500 text-slate-950 border border-white font-bold scale-[0.55]'
+                : slot.status === 'occupied'
+                ? 'bg-slate-900/95 text-red-400 border border-red-500/40'
+                : 'bg-slate-900/95 text-emerald-400 border border-emerald-500/40 hover:scale-[0.52]'
+            }`}
+          >
+            <span>{slot.number}</span>
+            {isRecommended && <span>⭐ AI</span>}
+            {isHighlighted && !isRecommended && <span>🔍</span>}
+            {slot.category === 'ev' && <span>⚡</span>}
+            {slot.category === 'vip' && <span>👑</span>}
+            {slot.category === 'disabled' && <span>♿</span>}
+          </div>
+        </Html>
       )}
     </group>
   );
@@ -462,26 +462,31 @@ const ThreeDLayoutElement: FC<{
   );
 };
 
-// 3D Campus Road & Driving Lanes (fallback used only when no custom
-// layoutItems were provided, so pre-existing pages keep working unchanged).
-const Campus3DGround: FC = () => {
+// 3D Campus Road & Driving Lanes with Dynamic Ground Mesh sizing
+const Campus3DGround: FC<{ width: number; depth: number; centerX: number; centerZ: number }> = ({
+  width,
+  depth,
+  centerX,
+  centerZ,
+}) => {
+  const laneWidth = Math.max(32, width - 8);
   return (
-    <group position={[0, -0.01, 0]}>
-      {/* Asphalt Floor Deck */}
+    <group position={[centerX, -0.01, centerZ]}>
+      {/* Dynamic Asphalt Floor Deck */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[40, 30]} />
+        <planeGeometry args={[width, depth]} />
         <meshStandardMaterial color="#090d16" roughness={0.8} />
       </mesh>
 
       {/* Main Driving Lane */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <planeGeometry args={[36, 4]} />
+        <planeGeometry args={[laneWidth, 4]} />
         <meshStandardMaterial color="#1e293b" />
       </mesh>
 
       {/* Lane Dashed Center Line */}
-      {Array.from({ length: 10 }).map((_, i) => (
-        <mesh key={i} position={[-16 + i * 3.5, 0.04, 0]}>
+      {Array.from({ length: Math.floor(laneWidth / 3.5) }).map((_, i) => (
+        <mesh key={i} position={[-laneWidth / 2 + 2 + i * 3.5, 0.04, 0]}>
           <boxGeometry args={[1.8, 0.02, 0.15]} />
           <meshBasicMaterial color="#38bdf8" />
         </mesh>
@@ -489,8 +494,8 @@ const Campus3DGround: FC = () => {
 
       {/* Entrance Arrow Indicator */}
       <group position={[DEFAULT_ENTRANCE[0], 0.05, DEFAULT_ENTRANCE[1]]}>
-        <Html center distanceFactor={22}>
-          <div className="bg-emerald-500 text-slate-950 font-extrabold text-[10px] px-2.5 py-1 rounded-lg shadow-lg flex items-center gap-1 font-mono tracking-wider">
+        <Html center distanceFactor={30}>
+          <div className="select-none scale-90 bg-emerald-500 text-slate-950 font-extrabold text-[10px] px-2.5 py-1 rounded-lg shadow-lg flex items-center gap-1 font-mono tracking-wider">
             ➔ ENTRANCE GATE
           </div>
         </Html>
@@ -498,8 +503,8 @@ const Campus3DGround: FC = () => {
 
       {/* Exit Arrow Indicator */}
       <group position={[DEFAULT_EXIT[0], 0.05, DEFAULT_EXIT[1]]}>
-        <Html center distanceFactor={22}>
-          <div className="bg-red-500 text-white font-extrabold text-[10px] px-2.5 py-1 rounded-lg shadow-lg flex items-center gap-1 font-mono tracking-wider">
+        <Html center distanceFactor={30}>
+          <div className="select-none scale-90 bg-red-500 text-white font-extrabold text-[10px] px-2.5 py-1 rounded-lg shadow-lg flex items-center gap-1 font-mono tracking-wider">
             EXIT GATE ➔
           </div>
         </Html>
@@ -530,14 +535,13 @@ const DragCaptureGround: FC<{
       }}
       onPointerLeave={() => onRelease()}
     >
-      <planeGeometry args={[100, 100]} />
+      <planeGeometry args={[120, 120]} />
       <meshBasicMaterial visible={false} />
     </mesh>
   );
 };
 
-// Camera Smooth Controller — cinematic tween to the selected slot instead of
-// an instant snap (Feature 8: "Camera Zoom" animation).
+// Camera Smooth Controller — Symmetrical Isometric Orbit Controls
 const CameraController: FC<{ selectedSlot?: ThreeDSlotData | null; dragging: boolean }> = ({ selectedSlot, dragging }) => {
   const controlsRef = useRef<any>(null);
   const targetPos = useRef(new THREE.Vector3(0, 0, 0));
@@ -545,6 +549,8 @@ const CameraController: FC<{ selectedSlot?: ThreeDSlotData | null; dragging: boo
   useEffect(() => {
     if (selectedSlot) {
       targetPos.current.set(selectedSlot.x, 0, selectedSlot.z);
+    } else {
+      targetPos.current.set(0, 0, 0);
     }
   }, [selectedSlot]);
 
@@ -561,9 +567,10 @@ const CameraController: FC<{ selectedSlot?: ThreeDSlotData | null; dragging: boo
       enablePan={!dragging}
       enableZoom={!dragging}
       enableRotate={!dragging}
-      maxPolarAngle={Math.PI / 2.1}
-      minDistance={5}
-      maxDistance={45}
+      maxPolarAngle={Math.PI / 3}
+      minPolarAngle={Math.PI / 6}
+      minDistance={10}
+      maxDistance={90}
     />
   );
 };
@@ -586,9 +593,7 @@ export const ThreeDParkingCanvas: FC<ThreeDParkingCanvasProps> = ({
 }) => {
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
-  // Multi-floor support (Feature 1): only render items belonging to the
-  // active floor. Items without a floor tag are treated as floor-agnostic
-  // so existing single-floor callers keep working unchanged.
+  // Multi-floor support: only render items belonging to active floor
   const visibleSlots = useMemo(
     () => slots.filter((s) => activeFloor === undefined || s.floor === undefined || s.floor === activeFloor),
     [slots, activeFloor]
@@ -597,6 +602,35 @@ export const ThreeDParkingCanvas: FC<ThreeDParkingCanvasProps> = ({
     () => (layoutItems || []).filter((it) => activeFloor === undefined || it.floor === undefined || it.floor === activeFloor),
     [layoutItems, activeFloor]
   );
+
+  // Dynamic Ground Mesh Bounds calculation based on slots & layout items
+  const groundBounds = useMemo(() => {
+    let minX = -18, maxX = 18, minZ = -12, maxZ = 12;
+    if (visibleSlots.length > 0) {
+      minX = Math.min(...visibleSlots.map((s) => s.x)) - 4;
+      maxX = Math.max(...visibleSlots.map((s) => s.x)) + 4;
+      minZ = Math.min(...visibleSlots.map((s) => s.z)) - 4;
+      maxZ = Math.max(...visibleSlots.map((s) => s.z)) + 4;
+    }
+    if (visibleLayoutItems.length > 0) {
+      visibleLayoutItems.forEach((it) => {
+        const hw = (it.width || 8) / 2 + 2;
+        const hl = (it.length || 8) / 2 + 2;
+        minX = Math.min(minX, it.x - hw);
+        maxX = Math.max(maxX, it.x + hw);
+        minZ = Math.min(minZ, it.z - hl);
+        maxZ = Math.max(maxZ, it.z + hl);
+      });
+    } else {
+      minX = Math.min(minX, DEFAULT_ENTRANCE[0] - 4);
+      maxX = Math.max(maxX, DEFAULT_EXIT[0] + 4);
+    }
+    const width = Math.max(50, Math.ceil((maxX - minX) + 8));
+    const depth = Math.max(38, Math.ceil((maxZ - minZ) + 8));
+    const centerX = (minX + maxX) / 2;
+    const centerZ = (minZ + maxZ) / 2;
+    return { width, depth, centerX, centerZ };
+  }, [visibleSlots, visibleLayoutItems]);
 
   const selectedSlot = visibleSlots.find((s) => s.id === selectedSlotId || s.number === selectedSlotId);
 
@@ -609,8 +643,6 @@ export const ThreeDParkingCanvas: FC<ThreeDParkingCanvasProps> = ({
 
   const handleDragRelease = () => {
     if (draggingId) {
-      // Final coordinates were already applied continuously via onItemDrag;
-      // this just signals the drag has ended (e.g. for a "saved" indicator).
       onDragEnd?.(draggingId, 0, 0);
     }
     setDraggingId(null);
@@ -644,17 +676,20 @@ export const ThreeDParkingCanvas: FC<ThreeDParkingCanvasProps> = ({
         </div>
       )}
 
-      {/* THREE.JS CANVAS */}
-      <Canvas camera={{ position: [0, 18, 22], fov: 45 }} dpr={isMobileDevice ? [1, 1.5] : [1, 2]}>
+      {/* THREE.JS CANVAS — Symmetrical Isometric Perspective Camera */}
+      <Canvas
+        camera={{ position: [0, 50, 40], fov: 40 }}
+        dpr={isMobileDevice ? [1, 1.5] : [1, 2]}
+      >
         <ambientLight intensity={1.2} />
-        <directionalLight position={[10, 20, 15]} intensity={1.5} castShadow />
-        <pointLight position={[-10, 10, -10]} intensity={0.8} />
+        <directionalLight position={[10, 25, 15]} intensity={1.5} castShadow />
+        <pointLight position={[-10, 15, -10]} intensity={0.8} />
 
         {visibleLayoutItems.length > 0 ? (
           <>
-            {/* Base asphalt deck still renders under custom layouts */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-              <planeGeometry args={[40, 30]} />
+            {/* Dynamic base asphalt deck renders seamlessly under custom layouts */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[groundBounds.centerX, -0.02, groundBounds.centerZ]} receiveShadow>
+              <planeGeometry args={[groundBounds.width, groundBounds.depth]} />
               <meshStandardMaterial color="#090d16" roughness={0.8} />
             </mesh>
             {visibleLayoutItems.map((item) => (
@@ -669,7 +704,12 @@ export const ThreeDParkingCanvas: FC<ThreeDParkingCanvasProps> = ({
             ))}
           </>
         ) : (
-          <Campus3DGround />
+          <Campus3DGround
+            width={groundBounds.width}
+            depth={groundBounds.depth}
+            centerX={groundBounds.centerX}
+            centerZ={groundBounds.centerZ}
+          />
         )}
 
         {/* 3D Parking Slots */}

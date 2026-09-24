@@ -76,6 +76,7 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [vehicleNumber, setVehicleNumber] = useState('');
+  const [vehicleType, setVehicleType] = useState<'4-wheeler' | '2-wheeler' | 'ev' | 'accessible'>('4-wheeler');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -227,7 +228,8 @@ const Register = () => {
     setLoading(true);
     try {
       const cleanPlate = role === 'user' ? vehicleNumber.trim().toUpperCase() : '';
-      const result = await register(fullName, email, phone, password, role, cleanPlate);
+      const cleanType = role === 'user' ? vehicleType : undefined;
+      const result = await register(fullName, email, phone, password, role, cleanPlate, cleanType);
       if (result.requiresTwoFactorSetup) {
         setQrCodeUrl(result.qrCodeUrl || '');
         setSecretKey(result.secret || '');
@@ -334,18 +336,56 @@ const Register = () => {
               </div>
 
               {role === 'user' && (
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                    <LicensePlateIcon />
-                  </span>
-                  <input
-                    type="text"
-                    value={vehicleNumber}
-                    onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
-                    placeholder="Vehicle License Plate (e.g. GJ-01-AB-1234)"
-                    className="input-neon pl-11 uppercase font-mono tracking-wide"
-                  />
-                  {errors.vehicleNumber && <p className="mt-1 text-xs text-red-400">{errors.vehicleNumber}</p>}
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1.5">
+                      Select Vehicle Type:
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { id: '4-wheeler' as const, label: '4 Wheeler (Car)', icon: '🚗', desc: 'Standard Bay' },
+                        { id: '2-wheeler' as const, label: '2 Wheeler (Bike)', icon: '🏍️', desc: 'Compact Bay' },
+                        { id: 'ev' as const, label: 'EV Charging', icon: '⚡', desc: 'Fast EV Station' },
+                        { id: 'accessible' as const, label: 'Accessible', icon: '♿', desc: 'Reserved Bay' },
+                      ].map((item) => {
+                        const active = vehicleType === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setVehicleType(item.id)}
+                            className={`flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all ${
+                              active
+                                ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.25)] ring-1 ring-cyan-400'
+                                : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200'
+                            }`}
+                          >
+                            <span className="text-lg">{item.icon}</span>
+                            <div className="min-w-0">
+                              <p className={`text-xs font-bold truncate ${active ? 'text-cyan-300' : 'text-gray-300'}`}>
+                                {item.label}
+                              </p>
+                              <p className="text-[10px] text-gray-500 truncate">{item.desc}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2">
+                      <LicensePlateIcon />
+                    </span>
+                    <input
+                      type="text"
+                      value={vehicleNumber}
+                      onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
+                      placeholder="Vehicle License Plate (e.g. GJ-01-AB-1234)"
+                      className="input-neon pl-11 uppercase font-mono tracking-wide"
+                    />
+                    {errors.vehicleNumber && <p className="mt-1 text-xs text-red-400">{errors.vehicleNumber}</p>}
+                  </div>
                 </div>
               )}
 

@@ -8,6 +8,7 @@ export interface User {
   phone: string;
   role: 'user' | 'admin' | 'security';
   vehicleNumber?: string;
+  vehicleType?: string;
   vehicles?: string[];
   twoFactorEnabled?: boolean;
 }
@@ -19,7 +20,7 @@ interface AuthContextType {
   pendingTwoFactor: string | null;
   login: (email: string, password: string) => Promise<{ user?: User; requiresTwoFactor?: boolean; requiresTwoFactorSetup?: boolean; qrCodeUrl?: string; secret?: string; userId?: string }>;
   verifyTwoFactor: (userId: string, code: string) => Promise<User>;
-  register: (name: string, email: string, phone: string, password: string, role?: string, vehicleNumber?: string) => Promise<{ user?: User; requiresTwoFactorSetup?: boolean; qrCodeUrl?: string; secret?: string; userId?: string }>;
+  register: (name: string, email: string, phone: string, password: string, role?: string, vehicleNumber?: string, vehicleType?: string) => Promise<{ user?: User; requiresTwoFactorSetup?: boolean; qrCodeUrl?: string; secret?: string; userId?: string }>;
   logout: () => void;
   updateUser: (data: Partial<User>) => void;
   clearPendingTwoFactor: () => void;
@@ -94,8 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res.user as unknown as User;
   };
 
-  const register = async (name: string, email: string, phone: string, password: string, role?: string, vehicleNumber?: string) => {
-    const res = await authApi.register(name, email, phone, password, role, vehicleNumber);
+  const register = async (name: string, email: string, phone: string, password: string, role?: string, vehicleNumber?: string, vehicleType?: string) => {
+    const res = await authApi.register(name, email, phone, password, role, vehicleNumber, vehicleType);
 
     if (res.requiresTwoFactorSetup) {
       setPendingTwoFactor(res.userId || null);

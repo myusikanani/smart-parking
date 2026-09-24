@@ -69,6 +69,89 @@ const timeSlots = [
   '18:00', '19:00', '20:00', '21:00',
 ];
 
+const DEFAULT_FACILITY_LOCATIONS: ParkingLocationItem[] = [
+  {
+    _id: 'loc-katargam-1',
+    name: 'Mall A - Katargam Central Mall',
+    code: 'KAT-MALL-A',
+    area: 'Katargam',
+    city: 'Surat',
+    address: 'Katargam Main Road, Near GIDC, Katargam, Surat - 395004',
+    latitude: 21.2330,
+    longitude: 72.8335,
+    description: 'Premier shopping and commercial hub with multi-level automated smart parking and rapid EV charging bays.',
+    contactNumber: '+91 98250 11223',
+    amenities: ['EV Fast Charging', 'CCTV 24/7', 'Covered Parking', 'Valet Service'],
+    totalFloors: 3,
+    status: 'active',
+    operatingHours: '24/7 Open',
+  },
+  {
+    _id: 'loc-katargam-2',
+    name: 'Mall B - Gitanjali Square Hub',
+    code: 'KAT-MALL-B',
+    area: 'Katargam',
+    city: 'Surat',
+    address: 'Gitanjali Circle, Opp. Lake Garden, Katargam, Surat - 395004',
+    latitude: 21.2375,
+    longitude: 72.8290,
+    description: 'Bustling retail center with underground parking and quick bike/EV access.',
+    contactNumber: '+91 98250 44556',
+    amenities: ['CCTV 24/7', 'Covered Parking', '24/7 Security'],
+    totalFloors: 2,
+    status: 'active',
+    operatingHours: '08:00 AM - 11:30 PM',
+  },
+  {
+    _id: 'loc-varachha-1',
+    name: 'Mall C - Diamond Complex Parking',
+    code: 'VAR-MALL-C',
+    area: 'Varachha',
+    city: 'Surat',
+    address: 'Mini Bazar Main Road, Near Diamond Market, Varachha, Surat - 395006',
+    latitude: 21.2185,
+    longitude: 72.8620,
+    description: 'State-of-the-art secure multi-story parking facility in the diamond district.',
+    contactNumber: '+91 98250 77889',
+    amenities: ['CCTV 24/7', 'EV Fast Charging', 'Covered Parking'],
+    totalFloors: 4,
+    status: 'active',
+    operatingHours: '24/7 Open',
+  },
+  {
+    _id: 'loc-adajan-1',
+    name: 'Mall D - Adajan Prime Hub',
+    code: 'ADJ-MALL-D',
+    area: 'Adajan',
+    city: 'Surat',
+    address: 'Adajan Gam Main Road, Near Prime Arcade, Adajan, Surat - 395009',
+    latitude: 21.1960,
+    longitude: 72.7930,
+    description: 'Modern commercial tower parking with quick highway connectivity and EV stations.',
+    contactNumber: '+91 98250 33445',
+    amenities: ['EV Fast Charging', 'CCTV 24/7', 'Covered Parking'],
+    totalFloors: 3,
+    status: 'active',
+    operatingHours: '24/7 Open',
+  },
+  {
+    _id: 'loc-vesu-1',
+    name: 'Mall E - Vesu Luxury Arcade',
+    code: 'VES-MALL-E',
+    area: 'Vesu',
+    city: 'Surat',
+    address: 'VIP Road, Near University Campus, Vesu, Surat - 395007',
+    latitude: 21.1450,
+    longitude: 72.7780,
+    description: 'Luxury destination parking with VIP valet and reserved high-speed EV charging bays.',
+    contactNumber: '+91 98250 99887',
+    amenities: ['VIP Reserved', 'EV Fast Charging', 'Valet Service', 'CCTV 24/7'],
+    totalFloors: 3,
+    status: 'active',
+    operatingHours: '24/7 Open',
+  },
+];
+
 const BookParking = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -84,27 +167,53 @@ const BookParking = () => {
   // Locations State
   const [locations, setLocations] = useState<ParkingLocationItem[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string>(initialLocationId);
+  const [selectedAreaFilter, setSelectedAreaFilter] = useState<string>('all');
   const [detectingGps, setDetectingGps] = useState(false);
   const [nearestSuggestion, setNearestSuggestion] = useState<{ name: string; distance: string; locId: string } | null>(null);
+
+  const displayLocations = useMemo(() => {
+    return locations.length > 0 ? locations : DEFAULT_FACILITY_LOCATIONS;
+  }, [locations]);
+
+  const availableAreas = useMemo(() => {
+    return ['all', ...Array.from(new Set(displayLocations.map((l) => l.area).filter(Boolean)))];
+  }, [displayLocations]);
+
+  const filteredFacilityLocations = useMemo(() => {
+    if (selectedAreaFilter === 'all') return displayLocations;
+    return displayLocations.filter((l) => l.area.toLowerCase() === selectedAreaFilter.toLowerCase());
+  }, [displayLocations, selectedAreaFilter]);
 
   // Fetch Locations list
   useEffect(() => {
     locationApi
       .getAll({ all: 'true' })
       .then((res) => {
-        const locs = res.locations || [];
+        const locs = res.locations && res.locations.length > 0 ? res.locations : DEFAULT_FACILITY_LOCATIONS;
         setLocations(locs);
         if (!selectedLocationId && locs.length > 0) {
           setSelectedLocationId(locs[0]._id);
         }
       })
-      .catch((err) => console.error('Error loading locations:', err));
+      .catch(() => {
+        setLocations(DEFAULT_FACILITY_LOCATIONS);
+        if (!selectedLocationId) {
+          setSelectedLocationId(DEFAULT_FACILITY_LOCATIONS[0]._id);
+        }
+      });
   }, []);
+
+  // Ensure default selected location is always set
+  useEffect(() => {
+    if (!selectedLocationId && displayLocations.length > 0) {
+      setSelectedLocationId(displayLocations[0]._id);
+    }
+  }, [displayLocations, selectedLocationId]);
 
   // Quick GPS Proximity detection
   const handleDetectNearestGps = () => {
     if (!navigator.geolocation) {
-      toast('Geolocation is not supported by your browser.', 'error');
+      toast('Geolocation not supported. Selected default facility.', 'info');
       return;
     }
     setDetectingGps(true);
@@ -114,7 +223,7 @@ const BookParking = () => {
           const res = await locationApi.getNearby({
             lat: pos.coords.latitude,
             lng: pos.coords.longitude,
-            radius: 15,
+            radius: 25,
             vehicleType: category,
           });
           const best = res.recommended || (res.locations && res.locations[0]);
@@ -125,19 +234,28 @@ const BookParking = () => {
               distance: best.distanceFormatted || 'Nearby',
               locId: best._id,
             });
-            toast(`📍 Nearest Facility Detected: ${best.name} (${best.distanceFormatted || ''})`, 'success');
+            toast(`📍 Nearest Facility Detected: ${best.name}`, 'success');
+          } else if (displayLocations.length > 0) {
+            setSelectedLocationId(displayLocations[0]._id);
+            toast(`📍 Selected default facility: ${displayLocations[0].name}`, 'info');
           }
-        } catch (err) {
-          toast('Failed to search nearby facilities.', 'error');
+        } catch {
+          if (displayLocations.length > 0) {
+            setSelectedLocationId(displayLocations[0]._id);
+            toast(`📍 Selected facility: ${displayLocations[0].name}`, 'info');
+          }
         } finally {
           setDetectingGps(false);
         }
       },
-      (err) => {
+      () => {
         setDetectingGps(false);
-        toast(`GPS Error: ${err.message}`, 'error');
+        if (displayLocations.length > 0) {
+          setSelectedLocationId(displayLocations[0]._id);
+          toast(`📍 Default facility selected: ${displayLocations[0].name}`, 'info');
+        }
       },
-      { enableHighAccuracy: true, timeout: 8000 }
+      { enableHighAccuracy: false, timeout: 6000 }
     );
   };
 
@@ -399,8 +517,8 @@ const BookParking = () => {
     [slots, selectedSlotId, category]
   );
 
-  // 3D / 2D Floor Deck View Mode in Step 2
-  const [mapViewMode, setMapViewMode] = useState<'3d' | '2d'>('3d');
+  // 3D / 2D Floor Deck View Mode in Step 2 (Defaults to 2D Plan as requested)
+  const [mapViewMode, setMapViewMode] = useState<'3d' | '2d'>('2d');
   const [deckFloor, setDeckFloor] = useState<number>(1);
   const [layoutItems, setLayoutItems] = useState<ThreeDLayoutItem[]>([]);
 
@@ -433,18 +551,31 @@ const BookParking = () => {
   }, [deckFloor]);
 
   const threeDSlots: ThreeDSlotData[] = useMemo(() => {
-    return slots
-      .filter((s) => (s.floor || 1) === deckFloor)
-      .map((s, idx) => ({
+    const floorSlots = slots.filter((s) => (s.floor || 1) === deckFloor);
+    const cols = 6;
+    const totalSlots = floorSlots.length;
+    const rows = Math.ceil(totalSlots / cols) || 1;
+    const spacingX = 4.2;
+    const spacingZ = 6.2;
+    const totalW = (Math.min(totalSlots, cols) - 1) * spacingX;
+    const totalD = (rows - 1) * spacingZ;
+    const offsetX = totalW / 2;
+    const offsetZ = totalD / 2;
+
+    return floorSlots.map((s, idx) => {
+      const col = idx % cols;
+      const row = Math.floor(idx / cols);
+      return {
         id: s.id,
         number: s.number,
         category: s.category,
         status: s.status,
         floor: s.floor || 1,
         pricePerHour: s.pricePerHour,
-        x: (idx % 6) * 4 - 10,
-        z: Math.floor(idx / 6) * 6 - 6,
-      }));
+        x: col * spacingX - offsetX,
+        z: row * spacingZ - offsetZ,
+      };
+    });
   }, [slots, deckFloor]);
 
   // Price Calculation — mirrors backend formula exactly:
@@ -475,6 +606,18 @@ const BookParking = () => {
     const endObj = new Date(startObj.getTime() + selectedHours * 60 * 60 * 1000);
     return endObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }, [selectedTime, selectedHours]);
+
+  const validateStep1 = () => {
+    if (!selectedLocationId) {
+      toast('Please select a parking facility or mall first.', 'error');
+      return false;
+    }
+    if (!vehicleNumber.trim() || vehicleNumber.trim().length < 4) {
+      toast('Please enter a valid vehicle license plate number (e.g. GJ-01-AB-1234).', 'error');
+      return false;
+    }
+    return true;
+  };
 
   const handleBookingSubmit = async () => {
     // 1. Check if user is logged in
@@ -601,7 +744,11 @@ const BookParking = () => {
           {/* Step 2 Pill */}
           <button
             type="button"
-            onClick={() => setCurrentStep(2)}
+            onClick={() => {
+              if (validateStep1()) {
+                setCurrentStep(2);
+              }
+            }}
             className={`flex items-center justify-center sm:justify-start gap-2 p-2 sm:px-4 sm:py-2.5 rounded-xl transition-all ${
               currentStep === 2
                 ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.25)] font-bold'
@@ -623,8 +770,14 @@ const BookParking = () => {
           <button
             type="button"
             onClick={() => {
-              if (selectedSlot) setCurrentStep(3);
-              else toast('Please select an available parking bay first', 'info');
+              if (!validateStep1()) {
+                return;
+              }
+              if (selectedSlot) {
+                setCurrentStep(3);
+              } else {
+                toast('Please select an available parking bay from Step 2 first', 'info');
+              }
             }}
             className={`flex items-center justify-center sm:justify-start gap-2 p-2 sm:px-4 sm:py-2.5 rounded-xl transition-all ${
               currentStep === 3
@@ -658,16 +811,16 @@ const BookParking = () => {
           >
             {/* 1.1 PARKING FACILITY & MALL SELECTOR */}
             <div className="glass-card p-5 sm:p-6 rounded-2xl border border-cyan-500/30 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border)]">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">
                     <HiOutlineBuildingStorefront className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm sm:text-base font-bold text-white">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
                       1. Select Parking Facility & Mall
                     </h3>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-slate-500 dark:text-gray-400">
                       Choose a facility in Katargam, Varachha, Adajan, or Vesu.
                     </p>
                   </div>
@@ -677,7 +830,7 @@ const BookParking = () => {
                   type="button"
                   onClick={handleDetectNearestGps}
                   disabled={detectingGps}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-xs font-bold transition shadow-md"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/40 text-cyan-700 dark:text-cyan-300 text-xs font-bold transition shadow-sm"
                 >
                   <HiOutlineMapPin className={`w-4 h-4 ${detectingGps ? 'animate-spin' : ''}`} />
                   <span>{detectingGps ? 'Detecting GPS...' : '📍 Auto-Detect Nearest'}</span>
@@ -685,40 +838,69 @@ const BookParking = () => {
               </div>
 
               {nearestSuggestion && (
-                <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-300 flex items-center justify-between">
+                <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-700 dark:text-cyan-300 flex items-center justify-between">
                   <span>📍 Nearest GPS Suggested: <strong>{nearestSuggestion.name}</strong> ({nearestSuggestion.distance})</span>
-                  <span className="text-[10px] text-emerald-400 font-bold">✓ Selected</span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">✓ Selected</span>
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {locations.map((loc) => {
+              {/* AREA FILTER PILLS */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
+                <span className="text-xs font-bold text-slate-600 dark:text-gray-400 mr-1">Choose Area:</span>
+                {availableAreas.map((area) => {
+                  const isAreaSelected = selectedAreaFilter.toLowerCase() === area.toLowerCase();
+                  return (
+                    <button
+                      key={area}
+                      type="button"
+                      onClick={() => setSelectedAreaFilter(area)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all capitalize cursor-pointer ${
+                        isAreaSelected
+                          ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/25 scale-105'
+                          : 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:bg-cyan-500/10'
+                      }`}
+                    >
+                      {area === 'all' ? '🏢 All Areas' : `📍 ${area}`}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* FACILITY CARDS GRID */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                {filteredFacilityLocations.map((loc) => {
                   const isSelected = selectedLocationId === loc._id;
                   return (
                     <button
                       key={loc._id}
                       type="button"
                       onClick={() => setSelectedLocationId(loc._id)}
-                      className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                      className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
                         isSelected
-                          ? 'bg-cyan-950/80 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
-                          : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.07] text-gray-300'
+                          ? 'bg-cyan-50/80 dark:bg-cyan-950/80 border-cyan-500 shadow-md ring-2 ring-cyan-400'
+                          : 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:border-cyan-400 text-slate-700 dark:text-gray-300'
                       }`}
                     >
                       <div>
-                        <div className="flex items-center justify-between gap-1 mb-1.5">
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        <div className="flex items-center justify-between gap-1 mb-2">
+                          <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 border border-cyan-500/30">
                             {loc.area}
                           </span>
-                          {isSelected && <span className="text-cyan-400 font-bold text-xs">✓ Selected</span>}
+                          {isSelected ? (
+                            <span className="text-cyan-600 dark:text-cyan-400 font-bold text-xs flex items-center gap-1">
+                              <HiOutlineCheck className="w-4 h-4" /> Selected
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 hover:text-cyan-500">Click to Select</span>
+                          )}
                         </div>
-                        <p className="text-sm font-bold text-white line-clamp-1">{loc.name}</p>
-                        <p className="text-[11px] text-gray-400 mt-1 line-clamp-1">{loc.address}</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{loc.name}</p>
+                        <p className="text-[11px] text-slate-500 dark:text-gray-400 mt-1 line-clamp-2">{loc.address}</p>
                       </div>
 
-                      <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-gray-400">
-                        <span>{loc.operatingHours || '24/7 Open'}</span>
-                        <span className="text-emerald-400 font-semibold">{loc.totalFloors || 3} Floors</span>
+                      <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-[10px] text-slate-500 dark:text-gray-400">
+                        <span>🕒 {loc.operatingHours || '24/7 Open'}</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">{loc.totalFloors || 3} Floors Deck</span>
                       </div>
                     </button>
                   );
@@ -982,7 +1164,11 @@ const BookParking = () => {
             <div className="flex justify-end pt-2">
               <button
                 type="button"
-                onClick={() => setCurrentStep(2)}
+                onClick={() => {
+                  if (validateStep1()) {
+                    setCurrentStep(2);
+                  }
+                }}
                 className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-slate-950 font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-cyan-500/30 transition-all flex items-center justify-center gap-2"
               >
                 <span>Continue to Bay Selection (Map)</span>

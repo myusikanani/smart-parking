@@ -1058,22 +1058,6 @@ export default function Landing() {
             />
           </svg>
 
-          {/* Bottom Right Glowing 4-Point Diamond Star */}
-          <div className="absolute bottom-6 right-12 z-10 pointer-events-none opacity-90 animate-pulse">
-            <svg viewBox="0 0 100 100" className="w-20 sm:w-28 h-20 sm:h-28 drop-shadow-[0_0_25px_#00D2FF]">
-              <path
-                d="M 50 0 C 50 35, 65 50, 100 50 C 65 50, 50 65, 50 100 C 50 65, 35 50, 0 50 C 35 50, 50 35, 50 0 Z"
-                fill="url(#diamondStarGrad)"
-              />
-              <defs>
-                <linearGradient id="diamondStarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#FFFFFF" />
-                  <stop offset="35%" stopColor="#38BDF8" />
-                  <stop offset="100%" stopColor="#0284C7" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
 
           {/* Inner Centered Glassmorphic Elevated Card */}
           <div className="relative z-20 max-w-3xl mx-auto rounded-3xl bg-white/90 dark:bg-[#091e4a]/75 border border-cyan-500/25 backdrop-blur-2xl p-8 sm:p-12 text-center shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.55)]">

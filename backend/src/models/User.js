@@ -40,6 +40,11 @@ const userSchema = new mongoose.Schema({
     uppercase: true,
     default: ''
   },
+  vehicleType: {
+    type: String,
+    enum: ['4-wheeler', '2-wheeler', 'ev', 'accessible'],
+    default: '4-wheeler'
+  },
   vehicles: {
     type: [String],
     default: []
