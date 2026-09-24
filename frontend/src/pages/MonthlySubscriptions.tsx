@@ -16,6 +16,7 @@ import {
 } from 'react-icons/hi2';
 import { subscriptionApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { formatIndianLicensePlate } from '../utils/plateFormatter';
 
 interface Subscription {
   _id: string;
@@ -41,21 +42,21 @@ export default function MonthlySubscriptions() {
   // Subscribe modal state
   const [selectedPlan, setSelectedPlan] = useState<'silver' | 'gold_vip' | 'corporate_fleet' | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-  const [vehicleInput, setVehicleInput] = useState(() => (user?.vehicleNumber || (user?.vehicles && user.vehicles[0]) || '').trim().toUpperCase());
+  const [vehicleInput, setVehicleInput] = useState(() => formatIndianLicensePlate(user?.vehicleNumber || (user?.vehicles && user.vehicles[0]) || ''));
   const [subscribing, setSubscribing] = useState(false);
   const [subscribeSuccess, setSubscribeSuccess] = useState('');
 
   // Sync vehicle whenever user auth loads
   useEffect(() => {
     if (user?.vehicleNumber) {
-      setVehicleInput(user.vehicleNumber.trim().toUpperCase());
+      setVehicleInput(formatIndianLicensePlate(user.vehicleNumber));
     } else if (user?.vehicles && user.vehicles.length > 0) {
-      setVehicleInput(String(user.vehicles[0]).trim().toUpperCase());
+      setVehicleInput(formatIndianLicensePlate(String(user.vehicles[0])));
     }
   }, [user?.vehicleNumber, user?.vehicles]);
 
   const openSubscribeModal = (planId: 'silver' | 'gold_vip' | 'corporate_fleet') => {
-    const defaultPlate = (user?.vehicleNumber || (user?.vehicles && user.vehicles[0]) || '').trim().toUpperCase();
+    const defaultPlate = formatIndianLicensePlate(user?.vehicleNumber || (user?.vehicles && user.vehicles[0]) || '');
     setVehicleInput(defaultPlate);
     setSelectedPlan(planId);
     setError('');
@@ -87,10 +88,10 @@ export default function MonthlySubscriptions() {
     setSubscribing(true);
     setError('');
     try {
-      const defaultPlate = (user?.vehicleNumber || (user?.vehicles && user.vehicles[0]) || 'GJ-05-AB-1234').trim().toUpperCase();
+      const defaultPlate = formatIndianLicensePlate(user?.vehicleNumber || (user?.vehicles && user.vehicles[0]) || 'GJ-01-AB-1234');
       const vehicleList = vehicleInput
         .split(',')
-        .map((v) => v.trim().toUpperCase())
+        .map((v) => formatIndianLicensePlate(v.trim()))
         .filter(Boolean);
 
       const res = await subscriptionApi.create({
@@ -394,9 +395,19 @@ export default function MonthlySubscriptions() {
                   <input
                     type="text"
                     value={vehicleInput}
-                    onChange={(e) => setVehicleInput(e.target.value.toUpperCase())}
-                    placeholder="e.g. GJ-01-AB-1234, MH-12-XY-9999"
-                    className="input-neon w-full px-4 py-2.5 font-mono uppercase rounded-xl"
+                    onChange={(e) => {
+                      // Support comma separated or single plate formatting
+                      const val = e.target.value;
+                      if (val.includes(',')) {
+                        const parts = val.split(',');
+                        const formatted = parts.map((p, idx) => idx === parts.length - 1 ? (p.trim() ? formatIndianLicensePlate(p) : '') : formatIndianLicensePlate(p)).join(', ');
+                        setVehicleInput(formatted);
+                      } else {
+                        setVehicleInput(formatIndianLicensePlate(val));
+                      }
+                    }}
+                    placeholder="e.g. GJ-01-AB-1234"
+                    className="input-neon w-full px-4 py-2.5 font-mono uppercase rounded-xl tracking-wider font-bold"
                   />
                   
                   {/* QUICK SELECT CHIPS FOR SAVED VEHICLES */}
@@ -407,10 +418,10 @@ export default function MonthlySubscriptions() {
                         <button
                           key={v}
                           type="button"
-                          onClick={() => setVehicleInput(String(v).trim().toUpperCase())}
+                          onClick={() => setVehicleInput(formatIndianLicensePlate(String(v)))}
                           className="px-2 py-0.5 rounded bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 font-mono text-[10px] font-bold transition cursor-pointer"
                         >
-                          🚗 {v}
+                          🚗 {formatIndianLicensePlate(String(v))}
                         </button>
                       ))}
                     </div>

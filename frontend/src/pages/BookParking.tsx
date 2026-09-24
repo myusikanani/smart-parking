@@ -35,6 +35,7 @@ import type { ParkingSlotItem } from '../components/InteractiveFloorMap';
 import ThreeDParkingCanvas from '../components/ThreeDParkingCanvas';
 import type { ThreeDSlotData, ThreeDLayoutItem } from '../components/ThreeDParkingCanvas';
 import AIVoiceBookingModal from '../components/AIVoiceBookingModal';
+import { formatIndianLicensePlate, isValidIndianLicensePlate, handlePlateKeyDown } from '../utils/plateFormatter';
 
 interface Slot {
   id: string;
@@ -275,9 +276,23 @@ const BookParking = () => {
   const todayStr = fmtLocal(new Date());
   const [date, setDate] = useState(initialSlot.date);
   const [selectedTime, setSelectedTime] = useState(initialSlot.time);
-  const [category, setCategory] = useState(locationState?.category || 'four-wheeler');
+
+  const mapVehicleTypeToCategory = (vType?: string): 'four-wheeler' | 'two-wheeler' | 'ev' | 'disabled' => {
+    if (!vType) return 'four-wheeler';
+    const clean = vType.toLowerCase().trim();
+    if (clean.includes('2') || clean.includes('two') || clean.includes('bike') || clean.includes('scooter')) return 'two-wheeler';
+    if (clean.includes('ev') || clean.includes('electric')) return 'ev';
+    if (clean.includes('disable') || clean.includes('access')) return 'disabled';
+    return 'four-wheeler';
+  };
+
+  const [category, setCategory] = useState<string>(
+    locationState?.category || (user?.vehicleType ? mapVehicleTypeToCategory(user.vehicleType) : 'four-wheeler')
+  );
   const [selectedHours, setSelectedHours] = useState(2);
-  const [vehicleNumber, setVehicleNumber] = useState((user?.vehicleNumber || 'MH-12-AB-3456').trim().toUpperCase());
+  const [vehicleNumber, setVehicleNumber] = useState(() => {
+    return formatIndianLicensePlate(user?.vehicleNumber || '');
+  });
   const [selectedSlotId, setSelectedSlotId] = useState<string>(locationState?.preSelectedSlotId || '');
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
 
@@ -288,7 +303,7 @@ const BookParking = () => {
   const [addVehicleMsg, setAddVehicleMsg] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null);
   const [localVehicles, setLocalVehicles] = useState<string[]>(() => {
     if (user?.vehicles && Array.isArray(user.vehicles)) {
-      return user.vehicles.map((v) => String(v).trim().toUpperCase()).filter(Boolean);
+      return user.vehicles.map((v) => formatIndianLicensePlate(String(v))).filter(Boolean);
     }
     return [];
   });
@@ -296,7 +311,7 @@ const BookParking = () => {
   // Sync with user?.vehicles whenever user changes
   useEffect(() => {
     if (user?.vehicles && Array.isArray(user.vehicles)) {
-      const serverVehicles = user.vehicles.map((v) => String(v).trim().toUpperCase()).filter(Boolean);
+      const serverVehicles = user.vehicles.map((v) => formatIndianLicensePlate(String(v))).filter(Boolean);
       setLocalVehicles((prev) => Array.from(new Set([...prev, ...serverVehicles])));
     }
   }, [user?.vehicles]);
@@ -309,17 +324,24 @@ const BookParking = () => {
           if (res.user) {
             updateUser(res.user as unknown as Partial<User>);
             if (Array.isArray(res.user.vehicles)) {
-              const freshList = (res.user.vehicles as string[]).map((v) => String(v).trim().toUpperCase()).filter(Boolean);
+              const freshList = (res.user.vehicles as string[]).map((v) => formatIndianLicensePlate(String(v))).filter(Boolean);
               setLocalVehicles(freshList);
+            }
+            if (res.user.vehicleNumber) {
+              const formattedRegPlate = formatIndianLicensePlate(String(res.user.vehicleNumber));
+              setVehicleNumber((curr) => (!curr || curr === formattedRegPlate ? formattedRegPlate : curr));
+            }
+            if (res.user.vehicleType && !locationState?.category) {
+              setCategory(mapVehicleTypeToCategory(String(res.user.vehicleType)));
             }
           }
         })
         .catch(() => {});
     }
-  }, [token, updateUser]);
+  }, [token, updateUser, locationState?.category]);
 
   const primaryPlate = useMemo(() => {
-    return (user?.vehicleNumber || 'MH-12-AB-3456').trim().toUpperCase();
+    return formatIndianLicensePlate(user?.vehicleNumber || '');
   }, [user?.vehicleNumber]);
 
   // Secondary garage vehicles (all saved vehicles excluding the primary car)
@@ -330,35 +352,45 @@ const BookParking = () => {
     ];
     const primary = primaryPlate;
     const secondary = rawList
-      .map((v) => (v ? String(v).trim().toUpperCase() : ''))
+      .map((v) => (v ? formatIndianLicensePlate(String(v)) : ''))
       .filter((v) => v && v !== primary);
     return Array.from(new Set(secondary));
   }, [user?.vehicles, localVehicles, primaryPlate]);
 
+  // Sync vehicle number and category when user loads or updates
   useEffect(() => {
-    if (user?.vehicleNumber && (!vehicleNumber || vehicleNumber === 'MH-12-AB-3456')) {
-      setVehicleNumber(user.vehicleNumber.trim().toUpperCase());
+    if (user?.vehicleNumber) {
+      const formatted = formatIndianLicensePlate(user.vehicleNumber);
+      setVehicleNumber((current) => {
+        if (!current || current === formatted) {
+          return formatted;
+        }
+        return current;
+      });
     }
-  }, [user?.vehicleNumber, vehicleNumber]);
+    if (user?.vehicleType && !locationState?.category) {
+      setCategory(mapVehicleTypeToCategory(user.vehicleType));
+    }
+  }, [user?.vehicleNumber, user?.vehicleType, locationState?.category]);
 
   const handleApplyVoiceBooking = (data: { category?: 'four-wheeler' | 'two-wheeler' | 'ev' | 'disabled'; durationHours?: number; time?: string; date?: string; vehicleNumber?: string }) => {
     if (data.category) setCategory(data.category);
     if (data.durationHours) setSelectedHours(data.durationHours);
     if (data.time) setSelectedTime(data.time);
     if (data.date) setDate(data.date);
-    if (data.vehicleNumber) setVehicleNumber(data.vehicleNumber.trim().toUpperCase());
+    if (data.vehicleNumber) setVehicleNumber(formatIndianLicensePlate(data.vehicleNumber));
   };
 
   const handleAddNewVehicle = async () => {
-    const cleanPlate = newPlateInput.trim().toUpperCase();
-    if (!cleanPlate) {
-      toast('Please enter a valid license plate number', 'error');
-      setAddVehicleMsg({ type: 'error', text: 'Please enter a valid license plate.' });
+    const cleanPlate = formatIndianLicensePlate(newPlateInput.trim());
+    if (!cleanPlate || cleanPlate.length < 8) {
+      toast('Please enter a valid Indian license plate number (e.g. GJ-01-AB-1234)', 'error');
+      setAddVehicleMsg({ type: 'error', text: 'Please enter a valid Indian license plate (e.g. GJ-01-AB-1234).' });
       return;
     }
 
-    // 1. If user typed Primary Car (MH-12-AB-3456)
-    if (cleanPlate === primaryPlate) {
+    // 1. If user typed Primary Car
+    if (primaryPlate && cleanPlate === primaryPlate) {
       setVehicleNumber(primaryPlate);
       setNewPlateInput('');
       toast(`⭐ "${cleanPlate}" is your Primary Registered Car! Selected for booking.`, 'info');
@@ -387,7 +419,7 @@ const BookParking = () => {
       if (res.user) {
         updateUser(res.user as unknown as Partial<User>);
         if (Array.isArray(res.user.vehicles)) {
-          const freshList = (res.user.vehicles as string[]).map((v) => String(v).trim().toUpperCase()).filter(Boolean);
+          const freshList = (res.user.vehicles as string[]).map((v) => formatIndianLicensePlate(String(v))).filter(Boolean);
           setLocalVehicles(freshList);
         }
       }
@@ -396,7 +428,7 @@ const BookParking = () => {
     } catch (err: unknown) {
       // Revert optimistic addition on error
       setLocalVehicles((prev) => prev.filter((v) => v !== cleanPlate));
-      setVehicleNumber(primaryPlate);
+      setVehicleNumber(primaryPlate || '');
       const message = err instanceof Error ? err.message : 'Failed to register vehicle.';
       toast(message, 'error');
       setAddVehicleMsg({ type: 'error', text: message });
@@ -409,14 +441,14 @@ const BookParking = () => {
     // Optimistically remove from local state
     setLocalVehicles((prev) => prev.filter((v) => v !== plate));
     if (vehicleNumber === plate) {
-      setVehicleNumber(primaryPlate);
+      setVehicleNumber(primaryPlate || '');
     }
     try {
       const res = await authApi.updateProfile({ removeVehicle: plate });
       if (res.user) {
         updateUser(res.user as unknown as Partial<User>);
         if (Array.isArray(res.user.vehicles)) {
-          const freshList = (res.user.vehicles as string[]).map((v) => String(v).trim().toUpperCase()).filter(Boolean);
+          const freshList = (res.user.vehicles as string[]).map((v) => formatIndianLicensePlate(String(v))).filter(Boolean);
           setLocalVehicles(freshList);
         }
       }
@@ -1038,19 +1070,21 @@ const BookParking = () => {
                   <div className="flex gap-2 pt-2">
                     <input
                       type="text"
+                      maxLength={13}
                       value={newPlateInput}
                       onChange={(e) => {
-                        setNewPlateInput(e.target.value.toUpperCase());
+                        setNewPlateInput(formatIndianLicensePlate(e.target.value));
                         setAddVehicleMsg(null);
                       }}
                       onKeyDown={(e) => {
+                        handlePlateKeyDown(e, newPlateInput, setNewPlateInput);
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           handleAddNewVehicle();
                         }
                       }}
-                      placeholder="e.g. MH-12-AB-3406 or GJ-01-XY-9999"
-                      className="input-neon flex-1 px-3.5 py-2 text-xs font-mono uppercase rounded-xl tracking-wider"
+                      placeholder="e.g. GJ-01-AB-1234"
+                      className="input-neon flex-1 px-3.5 py-2 text-xs font-mono uppercase rounded-xl tracking-wider font-bold"
                     />
                     <button
                       type="button"
@@ -1074,13 +1108,18 @@ const BookParking = () => {
 
               {!isLoggedIn && (
                 <div className="pt-2">
-                  <label className="block text-[11px] text-gray-400 mb-1">Enter License Plate:</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] text-gray-400">Enter Vehicle License Plate Number:</label>
+                    <span className="text-[10px] text-cyan-400 font-mono">Format: GJ-01-AB-1234</span>
+                  </div>
                   <input
                     type="text"
+                    maxLength={13}
                     value={vehicleNumber}
-                    onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
-                    placeholder="e.g. MH-12-AB-3456"
-                    className="input-neon w-full px-3.5 py-2 text-xs font-mono uppercase rounded-xl tracking-wider"
+                    onChange={(e) => setVehicleNumber(formatIndianLicensePlate(e.target.value))}
+                    onKeyDown={(e) => handlePlateKeyDown(e, vehicleNumber, setVehicleNumber)}
+                    placeholder="e.g. GJ-01-AB-1234"
+                    className="input-neon w-full px-3.5 py-2.5 text-xs font-mono uppercase rounded-xl tracking-wider font-bold"
                   />
                 </div>
               )}
@@ -1421,7 +1460,7 @@ const BookParking = () => {
                 <div className="flex justify-between py-2 border-b border-white/5">
                   <span className="text-gray-400">Vehicle License Plate</span>
                   <span className="font-mono text-cyan-300 font-bold bg-cyan-950/80 px-2.5 py-0.5 rounded border border-cyan-500/30">
-                    🚗 {vehicleNumber || 'MH-12-AB-3456'}
+                    🚗 {vehicleNumber || 'No Plate Selected'}
                   </span>
                 </div>
 

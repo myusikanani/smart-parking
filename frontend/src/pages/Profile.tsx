@@ -6,6 +6,7 @@ import { BikeScooter } from '../components/vehicles';
 import { authApi } from '../services/api';
 import { useToast } from '../components/ui/Toast';
 import TwoFactorModal from '../components/TwoFactorModal';
+import { formatIndianLicensePlate, isValidIndianLicensePlate, handlePlateKeyDown } from '../utils/plateFormatter';
 
 const Profile = () => {
   const { user, updateUser } = useAuth();
@@ -49,19 +50,19 @@ const Profile = () => {
   };
 
   const handleAddVehicle = async () => {
-    const cleanPlate = newPlate.trim().toUpperCase();
-    if (!cleanPlate) {
-      toast('Please enter a valid license plate number', 'error');
+    const cleanPlate = formatIndianLicensePlate(newPlate.trim());
+    if (!cleanPlate || !isValidIndianLicensePlate(cleanPlate)) {
+      toast('Please enter a valid Indian license plate number (e.g. GJ-01-AB-1234)', 'error');
       return;
     }
 
-    const primary = (user?.vehicleNumber || '').trim().toUpperCase();
+    const primary = formatIndianLicensePlate(user?.vehicleNumber || '');
     if (cleanPlate === primary) {
       toast(`⚠️ Vehicle ${cleanPlate} is already your Primary Registered Car!`, 'error');
       return;
     }
 
-    if (user?.vehicles && user.vehicles.map(v => v.trim().toUpperCase()).includes(cleanPlate)) {
+    if (user?.vehicles && user.vehicles.map(v => formatIndianLicensePlate(String(v))).includes(cleanPlate)) {
       toast(`⚠️ Vehicle ${cleanPlate} is already registered in your Garage!`, 'error');
       return;
     }
@@ -263,10 +264,18 @@ const Profile = () => {
           <div className="flex gap-2">
             <input
               type="text"
+              maxLength={13}
               value={newPlate}
-              onChange={(e) => setNewPlate(e.target.value.toUpperCase())}
+              onChange={(e) => setNewPlate(formatIndianLicensePlate(e.target.value))}
+              onKeyDown={(e) => {
+                handlePlateKeyDown(e, newPlate, setNewPlate);
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddVehicle();
+                }
+              }}
               placeholder="e.g. GJ-01-XY-9999"
-              className="input-neon flex-1 px-3 py-2 text-xs font-mono uppercase rounded-xl"
+              className="input-neon flex-1 px-3 py-2 text-xs font-mono uppercase rounded-xl tracking-wider font-bold"
             />
             <button
               onClick={handleAddVehicle}

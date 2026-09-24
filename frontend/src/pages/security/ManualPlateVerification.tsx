@@ -16,6 +16,7 @@ import {
 } from 'react-icons/hi2';
 import { securityApi, bookingApi } from '../../services/api';
 import { CarSedan } from '../../components/vehicles';
+import { formatIndianLicensePlate, handlePlateKeyDown } from '../../utils/plateFormatter';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -261,11 +262,17 @@ const ManualPlateVerification = () => {
                   <HiOutlineTruck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
                     type="text"
-                    placeholder="e.g., MH-12-AB-3456 or DL-01-XX-9999"
+                    maxLength={13}
+                    placeholder="e.g., GJ-01-AB-1234 or DL-01-XX-9999"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
-                    onKeyDown={(e) => e.key === 'Enter' && !loading && handleSearch()}
-                    className="input-neon w-full pl-11 pr-4 py-3 text-base rounded-xl uppercase font-mono tracking-wider"
+                    onChange={(e) => setSearchQuery(formatIndianLicensePlate(e.target.value))}
+                    onKeyDown={(e) => {
+                      handlePlateKeyDown(e, searchQuery, setSearchQuery);
+                      if (e.key === 'Enter' && !loading) {
+                        handleSearch();
+                      }
+                    }}
+                    className="input-neon w-full pl-11 pr-4 py-3 text-base rounded-xl uppercase font-mono tracking-wider font-bold"
                   />
                 </div>
               </div>

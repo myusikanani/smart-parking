@@ -55,6 +55,8 @@ const LicensePlateIcon = () => (
   </svg>
 );
 
+import { formatIndianLicensePlate, isValidIndianLicensePlate, handlePlateKeyDown } from '../utils/plateFormatter';
+
 const strengthConfig = [
   { label: 'Weak', color: 'bg-cyan-500', width: '33%', active: (s: number) => s > 0 },
   { label: 'Medium', color: 'bg-pink-500', width: '66%', active: (s: number) => s > 1 },
@@ -131,8 +133,8 @@ const Register = () => {
     if (role === 'user') {
       if (!vehicleNumber.trim()) {
         errs.vehicleNumber = 'Vehicle license plate number is required';
-      } else if (vehicleNumber.trim().length < 4) {
-        errs.vehicleNumber = 'Please enter a valid vehicle license plate (e.g. GJ-01-AB-1234)';
+      } else if (!isValidIndianLicensePlate(vehicleNumber.trim())) {
+        errs.vehicleNumber = 'Please enter a valid format: State-RTO-Series-Number (e.g. GJ-01-AB-1234)';
       }
     }
 
@@ -379,10 +381,12 @@ const Register = () => {
                     </span>
                     <input
                       type="text"
+                      maxLength={13}
                       value={vehicleNumber}
-                      onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
-                      placeholder="Vehicle License Plate (e.g. GJ-01-AB-1234)"
-                      className="input-neon pl-11 uppercase font-mono tracking-wide"
+                      onChange={(e) => setVehicleNumber(formatIndianLicensePlate(e.target.value))}
+                      onKeyDown={(e) => handlePlateKeyDown(e, vehicleNumber, setVehicleNumber)}
+                      placeholder="e.g. GJ-01-AB-1234"
+                      className="input-neon pl-11 uppercase font-mono tracking-wider font-bold"
                     />
                     {errors.vehicleNumber && <p className="mt-1 text-xs text-red-400">{errors.vehicleNumber}</p>}
                   </div>

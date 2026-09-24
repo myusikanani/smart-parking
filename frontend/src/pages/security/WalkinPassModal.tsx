@@ -10,6 +10,7 @@ import {
   HiOutlineCurrencyRupee
 } from 'react-icons/hi2';
 import { securityApi } from '../../services/api';
+import { formatIndianLicensePlate, handlePlateKeyDown } from '../../utils/plateFormatter';
 
 interface WalkinPassModalProps {
   isOpen: boolean;
@@ -139,8 +140,10 @@ export default function WalkinPassModal({ isOpen, onClose, onSuccess, initialVeh
                   <input
                     type="text"
                     required
+                    maxLength={13}
                     value={vehicleNumber}
-                    onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
+                    onChange={(e) => setVehicleNumber(formatIndianLicensePlate(e.target.value))}
+                    onKeyDown={(e) => handlePlateKeyDown(e, vehicleNumber, setVehicleNumber)}
                     placeholder="GJ-01-AB-1234"
                     className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-base text-white font-mono tracking-wider uppercase focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
                   />
