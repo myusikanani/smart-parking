@@ -19,71 +19,73 @@ import {
   HiOutlineIdentification,
   HiOutlineCreditCard,
   HiOutlineBuildingOffice2,
+  HiOutlineClock,
+  HiOutlineMicrophone,
 } from 'react-icons/hi2';
 import { useNavigate } from 'react-router-dom';
 import ParkEaseHeroIsometric3D from '../components/3d/ParkEaseHeroIsometric3D';
 import { CarSedan, ElectricCar, BikeScooter } from '../components/vehicles';
 import { slotApi } from '../services/api';
 
-// 6 Real System Feature Cards matching actual Codebase Architecture
+// 6 Real System Feature Cards (Option 1: User-Friendly & Benefit-Driven)
 const realFeatures = [
   {
-    icon: HiOutlineCpuChip,
-    badgeIcon: HiOutlineBolt,
-    badgeText: 'IoT SENSORS',
+    icon: HiOutlineMagnifyingGlass,
+    badgeIcon: HiOutlineClock,
+    badgeText: 'SAVE TIME',
     badgeColor: 'text-[#00FFA3] bg-[#00FFA3]/10 border-[#00FFA3]/30',
-    title: 'Ultrasonic Bay Sensors',
-    description: 'Real-time bay occupancy detection with sub-second WebSocket synchronization directly linked with automated gate barriers.',
+    title: 'Find Parking Before You Arrive',
+    description: 'Check live available spots in advance and never waste time driving around in circles looking for parking.',
     iconColor: 'text-[#00D2FF]',
     glowColor: 'hover:shadow-[0_0_25px_rgba(0,255,163,0.25)] hover:border-[#00FFA3]/40',
   },
   {
     icon: HiOutlineBuildingOffice2,
     badgeIcon: HiOutlineCursorArrowRays,
-    badgeText: '3 FLOORS',
+    badgeText: 'SMART MAP',
     badgeColor: 'text-[#00D2FF] bg-[#00D2FF]/10 border-[#00D2FF]/30',
-    title: '3D Multi-Floor Navigation',
-    description: 'Interactive Three.js 3D deck view across Floors 1, 2, and 3 with dedicated EV charging, VIP, and accessible zone filtering.',
+    title: 'Pick Your Perfect Spot',
+    description: 'Select ground floor, basement, or shaded spots directly from a clean and easy-to-use visual map.',
     iconColor: 'text-[#00FFA3]',
     glowColor: 'hover:shadow-[0_0_25px_rgba(0,210,255,0.25)] hover:border-[#00D2FF]/40',
   },
   {
     icon: HiOutlineShieldCheck,
     badgeIcon: HiOutlineQrCode,
-    badgeText: 'DYNAMIC QR',
+    badgeText: 'NO WAITING',
     badgeColor: 'text-[#00D2FF] bg-[#00D2FF]/10 border-[#00D2FF]/30',
-    title: 'Dynamic QR & LPR Access',
-    description: 'Encrypted rotating QR passes and automatic license plate scanning for zero-delay contactless entry and automated exit.',
+    title: 'Contactless Gate Entry',
+    description: 'Just show your digital pass on your phone screen to open the boom barrier automatically in seconds.',
     iconColor: 'text-[#00D2FF]',
     glowColor: 'hover:shadow-[0_0_25px_rgba(0,210,255,0.25)] hover:border-[#00D2FF]/40',
   },
   {
     icon: HiOutlineCurrencyRupee,
     badgeIcon: HiOutlineCreditCard,
-    badgeText: 'RAZORPAY',
+    badgeText: 'EASY PAY',
     badgeColor: 'text-[#00FFA3] bg-[#00FFA3]/10 border-[#00FFA3]/30',
-    title: 'Cashless UPI & Card Billing',
-    description: 'Secure instant digital payments via Razorpay (UPI, GPay, PhonePe, Cards) with automated GST e-receipts and wallet checkout.',
+    title: 'One-Tap Cashless Billing',
+    description: 'Pay smoothly with Google Pay, PhonePe, UPI, or cards with instant receipts sent to your phone.',
     iconColor: 'text-[#00FFA3]',
     glowColor: 'hover:shadow-[0_0_25px_rgba(0,255,163,0.25)] hover:border-[#00FFA3]/40',
   },
   {
     icon: HiOutlineChatBubbleLeftRight,
-    badgeIcon: HiOutlineSparkles,
-    badgeText: 'AI CONCIERGE',
+    badgeIcon: HiOutlineMicrophone,
+    badgeText: 'VOICE BOOKING',
     badgeColor: 'text-[#00D2FF] bg-[#00D2FF]/10 border-[#00D2FF]/30',
-    title: 'AI Smart Assistant & Help',
-    description: 'Intelligent AI chatbot for instant booking assistance, slot availability lookup, lane clearance, and automated email/WhatsApp pass delivery.',
+    title: 'Speak & Reserve in Seconds',
+    description: 'Too busy to type? Just use your voice to ask for a spot and get booked in under 10 seconds.',
     iconColor: 'text-[#00D2FF]',
     glowColor: 'hover:shadow-[0_0_25px_rgba(0,210,255,0.25)] hover:border-[#00D2FF]/40',
   },
   {
-    icon: HiOutlineMapPin,
-    badgeIcon: HiOutlineBolt,
-    badgeText: 'SMART QUEUE',
+    icon: HiOutlineBolt,
+    badgeIcon: HiOutlineSparkles,
+    badgeText: 'ALL VEHICLES',
     badgeColor: 'text-[#00FFA3] bg-[#00FFA3]/10 border-[#00FFA3]/30',
-    title: 'Waiting List & Buffer Bays',
-    description: 'Automatic queue management when garages reach peak capacity, with priority allocation from dedicated emergency standby slots.',
+    title: 'Cars, Bikes & EV Stations',
+    description: 'Guaranteed charging slots for electric vehicles, compact spaces for bikes, and priority accessible bays.',
     iconColor: 'text-[#00FFA3]',
     glowColor: 'hover:shadow-[0_0_25px_rgba(0,255,163,0.25)] hover:border-[#00FFA3]/40',
   },
@@ -439,7 +441,7 @@ export default function Landing() {
             transition={{ delay: 0.1 }}
             className="text-sm sm:text-base text-slate-600 dark:text-gray-400 font-sans"
           >
-            Complete smart parking platform with real-time IoT sensors, multi-floor 3D maps, and Razorpay cashless payments.
+            A fast, hassle-free parking experience — from finding a spot and navigating the lot to instant cashless exit.
           </motion.p>
         </div>
 
