@@ -262,11 +262,6 @@ const ParkingPass = ({ booking }: ParkingPassProps) => {
         {!isGraceExpired ? (
           <div className="flex flex-col items-center justify-center">
             <div className="relative p-3.5 bg-white rounded-2xl shadow-[0_0_25px_rgba(6,182,212,0.35)] overflow-hidden border-2 border-cyan-400/40">
-              <motion.div
-                animate={{ y: [0, 140, 0] }}
-                transition={{ repeat: Infinity, duration: 2.5, ease: 'linear' }}
-                className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-500 to-transparent pointer-events-none z-10"
-              />
               <img
                 src={qrImageUrl}
                 alt="Digital Gate Pass QR Code"
