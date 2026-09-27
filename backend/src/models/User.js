@@ -46,7 +46,7 @@ const userSchema = new mongoose.Schema({
     default: '4-wheeler'
   },
   vehicles: {
-    type: [String],
+    type: [mongoose.Schema.Types.Mixed],
     default: []
   },
   isActive: {

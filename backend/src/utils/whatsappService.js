@@ -38,7 +38,7 @@ const sendWhatsAppTicket = async ({ to, booking, qrUrl, customMessage }) => {
   }
 
   const slotNum = booking.slot?.number || booking.slotNumber || 'A-04';
-  const vehicle = booking.vehicleNumber || 'MH-12-AB-3456';
+  const vehicle = booking.vehicleNumber || '—';
   const start = new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const end = new Date(booking.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const passId = String(booking._id || booking.id || 'PS-' + Date.now()).slice(-8).toUpperCase();

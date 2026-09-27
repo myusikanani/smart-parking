@@ -105,7 +105,7 @@ const QRCode = () => {
         .replace(/\b\w/g, (c) => c.toUpperCase());
       const userObj = typeof raw.user === 'object' && raw.user !== null ? (raw.user as Record<string, unknown>) : null;
       const driverName = String(booking.userName || userObj?.name || user?.name || 'Registered Driver');
-      const vehicleNum = String(booking.vehicleNumber || user?.vehicleNumber || 'MH-12-AB-3456');
+      const vehicleNum = String(booking.vehicleNumber || user?.vehicleNumber || '—');
       const passId = String(booking.id || raw._id || raw.id || 'GATE').slice(-8).toUpperCase();
 
       const startDate = new Date(booking.startTime);

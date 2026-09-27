@@ -59,7 +59,7 @@ exports.createSubscription = async (req, res) => {
     // Vehicles array
     let vehicles = Array.isArray(vehicleNumbers) && vehicleNumbers.length > 0 
       ? vehicleNumbers.map(v => String(v).trim().toUpperCase()) 
-      : [user?.vehicleNumber || 'MH-12-AB-3456'];
+      : (user?.vehicleNumber ? [user.vehicleNumber] : []);
 
     if (vehicles.length > plan.maxVehicles) {
       vehicles = vehicles.slice(0, plan.maxVehicles);

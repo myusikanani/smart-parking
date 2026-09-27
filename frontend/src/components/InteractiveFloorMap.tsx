@@ -19,18 +19,26 @@ interface InteractiveFloorMapProps {
   selectedSlotId: string | null;
   onSelectSlot: (slot: ParkingSlotItem) => void;
   onRefresh?: () => void;
+  initialCategory?: string;
 }
 
 export const InteractiveFloorMap: FC<InteractiveFloorMapProps> = ({
   slots,
   selectedSlotId,
   onSelectSlot,
-  onRefresh
+  onRefresh,
+  initialCategory
 }) => {
   const [activeFloor, setActiveFloor] = useState<number>(1);
-  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterCategory, setFilterCategory] = useState<string>(initialCategory || 'all');
   const [liveSlots, setLiveSlots] = useState<ParkingSlotItem[]>(slots);
   const [bufferTooltip, setBufferTooltip] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialCategory) {
+      setFilterCategory(initialCategory);
+    }
+  }, [initialCategory]);
 
   useEffect(() => {
     setLiveSlots(slots);

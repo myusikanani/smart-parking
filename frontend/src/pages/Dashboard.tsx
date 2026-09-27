@@ -129,7 +129,7 @@ const Dashboard = () => {
     status: b.status || 'confirmed',
     amount: b.amount || 15,
     category: b.category || 'four-wheeler',
-    vehicleNumber: b.vehicleNumber || 'MH-12-AB-3456',
+    vehicleNumber: b.vehicleNumber || user?.vehicleNumber || '—',
     rawBooking: b,
   }));
 
@@ -170,7 +170,7 @@ const Dashboard = () => {
       userName: String(user?.name || 'Driver'),
       slotId: String(b.slotId || 'slot-1'),
       slotNumber: String(b.slotNumber || 'A-01'),
-      vehicleNumber: String(b.vehicleNumber || 'MH-12-AB-3456'),
+      vehicleNumber: String(b.vehicleNumber || user?.vehicleNumber || '—'),
       category: String(b.category || 'four-wheeler'),
       startTime: String(b.startTime || new Date().toISOString()),
       endTime: String(b.endTime || new Date().toISOString()),
@@ -331,7 +331,7 @@ const Dashboard = () => {
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">
                     Slot #{String(activeOrNextPass.slotNumber || 'A-01')} &middot;{' '}
                     <span className="font-mono text-cyan-600 dark:text-cyan-300">
-                      {String(activeOrNextPass.vehicleNumber || 'MH-12-AB-3456')}
+                      {String(activeOrNextPass.vehicleNumber || user?.vehicleNumber || '—')}
                     </span>
                   </h3>
                   <p className="text-xs text-slate-600 dark:text-gray-400 mt-1 flex items-center gap-2">

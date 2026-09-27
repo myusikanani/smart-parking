@@ -50,6 +50,46 @@ interface Slot {
   features?: string[];
 }
 
+export interface GarageVehicleItem {
+  plate: string;
+  type: 'four-wheeler' | 'two-wheeler' | 'ev' | 'disabled';
+  isPrimary?: boolean;
+}
+
+const mapVehicleTypeToCategory = (vType?: string): 'four-wheeler' | 'two-wheeler' | 'ev' | 'disabled' => {
+  if (!vType) return 'four-wheeler';
+  const clean = vType.toLowerCase().trim();
+  if (clean.includes('2') || clean.includes('two') || clean.includes('bike') || clean.includes('scooter')) return 'two-wheeler';
+  if (clean.includes('ev') || clean.includes('electric')) return 'ev';
+  if (clean.includes('disable') || clean.includes('access')) return 'disabled';
+  return 'four-wheeler';
+};
+
+const mapCategoryToApiVehicleType = (cat: string): '4-wheeler' | '2-wheeler' | 'ev' | 'accessible' => {
+  if (cat === 'two-wheeler') return '2-wheeler';
+  if (cat === 'ev') return 'ev';
+  if (cat === 'disabled') return 'accessible';
+  return '4-wheeler';
+};
+
+const getVehicleTypeLabel = (cat: string) => {
+  switch (cat) {
+    case 'two-wheeler': return 'Two Wheeler';
+    case 'ev': return 'EV Charging';
+    case 'disabled': return 'Accessible';
+    default: return 'Four Wheeler';
+  }
+};
+
+const getVehicleTypeEmoji = (cat: string) => {
+  switch (cat) {
+    case 'two-wheeler': return '🛵';
+    case 'ev': return '⚡';
+    case 'disabled': return '♿';
+    default: return '🚗';
+  }
+};
+
 const categories = [
   { id: 'four-wheeler', label: 'Four Wheeler', icon: HiOutlineShoppingCart, desc: 'Cars & SUVs', price: '₹30.00/hr' },
   { id: 'two-wheeler', label: 'Two Wheeler', icon: HiOutlineTruck, desc: 'Bikes & Scooters', price: '₹15.00/hr' },
@@ -277,13 +317,50 @@ const BookParking = () => {
   const [date, setDate] = useState(initialSlot.date);
   const [selectedTime, setSelectedTime] = useState(initialSlot.time);
 
-  const mapVehicleTypeToCategory = (vType?: string): 'four-wheeler' | 'two-wheeler' | 'ev' | 'disabled' => {
+  type VehicleCategory = 'four-wheeler' | 'two-wheeler' | 'ev' | 'disabled';
+  interface GarageVehicleItem {
+    plate: string;
+    type: VehicleCategory;
+    isPrimary?: boolean;
+  }
+
+  const mapVehicleTypeToCategory = (vType?: string): VehicleCategory => {
     if (!vType) return 'four-wheeler';
     const clean = vType.toLowerCase().trim();
     if (clean.includes('2') || clean.includes('two') || clean.includes('bike') || clean.includes('scooter')) return 'two-wheeler';
     if (clean.includes('ev') || clean.includes('electric')) return 'ev';
     if (clean.includes('disable') || clean.includes('access')) return 'disabled';
     return 'four-wheeler';
+  };
+
+  const mapCategoryToApiVehicleType = (cat: VehicleCategory): string => {
+    switch (cat) {
+      case 'two-wheeler': return '2-wheeler';
+      case 'ev': return 'ev';
+      case 'disabled': return 'accessible';
+      case 'four-wheeler':
+      default: return '4-wheeler';
+    }
+  };
+
+  const getVehicleTypeLabel = (cat: string): string => {
+    switch (cat) {
+      case 'two-wheeler': return 'Two Wheeler';
+      case 'ev': return 'EV Charging';
+      case 'disabled': return 'Accessible';
+      case 'four-wheeler':
+      default: return 'Four Wheeler';
+    }
+  };
+
+  const getVehicleTypeEmoji = (cat: string): string => {
+    switch (cat) {
+      case 'two-wheeler': return '🛵';
+      case 'ev': return '⚡';
+      case 'disabled': return '♿';
+      case 'four-wheeler':
+      default: return '🚗';
+    }
   };
 
   const [category, setCategory] = useState<string>(
@@ -301,20 +378,8 @@ const BookParking = () => {
   const [newPlateInput, setNewPlateInput] = useState('');
   const [addingVehicleLoading, setAddingVehicleLoading] = useState(false);
   const [addVehicleMsg, setAddVehicleMsg] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null);
-  const [localVehicles, setLocalVehicles] = useState<string[]>(() => {
-    if (user?.vehicles && Array.isArray(user.vehicles)) {
-      return user.vehicles.map((v) => formatIndianLicensePlate(String(v))).filter(Boolean);
-    }
-    return [];
-  });
-
-  // Sync with user?.vehicles whenever user changes
-  useEffect(() => {
-    if (user?.vehicles && Array.isArray(user.vehicles)) {
-      const serverVehicles = user.vehicles.map((v) => formatIndianLicensePlate(String(v))).filter(Boolean);
-      setLocalVehicles((prev) => Array.from(new Set([...prev, ...serverVehicles])));
-    }
-  }, [user?.vehicles]);
+  const [newVehicleCategory, setNewVehicleCategory] = useState<VehicleCategory>('four-wheeler');
+  const [localVehicles, setLocalVehicles] = useState<GarageVehicleItem[]>([]);
 
   // Fetch freshest user profile & garage vehicles on page mount
   useEffect(() => {
@@ -324,7 +389,15 @@ const BookParking = () => {
           if (res.user) {
             updateUser(res.user as unknown as Partial<User>);
             if (Array.isArray(res.user.vehicles)) {
-              const freshList = (res.user.vehicles as string[]).map((v) => formatIndianLicensePlate(String(v))).filter(Boolean);
+              const freshList: GarageVehicleItem[] = (res.user.vehicles as any[]).map((v) => {
+                if (typeof v === 'string') {
+                  return { plate: formatIndianLicensePlate(v), type: 'four-wheeler' as VehicleCategory };
+                }
+                return {
+                  plate: formatIndianLicensePlate(v?.plate || ''),
+                  type: mapVehicleTypeToCategory(v?.type),
+                };
+              }).filter((v) => Boolean(v.plate));
               setLocalVehicles(freshList);
             }
             if (res.user.vehicleNumber) {
@@ -344,18 +417,66 @@ const BookParking = () => {
     return formatIndianLicensePlate(user?.vehicleNumber || '');
   }, [user?.vehicleNumber]);
 
-  // Secondary garage vehicles (all saved vehicles excluding the primary car)
-  const garageVehicles = useMemo(() => {
-    const rawList = [
-      ...(Array.isArray(user?.vehicles) ? user.vehicles : []),
-      ...localVehicles,
-    ];
-    const primary = primaryPlate;
-    const secondary = rawList
-      .map((v) => (v ? formatIndianLicensePlate(String(v)) : ''))
-      .filter((v) => v && v !== primary);
-    return Array.from(new Set(secondary));
-  }, [user?.vehicles, localVehicles, primaryPlate]);
+  // Combined Garage Vehicles with types and primary tags
+  const allGarageVehicles: GarageVehicleItem[] = useMemo(() => {
+    const list: GarageVehicleItem[] = [];
+    const seenPlates = new Set<string>();
+
+    // 1. Primary vehicle from user registration
+    if (user?.vehicleNumber) {
+      const pPlate = formatIndianLicensePlate(user.vehicleNumber);
+      if (pPlate) {
+        const pType = mapVehicleTypeToCategory(user.vehicleType);
+        list.push({ plate: pPlate, type: pType, isPrimary: true });
+        seenPlates.add(pPlate);
+      }
+    }
+
+    // 2. Saved user vehicles from user.vehicles
+    if (Array.isArray(user?.vehicles)) {
+      user.vehicles.forEach((item) => {
+        const rawPlate = typeof item === 'string' ? item : (item as any)?.plate;
+        const rawType = typeof item === 'string' ? undefined : (item as any)?.type;
+        const clean = formatIndianLicensePlate(rawPlate || '');
+        if (clean && !seenPlates.has(clean)) {
+          list.push({
+            plate: clean,
+            type: mapVehicleTypeToCategory(rawType),
+            isPrimary: clean === formatIndianLicensePlate(user?.vehicleNumber || ''),
+          });
+          seenPlates.add(clean);
+        }
+      });
+    }
+
+    // 3. Local session vehicles
+    localVehicles.forEach((item) => {
+      const clean = formatIndianLicensePlate(item.plate);
+      if (clean && !seenPlates.has(clean)) {
+        list.push({
+          plate: clean,
+          type: item.type,
+          isPrimary: item.isPrimary || clean === formatIndianLicensePlate(user?.vehicleNumber || ''),
+        });
+        seenPlates.add(clean);
+      }
+    });
+
+    return list;
+  }, [user?.vehicleNumber, user?.vehicleType, user?.vehicles, localVehicles]);
+
+  const currentSelectedVehicle = useMemo(() => {
+    if (!vehicleNumber) return null;
+    const clean = formatIndianLicensePlate(vehicleNumber);
+    return allGarageVehicles.find((v) => v.plate === clean) || null;
+  }, [vehicleNumber, allGarageVehicles]);
+
+  const handleSelectVehicle = (veh: GarageVehicleItem) => {
+    setVehicleNumber(veh.plate);
+    setCategory(veh.type);
+    setSelectedSlotId(''); // reset slot so user picks a matching slot
+    toast(`🚗 Selected ${veh.plate} (${getVehicleTypeLabel(veh.type)}) for booking`, 'info');
+  };
 
   // Sync vehicle number and category when user loads or updates
   useEffect(() => {
@@ -389,18 +510,10 @@ const BookParking = () => {
       return;
     }
 
-    // 1. If user typed Primary Car
-    if (primaryPlate && cleanPlate === primaryPlate) {
-      setVehicleNumber(primaryPlate);
-      setNewPlateInput('');
-      toast(`⭐ "${cleanPlate}" is your Primary Registered Car! Selected for booking.`, 'info');
-      setAddVehicleMsg({ type: 'info', text: `"${cleanPlate}" is your Primary Vehicle and has been selected for booking.` });
-      return;
-    }
-
-    // 2. If user typed an already saved Garage Car
-    if (garageVehicles.includes(cleanPlate)) {
-      setVehicleNumber(cleanPlate);
+    // 1. If already in garage
+    const existing = allGarageVehicles.find((v) => v.plate === cleanPlate);
+    if (existing) {
+      handleSelectVehicle(existing);
       setNewPlateInput('');
       toast(`🚗 "${cleanPlate}" is already in your Garage! Selected for booking.`, 'info');
       setAddVehicleMsg({ type: 'info', text: `"${cleanPlate}" is already in your Garage and has been selected for booking.` });
@@ -409,26 +522,38 @@ const BookParking = () => {
 
     setAddingVehicleLoading(true);
     setAddVehicleMsg(null);
+    const newItem: GarageVehicleItem = {
+      plate: cleanPlate,
+      type: newVehicleCategory,
+      isPrimary: false,
+    };
+
     // Optimistically add to local state instantly
-    setLocalVehicles((prev) => Array.from(new Set([...prev, cleanPlate])));
+    setLocalVehicles((prev) => [...prev, newItem]);
     setVehicleNumber(cleanPlate);
+    setCategory(newVehicleCategory);
+    setSelectedSlotId('');
     setNewPlateInput('');
 
     try {
-      const res = await authApi.updateProfile({ addVehicle: cleanPlate });
+      const res = await authApi.updateProfile({
+        addVehicle: cleanPlate,
+        addVehicleType: mapCategoryToApiVehicleType(newVehicleCategory),
+      });
       if (res.user) {
         updateUser(res.user as unknown as Partial<User>);
-        if (Array.isArray(res.user.vehicles)) {
-          const freshList = (res.user.vehicles as string[]).map((v) => formatIndianLicensePlate(String(v))).filter(Boolean);
-          setLocalVehicles(freshList);
-        }
       }
-      toast(`🚗 Vehicle ${cleanPlate} added to your garage & selected for booking!`, 'success');
-      setAddVehicleMsg({ type: 'success', text: `✓ Vehicle "${cleanPlate}" added to your garage and selected for this reservation!` });
+      toast(`✓ Vehicle ${cleanPlate} (${getVehicleTypeLabel(newVehicleCategory)}) added to garage & selected!`, 'success');
+      setAddVehicleMsg({
+        type: 'success',
+        text: `✓ Vehicle "${cleanPlate}" (${getVehicleTypeLabel(newVehicleCategory)}) added and selected for this reservation!`,
+      });
     } catch (err: unknown) {
       // Revert optimistic addition on error
-      setLocalVehicles((prev) => prev.filter((v) => v !== cleanPlate));
-      setVehicleNumber(primaryPlate || '');
+      setLocalVehicles((prev) => prev.filter((v) => v.plate !== cleanPlate));
+      const defaultVeh = allGarageVehicles[0];
+      setVehicleNumber(defaultVeh?.plate || '');
+      if (defaultVeh) setCategory(defaultVeh.type);
       const message = err instanceof Error ? err.message : 'Failed to register vehicle.';
       toast(message, 'error');
       setAddVehicleMsg({ type: 'error', text: message });
@@ -439,18 +564,20 @@ const BookParking = () => {
 
   const handleRemoveGarageVehicle = async (plate: string) => {
     // Optimistically remove from local state
-    setLocalVehicles((prev) => prev.filter((v) => v !== plate));
+    setLocalVehicles((prev) => prev.filter((v) => v.plate !== plate));
     if (vehicleNumber === plate) {
-      setVehicleNumber(primaryPlate || '');
+      const fallbackVeh = allGarageVehicles.find((v) => v.plate !== plate);
+      if (fallbackVeh) {
+        setVehicleNumber(fallbackVeh.plate);
+        setCategory(fallbackVeh.type);
+      } else {
+        setVehicleNumber('');
+      }
     }
     try {
       const res = await authApi.updateProfile({ removeVehicle: plate });
       if (res.user) {
         updateUser(res.user as unknown as Partial<User>);
-        if (Array.isArray(res.user.vehicles)) {
-          const freshList = (res.user.vehicles as string[]).map((v) => formatIndianLicensePlate(String(v))).filter(Boolean);
-          setLocalVehicles(freshList);
-        }
       }
       toast(`Vehicle ${plate} removed from your garage`, 'success');
     } catch (err: unknown) {
@@ -694,9 +821,12 @@ const BookParking = () => {
         isLoggedIn &&
         cleanVehiclePlate &&
         cleanVehiclePlate !== primaryPlate &&
-        !garageVehicles.includes(cleanVehiclePlate)
+        !allGarageVehicles.some((v) => v.plate === cleanVehiclePlate)
       ) {
-        authApi.updateProfile({ addVehicle: cleanVehiclePlate })
+        authApi.updateProfile({
+          addVehicle: cleanVehiclePlate,
+          addVehicleType: mapCategoryToApiVehicleType(category as VehicleCategory),
+        })
           .then((pRes) => {
             if (pRes.user) updateUser(pRes.user as unknown as Partial<User>);
           })
@@ -975,21 +1105,37 @@ const BookParking = () => {
 
             {/* COMPACT & COLLAPSIBLE VEHICLE GARAGE SELECTOR */}
             <div className="glass-card p-4 sm:p-5 rounded-2xl space-y-3 border border-cyan-500/25">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🚗</span>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-base">{getVehicleTypeEmoji(currentSelectedVehicle?.type || category)}</span>
                   <span className="text-xs font-bold text-gray-200">Selected Vehicle for Booking:</span>
-                  <span className="font-mono font-extrabold text-xs text-cyan-300 bg-cyan-950/90 px-2.5 py-1 rounded-lg border border-cyan-500/40">
-                    {vehicleNumber}
-                  </span>
-                  {vehicleNumber === primaryPlate && (
-                    <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded font-mono font-bold">
-                      ⭐ Primary
+                  {vehicleNumber ? (
+                    <span className="font-mono font-extrabold text-xs text-cyan-300 bg-cyan-950/90 px-2.5 py-1 rounded-lg border border-cyan-500/40 tracking-wider">
+                      {vehicleNumber}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30">
+                      ⚠️ No Vehicle Selected
                     </span>
                   )}
-                  {garageVehicles.includes(vehicleNumber) && (
-                    <span className="text-[10px] bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded font-mono font-bold">
-                      🚗 Garage Car
+                  {currentSelectedVehicle ? (
+                    <>
+                      <span className="text-[10px] bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
+                        {getVehicleTypeEmoji(currentSelectedVehicle.type)} {getVehicleTypeLabel(currentSelectedVehicle.type)}
+                      </span>
+                      {currentSelectedVehicle.isPrimary ? (
+                        <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-md font-mono font-bold">
+                          ⭐ Primary
+                        </span>
+                      ) : (
+                        <span className="text-[10px] bg-pink-500/20 text-pink-300 border border-pink-500/40 px-2 py-0.5 rounded-md font-mono font-bold">
+                          🚗 Garage Car
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-[10px] bg-blue-500/15 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-md font-semibold">
+                      {getVehicleTypeEmoji(category)} {getVehicleTypeLabel(category)}
                     </span>
                   )}
                 </div>
@@ -998,10 +1144,10 @@ const BookParking = () => {
                   <button
                     type="button"
                     onClick={() => setGarageOpen(!garageOpen)}
-                    className="text-xs font-bold text-pink-400 hover:text-pink-300 bg-pink-500/10 hover:bg-pink-500/20 px-3 py-1.5 rounded-xl border border-pink-500/30 transition flex items-center gap-1.5"
+                    className="text-xs font-bold text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 px-3.5 py-1.5 rounded-xl border border-cyan-500/30 transition flex items-center gap-1.5 cursor-pointer"
                   >
                     <span>{garageOpen ? 'Close Garage ▲' : 'Change Car / + Add Car ▾'}</span>
-                    <span className="text-[10px] text-gray-400">({1 + garageVehicles.length} saved)</span>
+                    <span className="text-[10px] text-gray-400">({allGarageVehicles.length} saved)</span>
                   </button>
                 )}
               </div>
@@ -1011,98 +1157,132 @@ const BookParking = () => {
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  className="pt-3 border-t border-white/10 space-y-3"
+                  className="pt-3 border-t border-white/10 space-y-4"
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {/* Primary Car Card */}
-                    <div
-                      onClick={() => setVehicleNumber(primaryPlate)}
-                      className={`cursor-pointer p-3 rounded-xl border transition-all ${
-                        vehicleNumber === primaryPlate
-                          ? 'bg-cyan-950/90 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
-                          : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-[10px] font-mono font-bold text-cyan-300 uppercase">⭐ Primary Car</span>
-                        {vehicleNumber === primaryPlate && <span className="text-cyan-400 font-bold">✓ Selected</span>}
-                      </div>
-                      <p className="font-mono font-bold text-white text-sm mt-1">{primaryPlate}</p>
+                  {allGarageVehicles.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {allGarageVehicles.map((veh) => {
+                        const isSelected = vehicleNumber === veh.plate;
+                        return (
+                          <div
+                            key={veh.plate}
+                            onClick={() => handleSelectVehicle(veh)}
+                            className={`cursor-pointer p-3.5 rounded-xl border transition-all duration-200 relative ${
+                              isSelected
+                                ? 'bg-cyan-950/90 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.35)] ring-2 ring-cyan-400/80 scale-[1.01]'
+                                : 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-cyan-500/40 text-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between text-xs mb-1.5">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 flex items-center gap-1">
+                                <span>{getVehicleTypeEmoji(veh.type)}</span>
+                                <span>{getVehicleTypeLabel(veh.type)}</span>
+                              </span>
+                              <div className="flex items-center gap-2">
+                                {veh.isPrimary && (
+                                  <span className="text-[10px] font-bold text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30">
+                                    ⭐ Primary
+                                  </span>
+                                )}
+                                {isSelected ? (
+                                  <span className="text-cyan-400 font-bold text-xs flex items-center gap-0.5">
+                                    ✓ Selected
+                                  </span>
+                                ) : null}
+                                {!veh.isPrimary && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemoveGarageVehicle(veh.plate);
+                                    }}
+                                    className="text-gray-500 hover:text-red-400 text-xs p-0.5 transition"
+                                    title="Remove vehicle"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            <p className="font-mono font-black text-white text-base tracking-wider">{veh.plate}</p>
+                            <p className="text-[10px] text-gray-400 mt-1">
+                              {isSelected ? '✓ Slots auto-filtered to this category' : 'Click to select & auto-filter slots'}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-3 text-center text-xs text-gray-400 bg-white/5 rounded-xl border border-white/10">
+                      No vehicles saved in your garage yet. Add your vehicle below.
+                    </div>
+                  )}
+
+                  {/* Add New Car Form with Vehicle Type Selector */}
+                  <div className="p-3.5 rounded-xl bg-slate-900/90 border border-white/10 space-y-3">
+                    <label className="block text-xs font-bold text-gray-200">
+                      + Register New Vehicle to Garage:
+                    </label>
+
+                    {/* 4-Pill Vehicle Type Selector */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {categories.map((cat) => {
+                        const isCatSelected = newVehicleCategory === cat.id;
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => setNewVehicleCategory(cat.id as 'four-wheeler' | 'two-wheeler' | 'ev' | 'disabled')}
+                            className={`p-2 rounded-xl text-xs font-semibold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                              isCatSelected
+                                ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-md shadow-cyan-500/20'
+                                : 'bg-white/5 hover:bg-white/10 border-white/10 text-gray-300'
+                            }`}
+                          >
+                            <span>{getVehicleTypeEmoji(cat.id)}</span>
+                            <span>{cat.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
 
-                    {/* Garage Cars Cards */}
-                    {garageVehicles.map((v, idx) => {
-                      const isSelected = vehicleNumber === v;
-                      return (
-                        <div
-                          key={v}
-                          onClick={() => setVehicleNumber(v)}
-                          className={`cursor-pointer p-3 rounded-xl border transition-all ${
-                            isSelected
-                              ? 'bg-pink-950/90 border-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.3)] ring-1 ring-pink-400'
-                              : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-[10px] font-mono font-bold text-pink-300 uppercase">🚗 Garage Car #{idx + 2}</span>
-                            <div className="flex items-center gap-1.5">
-                              {isSelected && <span className="text-pink-400 font-bold">✓ Selected</span>}
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRemoveGarageVehicle(v);
-                                }}
-                                className="text-gray-500 hover:text-red-400 text-xs ml-1"
-                                title="Remove vehicle"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          </div>
-                          <p className="font-mono font-bold text-white text-sm mt-1">{v}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        maxLength={13}
+                        value={newPlateInput}
+                        onChange={(e) => {
+                          setNewPlateInput(formatIndianLicensePlate(e.target.value));
+                          setAddVehicleMsg(null);
+                        }}
+                        onKeyDown={(e) => {
+                          handlePlateKeyDown(e, newPlateInput, setNewPlateInput);
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddNewVehicle();
+                          }
+                        }}
+                        placeholder="e.g. GJ-01-AB-1234"
+                        className="input-neon flex-1 px-3.5 py-2.5 text-xs font-mono uppercase rounded-xl tracking-wider font-bold bg-white text-slate-900 dark:bg-slate-800 dark:text-white"
+                      />
+                      <button
+                        type="button"
+                        disabled={addingVehicleLoading || !newPlateInput.trim()}
+                        onClick={handleAddNewVehicle}
+                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs shadow-md transition disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        {addingVehicleLoading ? 'Saving...' : `+ Add & Select (${getVehicleTypeLabel(newVehicleCategory)})`}
+                      </button>
+                    </div>
 
-                  {/* Add New Car Input */}
-                  <div className="flex gap-2 pt-2">
-                    <input
-                      type="text"
-                      maxLength={13}
-                      value={newPlateInput}
-                      onChange={(e) => {
-                        setNewPlateInput(formatIndianLicensePlate(e.target.value));
-                        setAddVehicleMsg(null);
-                      }}
-                      onKeyDown={(e) => {
-                        handlePlateKeyDown(e, newPlateInput, setNewPlateInput);
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddNewVehicle();
-                        }
-                      }}
-                      placeholder="e.g. GJ-01-AB-1234"
-                      className="input-neon flex-1 px-3.5 py-2 text-xs font-mono uppercase rounded-xl tracking-wider font-bold"
-                    />
-                    <button
-                      type="button"
-                      disabled={addingVehicleLoading || !newPlateInput.trim()}
-                      onClick={handleAddNewVehicle}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-cyan-500 text-white font-bold text-xs shadow-md transition disabled:opacity-50"
-                    >
-                      {addingVehicleLoading ? 'Saving...' : '+ Add & Select'}
-                    </button>
+                    {addVehicleMsg && (
+                      <p className={`text-xs p-2 rounded-lg ${
+                        addVehicleMsg.type === 'error' ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/20 text-emerald-300'
+                      }`}>
+                        {addVehicleMsg.text}
+                      </p>
+                    )}
                   </div>
-
-                  {addVehicleMsg && (
-                    <p className={`text-xs p-2 rounded-lg ${
-                      addVehicleMsg.type === 'error' ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/20 text-emerald-300'
-                    }`}>
-                      {addVehicleMsg.text}
-                    </p>
-                  )}
                 </motion.div>
               )}
 
@@ -1119,7 +1299,7 @@ const BookParking = () => {
                     onChange={(e) => setVehicleNumber(formatIndianLicensePlate(e.target.value))}
                     onKeyDown={(e) => handlePlateKeyDown(e, vehicleNumber, setVehicleNumber)}
                     placeholder="e.g. GJ-01-AB-1234"
-                    className="input-neon w-full px-3.5 py-2.5 text-xs font-mono uppercase rounded-xl tracking-wider font-bold"
+                    className="input-neon w-full px-3.5 py-2.5 text-xs font-mono uppercase rounded-xl tracking-wider font-bold bg-white text-slate-900 dark:bg-slate-800 dark:text-white"
                   />
                 </div>
               )}
@@ -1316,6 +1496,7 @@ const BookParking = () => {
               </div>
             ) : (
               <InteractiveFloorMap
+                initialCategory={category}
                 slots={slots.map((s) => ({
                   _id: s.id,
                   number: s.number,

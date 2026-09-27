@@ -307,7 +307,7 @@ exports.verifyPayment = async (req, res) => {
       id: bookingId,
       status: 'confirmed',
       paymentStatus: 'paid',
-      vehicleNumber: req.body.vehicleNumber || 'MH-12-AB-3456',
+      vehicleNumber: req.body.vehicleNumber || (req.user && req.user.vehicleNumber) || '',
       slotNumber: 'A-01',
       amount: 60,
       qrToken,

@@ -60,7 +60,7 @@ const registerUser = async (req, res) => {
       role: userRole,
       vehicleNumber: cleanPlate,
       vehicleType: cleanVehicleType,
-      vehicles: cleanPlate ? [cleanPlate] : []
+      vehicles: cleanPlate ? [{ plate: cleanPlate, type: cleanVehicleType }] : []
     });
 
     const token = user.generateAuthToken();
@@ -89,7 +89,7 @@ const registerUser = async (req, res) => {
   } catch (error) {
     console.warn('DB Register Error (using demo fallback):', error.message);
     const userRole = req.body.role === 'admin' || req.body.role === 'security' ? req.body.role : 'user';
-    const cleanPlate = vehicleNumber ? String(vehicleNumber).trim().toUpperCase() : 'MH-12-AB-3456';
+    const cleanPlate = vehicleNumber ? String(vehicleNumber).trim().toUpperCase() : '';
     const cleanVehicleType = ['4-wheeler', '2-wheeler', 'ev', 'accessible'].includes(vehicleType) ? vehicleType : '4-wheeler';
     return res.status(201).json({
       success: true,
@@ -102,7 +102,7 @@ const registerUser = async (req, res) => {
         role: userRole,
         vehicleNumber: cleanPlate,
         vehicleType: cleanVehicleType,
-        vehicles: [cleanPlate]
+        vehicles: cleanPlate ? [{ plate: cleanPlate, type: cleanVehicleType }] : []
       }
     });
   }
@@ -204,7 +204,7 @@ const loginUser = async (req, res) => {
         role: user.role,
         vehicleNumber: user.vehicleNumber || '',
         vehicleType: user.vehicleType || '4-wheeler',
-        vehicles: user.vehicles || (user.vehicleNumber ? [user.vehicleNumber] : []),
+        vehicles: user.vehicles || (user.vehicleNumber ? [{ plate: user.vehicleNumber, type: user.vehicleType || '4-wheeler' }] : []),
         twoFactorEnabled: user.twoFactorEnabled
       }
     });
@@ -221,9 +221,9 @@ const loginUser = async (req, res) => {
         email: email || 'user@example.com',
         phone: '9876543210',
         role: userRole,
-        vehicleNumber: 'MH-12-AB-3456',
+        vehicleNumber: '',
         vehicleType: '4-wheeler',
-        vehicles: ['MH-12-AB-3456'],
+        vehicles: [],
         twoFactorEnabled: false
       }
     });
@@ -575,7 +575,7 @@ const getMe = async (req, res) => {
 };
 
 const updateProfile = async (req, res) => {
-  const { name, email, phone, vehicleNumber, addVehicle, removeVehicle } = req.body;
+  const { name, email, phone, vehicleNumber, vehicleType, addVehicle, addVehicleType, removeVehicle, setPrimaryVehicle } = req.body;
 
   try {
     const user = await User.findById(req.user.id);
@@ -589,15 +589,48 @@ const updateProfile = async (req, res) => {
 
     if (!Array.isArray(user.vehicles)) user.vehicles = [];
 
+    // Switch primary vehicle if requested
+    if (setPrimaryVehicle) {
+      const targetPlate = String(setPrimaryVehicle).trim().toUpperCase();
+      const matched = user.vehicles.find(v => {
+        const p = typeof v === 'object' && v !== null ? String(v.plate || '').trim().toUpperCase() : String(v || '').trim().toUpperCase();
+        return p === targetPlate;
+      });
+      user.vehicleNumber = targetPlate;
+      if (matched && typeof matched === 'object' && matched.type) {
+        user.vehicleType = matched.type;
+      }
+    }
+
     // Remove vehicle from garage if requested
     if (removeVehicle) {
       const plateToRemove = String(removeVehicle).trim().toUpperCase();
-      user.vehicles = user.vehicles.filter(v => v && String(v).trim().toUpperCase() !== plateToRemove);
+      user.vehicles = user.vehicles.filter(v => {
+        const p = typeof v === 'object' && v !== null ? String(v.plate || '').trim().toUpperCase() : String(v || '').trim().toUpperCase();
+        return p && p !== plateToRemove;
+      });
       user.markModified('vehicles');
+      if (user.vehicleNumber === plateToRemove) {
+        if (user.vehicles.length > 0) {
+          const first = user.vehicles[0];
+          user.vehicleNumber = typeof first === 'object' ? first.plate : first;
+          user.vehicleType = typeof first === 'object' && first.type ? first.type : '4-wheeler';
+        } else {
+          user.vehicleNumber = '';
+        }
+      }
     }
 
     // Add new vehicle to garage if requested
-    const newPlate = addVehicle ? String(addVehicle).trim().toUpperCase() : '';
+    let newPlate = '';
+    let newType = addVehicleType || vehicleType || '4-wheeler';
+    if (typeof addVehicle === 'object' && addVehicle !== null) {
+      newPlate = String(addVehicle.plate || '').trim().toUpperCase();
+      if (addVehicle.type) newType = addVehicle.type;
+    } else if (addVehicle) {
+      newPlate = String(addVehicle).trim().toUpperCase();
+    }
+
     if (newPlate) {
       const primaryClean = (user.vehicleNumber || '').trim().toUpperCase();
       // 1. Check if plate is already user's primary vehicle
@@ -609,7 +642,10 @@ const updateProfile = async (req, res) => {
       }
 
       // 2. Check if plate is already in user's garage array
-      const existingInGarage = user.vehicles.map(v => String(v).trim().toUpperCase());
+      const existingInGarage = user.vehicles.map(v => {
+        if (typeof v === 'object' && v !== null) return String(v.plate || '').trim().toUpperCase();
+        return String(v || '').trim().toUpperCase();
+      });
       if (existingInGarage.includes(newPlate)) {
         return res.status(400).json({
           success: false,
@@ -622,6 +658,7 @@ const updateProfile = async (req, res) => {
         _id: { $ne: user._id },
         $or: [
           { vehicleNumber: newPlate },
+          { 'vehicles.plate': newPlate },
           { vehicles: newPlate }
         ]
       });
@@ -632,13 +669,29 @@ const updateProfile = async (req, res) => {
         });
       }
 
-      user.vehicles.push(newPlate);
+      const cleanVehicleType = ['4-wheeler', '2-wheeler', 'ev', 'accessible'].includes(newType) ? newType : '4-wheeler';
+      user.vehicles.push({
+        plate: newPlate,
+        type: cleanVehicleType
+      });
       user.markModified('vehicles');
       if (!user.vehicleNumber) {
         user.vehicleNumber = newPlate;
+        user.vehicleType = cleanVehicleType;
       }
-    } else if (vehicleNumber && !addVehicle) {
-      user.vehicleNumber = String(vehicleNumber).trim().toUpperCase();
+    } else if (vehicleNumber !== undefined && !addVehicle) {
+      const cleanPrimary = String(vehicleNumber).trim().toUpperCase();
+      user.vehicleNumber = cleanPrimary;
+      if (vehicleType && ['4-wheeler', '2-wheeler', 'ev', 'accessible'].includes(vehicleType)) {
+        user.vehicleType = vehicleType;
+      }
+      if (cleanPrimary) {
+        const found = user.vehicles.find(v => (typeof v === 'object' && v !== null ? v.plate : v) === cleanPrimary);
+        if (!found) {
+          user.vehicles.unshift({ plate: cleanPrimary, type: user.vehicleType || '4-wheeler' });
+          user.markModified('vehicles');
+        }
+      }
     }
 
     await user.save();

@@ -42,7 +42,13 @@ export default function MonthlySubscriptions() {
   // Subscribe modal state
   const [selectedPlan, setSelectedPlan] = useState<'silver' | 'gold_vip' | 'corporate_fleet' | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-  const [vehicleInput, setVehicleInput] = useState(() => formatIndianLicensePlate(user?.vehicleNumber || (user?.vehicles && user.vehicles[0]) || ''));
+  
+  const getPlate = (v?: string | { plate: string; type?: string }) => {
+    if (!v) return '';
+    return typeof v === 'string' ? v : v.plate;
+  };
+
+  const [vehicleInput, setVehicleInput] = useState(() => formatIndianLicensePlate(user?.vehicleNumber || getPlate(user?.vehicles && user.vehicles[0]) || ''));
   const [subscribing, setSubscribing] = useState(false);
   const [subscribeSuccess, setSubscribeSuccess] = useState('');
 
@@ -51,12 +57,12 @@ export default function MonthlySubscriptions() {
     if (user?.vehicleNumber) {
       setVehicleInput(formatIndianLicensePlate(user.vehicleNumber));
     } else if (user?.vehicles && user.vehicles.length > 0) {
-      setVehicleInput(formatIndianLicensePlate(String(user.vehicles[0])));
+      setVehicleInput(formatIndianLicensePlate(getPlate(user.vehicles[0])));
     }
   }, [user?.vehicleNumber, user?.vehicles]);
 
   const openSubscribeModal = (planId: 'silver' | 'gold_vip' | 'corporate_fleet') => {
-    const defaultPlate = formatIndianLicensePlate(user?.vehicleNumber || (user?.vehicles && user.vehicles[0]) || '');
+    const defaultPlate = formatIndianLicensePlate(user?.vehicleNumber || getPlate(user?.vehicles && user.vehicles[0]) || '');
     setVehicleInput(defaultPlate);
     setSelectedPlan(planId);
     setError('');
@@ -88,7 +94,7 @@ export default function MonthlySubscriptions() {
     setSubscribing(true);
     setError('');
     try {
-      const defaultPlate = formatIndianLicensePlate(user?.vehicleNumber || (user?.vehicles && user.vehicles[0]) || 'GJ-01-AB-1234');
+      const defaultPlate = formatIndianLicensePlate(user?.vehicleNumber || getPlate(user?.vehicles && user.vehicles[0]) || 'GJ-01-AB-1234');
       const vehicleList = vehicleInput
         .split(',')
         .map((v) => formatIndianLicensePlate(v.trim()))
@@ -414,16 +420,19 @@ export default function MonthlySubscriptions() {
                   {user?.vehicles && user.vehicles.length > 0 && (
                     <div className="flex flex-wrap items-center gap-1.5 mt-2">
                       <span className="text-[10px] text-gray-400 font-semibold">Your Registered Vehicles:</span>
-                      {user.vehicles.map((v) => (
-                        <button
-                          key={v}
-                          type="button"
-                          onClick={() => setVehicleInput(formatIndianLicensePlate(String(v)))}
-                          className="px-2 py-0.5 rounded bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 font-mono text-[10px] font-bold transition cursor-pointer"
-                        >
-                          🚗 {formatIndianLicensePlate(String(v))}
-                        </button>
-                      ))}
+                      {user.vehicles.map((v) => {
+                        const plate = getPlate(v);
+                        return (
+                          <button
+                            key={plate}
+                            type="button"
+                            onClick={() => setVehicleInput(formatIndianLicensePlate(plate))}
+                            className="px-2 py-0.5 rounded bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 font-mono text-[10px] font-bold transition cursor-pointer"
+                          >
+                            🚗 {formatIndianLicensePlate(plate)}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
 

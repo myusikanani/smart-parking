@@ -1,6 +1,11 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { authApi } from '../services/api';
 
+export interface UserVehicle {
+  plate: string;
+  type?: '4-wheeler' | '2-wheeler' | 'ev' | 'accessible' | string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -9,7 +14,7 @@ export interface User {
   role: 'user' | 'admin' | 'security';
   vehicleNumber?: string;
   vehicleType?: string;
-  vehicles?: string[];
+  vehicles?: (string | UserVehicle)[];
   twoFactorEnabled?: boolean;
 }
 
