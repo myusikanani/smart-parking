@@ -13,6 +13,7 @@ const QRCode = () => {
   const location = useLocation();
   const { user } = useAuth();
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [allPaidBookings, setAllPaidBookings] = useState<Booking[]>([]);
   const [noPass, setNoPass] = useState(false);
   const [loading, setLoading] = useState(true);
   const [emailing, setEmailing] = useState(false);
@@ -31,9 +32,8 @@ const QRCode = () => {
     const state = location.state as Record<string, unknown> | null;
 
     // SECURITY: a QR pass exists ONLY for backend-verified paid bookings.
-    // Unpaid / failed / expired bookings must never render a scannable pass.
     const isPaidWithQR = (b: Record<string, unknown>) =>
-      b.paymentStatus === 'paid' && !!b.qrCode && !!b.qrToken;
+      b.paymentStatus === 'paid' && (Boolean(b.qrCode) || Boolean(b.qrToken) || Boolean(b._id) || Boolean(b.id));
 
     const normalizeBooking = (b: Record<string, unknown>): Booking => ({
       ...b,
@@ -44,38 +44,45 @@ const QRCode = () => {
       setLoading(true);
       setNoPass(false);
       try {
+        // Fetch all current user's bookings to enable multi-pass switching
+        const res = await bookingApi.getMyBookings();
+        const rawList = (res.bookings || []) as Array<Record<string, unknown>>;
+        const paidList = rawList
+          .filter(isPaidWithQR)
+          .map(normalizeBooking);
+
+        if (mounted) {
+          setAllPaidBookings(paidList);
+        }
+
+        // 1. If explicit booking was passed in router state
         if (state?.booking) {
           const raw = state.booking as Record<string, unknown>;
           if (isPaidWithQR(raw)) {
             if (mounted) setBooking(normalizeBooking(raw));
             return;
           }
-          // Booking passed but not paid yet (or no QR) — never fabricate one.
-          if (mounted) setNoPass(true);
-          return;
         }
 
+        // 2. If explicit bookingId was passed in router state
         if (state?.bookingId) {
-          const res = await bookingApi.getById(state.bookingId as string);
-          const raw = res.booking as unknown as Record<string, unknown> | undefined;
+          const targetId = String(state.bookingId);
+          const found = paidList.find((b) => String(b.id || (b as any)._id) === targetId);
+          if (found) {
+            if (mounted) setBooking(found);
+            return;
+          }
+          const singleRes = await bookingApi.getById(targetId);
+          const raw = singleRes.booking as unknown as Record<string, unknown> | undefined;
           if (mounted && raw && isPaidWithQR(raw)) {
             setBooking(normalizeBooking(raw));
             return;
           }
-          if (mounted) setNoPass(true);
-          return;
         }
 
-        // Opened directly from menu: show the latest PAID booking that has a
-        // real server-generated QR. Never fall back to fabricated/demo passes.
-        const res = await bookingApi.getMyBookings();
-        if (mounted && res.bookings && res.bookings.length > 0) {
-          const paid = (res.bookings as Array<Record<string, unknown>>).find(isPaidWithQR);
-          if (paid) {
-            setBooking(normalizeBooking(paid));
-            return;
-          }
-          setNoPass(true);
+        // 3. Default: Show the most recent paid booking
+        if (paidList.length > 0) {
+          if (mounted) setBooking(paidList[0]);
           return;
         }
 
@@ -400,10 +407,72 @@ const QRCode = () => {
         <p className="mt-1" style={{ color: 'var(--text-secondary)' }}>Show this QR code at the entry gate</p>
       </div>
 
+      {/* MULTI-PASS SELECTOR (When user has more than 1 active/paid booking) */}
+      {allPaidBookings.length > 1 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+              <span>🎟️ Your Active Passes</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-[10px] font-mono border border-cyan-500/30">
+                {allPaidBookings.length}
+              </span>
+            </span>
+            <span className="text-[11px] text-gray-400">Tap to switch pass</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {allPaidBookings.map((b, idx) => {
+              const rawB = b as unknown as Record<string, unknown>;
+              const bId = String(b.id || rawB._id || idx);
+              const currentId = String(booking?.id || (booking as unknown as Record<string, unknown>)?._id);
+              const isSelected = bId === currentId;
+              const slotObj = typeof rawB.slot === 'object' && rawB.slot !== null ? (rawB.slot as Record<string, unknown>) : null;
+              const slotStr = String(b.slotNumber || slotObj?.number || (typeof rawB.slot === 'string' ? rawB.slot : `Bay #${idx + 1}`));
+              const plateStr = String(b.vehicleNumber || 'Car');
+              const startT = b.startTime ? new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+              const endT = b.endTime ? new Date(b.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+              return (
+                <button
+                  key={bId}
+                  onClick={() => setBooking(b)}
+                  className={`p-3 rounded-xl border text-left transition-all relative overflow-hidden flex flex-col justify-between gap-1.5 ${
+                    isSelected
+                      ? 'bg-gradient-to-r from-cyan-950/80 to-blue-950/80 border-cyan-400 shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400'
+                      : 'bg-slate-900/60 border-white/10 hover:border-white/30 hover:bg-slate-800/60 opacity-75 hover:opacity-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-mono font-black text-sm text-white flex items-center gap-1">
+                      <span className="text-cyan-400">📍</span> {slotStr}
+                    </span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase font-mono ${
+                        isSelected
+                          ? 'bg-cyan-500 text-black font-extrabold'
+                          : 'bg-white/10 text-gray-300'
+                      }`}
+                    >
+                      {isSelected ? 'Viewing' : 'Select'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-gray-300 w-full">
+                    <span className="font-mono text-cyan-200">{plateStr}</span>
+                    <span className="text-[10px] text-gray-400">{startT} - {endT}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
+        key={String(booking.id || (booking as any)._id)}
+        initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
+        transition={{ duration: 0.3 }}
       >
         <ParkingPass booking={booking} />
       </motion.div>

@@ -381,6 +381,19 @@ const BookParking = () => {
   const [newVehicleCategory, setNewVehicleCategory] = useState<VehicleCategory>('four-wheeler');
   const [localVehicles, setLocalVehicles] = useState<GarageVehicleItem[]>([]);
 
+  // Auto-populate vehicle number and category as soon as user profile is available
+  useEffect(() => {
+    if (user?.vehicleNumber) {
+      const pPlate = formatIndianLicensePlate(user.vehicleNumber);
+      if (pPlate) {
+        setVehicleNumber((curr) => (!curr ? pPlate : curr));
+      }
+    }
+    if (user?.vehicleType && !locationState?.category) {
+      setCategory(mapVehicleTypeToCategory(user.vehicleType));
+    }
+  }, [user?.vehicleNumber, user?.vehicleType, locationState?.category]);
+
   // Fetch freshest user profile & garage vehicles on page mount
   useEffect(() => {
     if (token) {
@@ -402,7 +415,7 @@ const BookParking = () => {
             }
             if (res.user.vehicleNumber) {
               const formattedRegPlate = formatIndianLicensePlate(String(res.user.vehicleNumber));
-              setVehicleNumber((curr) => (!curr || curr === formattedRegPlate ? formattedRegPlate : curr));
+              setVehicleNumber((curr) => (!curr ? formattedRegPlate : curr));
             }
             if (res.user.vehicleType && !locationState?.category) {
               setCategory(mapVehicleTypeToCategory(String(res.user.vehicleType)));
