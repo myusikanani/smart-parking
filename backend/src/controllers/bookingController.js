@@ -352,8 +352,10 @@ exports.emailBookingQR = async (req, res) => {
     }
 
     const sent = await sendQREmail(userEmail, {
+      userName: booking.user?.name || 'Valued Driver',
       vehicleNumber: booking.vehicleNumber,
       slotNumber: booking.slot?.number || 'A-01',
+      floor: booking.slot?.floor || 1,
       endTime: booking.endTime ? new Date(booking.endTime).toLocaleString() : '',
       amount: booking.amount,
       qrDataUrl: booking.qrCode

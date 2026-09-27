@@ -1530,7 +1530,11 @@ const BookParking = () => {
                 <p className="text-base font-bold text-white flex items-center gap-2">
                   <span className="text-cyan-400">🅿️ Bay #{selectedSlot?.number || 'C1A'}</span>
                   <span className="text-gray-400 font-normal text-xs">
-                    (Floor {selectedSlot?.floor || 1}) &bull; ₹{hourlyRate}/hr &bull; Total: <span className="text-emerald-400 font-bold">₹{totalPrice}</span>
+                    (Floor {selectedSlot?.floor || 1}) &bull; {selectedHours >= 24 ? (
+                      <>Flat Day Pass ({selectedHours}h)</>
+                    ) : (
+                      <>₹{hourlyRate}/hr &times; {selectedHours} {selectedHours === 1 ? 'hr' : 'hrs'}</>
+                    )} &bull; Total: <span className="text-emerald-400 font-bold">₹{totalPrice}</span>
                   </span>
                 </p>
               </div>
@@ -1539,9 +1543,9 @@ const BookParking = () => {
                 <button
                   type="button"
                   onClick={() => setCurrentStep(1)}
-                  className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-bold transition"
+                  className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-bold transition flex items-center gap-1.5"
                 >
-                  Change Time
+                  <span>⏱️ Change Time ({selectedHours}h)</span>
                 </button>
                 <button
                   type="button"
@@ -1658,14 +1662,20 @@ const BookParking = () => {
                 </div>
 
                 <div className="flex justify-between py-2 border-b border-white/5">
-                  <span className="text-gray-400">Hourly Rate</span>
-                  <span className="font-mono text-gray-200">₹{hourlyRate.toFixed(2)} / hr</span>
+                  <span className="text-gray-400">Rate Plan</span>
+                  <span className="font-mono text-gray-200">
+                    {selectedHours >= 24
+                      ? `₹${dailyRate.toFixed(2)} / Day Pass (24h)`
+                      : `₹${hourlyRate.toFixed(2)}/hr × ${selectedHours} ${selectedHours === 1 ? 'hr' : 'hrs'}`}
+                  </span>
                 </div>
 
                 {/* Total Calculation */}
                 <div className="flex items-center justify-between pt-3">
                   <div>
-                    <p className="text-xs text-gray-400">Total Payable Amount</p>
+                    <p className="text-xs text-gray-400">
+                      Total Payable Amount {selectedHours < 24 ? `(₹${hourlyRate} × ${selectedHours}h)` : `(Flat Day Pass)`}
+                    </p>
                     <p className="text-3xl font-black neon-text-cyan">₹{totalPrice}</p>
                   </div>
                   <div className="text-right">

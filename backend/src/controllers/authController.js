@@ -4,7 +4,7 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
-const { send2FAEmailCode, sendResetPasswordEmail } = require('../utils/emailService');
+const { send2FAEmailCode, sendResetPasswordEmail, sendWelcomeEmail } = require('../utils/emailService');
 const { logAudit } = require('../utils/auditLogger');
 
 // Indian RTO License Plate Format Validator (Requires full 4-digit suffix e.g. GJ-01-AB-1234 or GJ-05-FJ-0788)
@@ -89,6 +89,13 @@ const registerUser = async (req, res) => {
       message: `Welcome ${user.name}! Your primary vehicle ${cleanPlate || 'plate'} (${cleanVehicleType}) has been verified.`,
       type: 'info'
     });
+
+    // Send Welcome Email to newly registered user
+    sendWelcomeEmail(user.email, {
+      name: user.name,
+      vehicleNumber: cleanPlate,
+      vehicleType: cleanVehicleType
+    }).catch((err) => console.error('Failed to send welcome email:', err.message));
 
     res.status(201).json({
       success: true,
@@ -813,7 +820,7 @@ const forgotPassword = async (req, res) => {
     user.resetPasswordExpire = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
     await user.save();
 
-    await sendResetPasswordEmail(user.email, rawToken, resetCode);
+    await sendResetPasswordEmail(user.email, rawToken, resetCode, user.name);
 
     await logAudit(req, {
       user: user.name || user.email,

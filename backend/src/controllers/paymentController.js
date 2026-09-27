@@ -282,10 +282,13 @@ exports.verifyPayment = async (req, res) => {
 
       if (booking.user && booking.user.email) {
         sendBookingEmail(booking.user.email, {
+          userName: booking.user.name || 'Valued Guest',
           vehicleNumber: booking.vehicleNumber,
           slotNumber: booking.slot?.number || 'A-01',
-          amount: booking.amount
-        }).catch(err => console.error('Email error:', err));
+          floor: booking.slot?.floor || 1,
+          amount: booking.amount,
+          qrDataUrl: booking.qrCode
+        }).catch(err => console.error('Email error:', err.message));
       }
 
       emitBookingUpdate({ bookingId: booking._id, status: 'confirmed' });
