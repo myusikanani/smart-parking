@@ -1,4 +1,44 @@
 import { Link } from 'react-router-dom';
+import { FaInstagram, FaFacebookF, FaLinkedinIn, FaXTwitter, FaGithub, FaYoutube } from 'react-icons/fa6';
+
+const socialLinks = [
+  {
+    name: 'Instagram',
+    url: 'https://instagram.com',
+    icon: FaInstagram,
+    hoverClass: 'hover:bg-gradient-to-tr hover:from-amber-500 hover:via-pink-500 hover:to-purple-600 hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(236,72,153,0.6)]',
+  },
+  {
+    name: 'Facebook',
+    url: 'https://facebook.com',
+    icon: FaFacebookF,
+    hoverClass: 'hover:bg-[#1877F2] hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(24,119,242,0.6)]',
+  },
+  {
+    name: 'LinkedIn',
+    url: 'https://linkedin.com',
+    icon: FaLinkedinIn,
+    hoverClass: 'hover:bg-[#0A66C2] hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(10,102,194,0.6)]',
+  },
+  {
+    name: 'X (Twitter)',
+    url: 'https://x.com',
+    icon: FaXTwitter,
+    hoverClass: 'hover:bg-slate-900 dark:hover:bg-white hover:text-white dark:hover:text-black hover:border-transparent hover:shadow-[0_0_18px_rgba(6,182,212,0.5)]',
+  },
+  {
+    name: 'GitHub',
+    url: 'https://github.com/myusikanani/smart-parking',
+    icon: FaGithub,
+    hoverClass: 'hover:bg-slate-800 hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(148,163,184,0.5)]',
+  },
+  {
+    name: 'YouTube',
+    url: 'https://youtube.com',
+    icon: FaYoutube,
+    hoverClass: 'hover:bg-[#FF0000] hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(255,0,0,0.6)]',
+  },
+];
 
 const footerNavs = [
   {
@@ -43,9 +83,35 @@ const Footer = () => (
           <p className="text-xs text-slate-500 dark:text-gray-400 max-w-sm mb-4 font-sans leading-relaxed">
             Autonomous Ecosystem Platforms. Next-generation smart parking infrastructure powered by real-time IoT sensors and 3D navigation.
           </p>
-          <div className="flex items-center gap-2.5 text-xs text-emerald-600 dark:text-emerald-400 font-mono">
+          
+          <div className="flex items-center gap-2.5 text-xs text-emerald-600 dark:text-emerald-400 font-mono mb-5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
             <span>All Systems Operational • 99.98% Uptime</span>
+          </div>
+
+          {/* SOCIAL MEDIA CHANNELS */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-gray-300 font-space">
+              Connect With Us:
+            </p>
+            <div className="flex flex-wrap items-center gap-2.5">
+              {socialLinks.map((social) => {
+                const Icon = social.icon;
+                return (
+                  <a
+                    key={social.name}
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Visit our ${social.name} page`}
+                    title={`Visit ParkEase on ${social.name}`}
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center border border-slate-300 dark:border-white/10 bg-white/70 dark:bg-slate-900/80 text-slate-600 dark:text-gray-300 transition-all duration-300 hover:scale-110 active:scale-95 shadow-sm ${social.hoverClass}`}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </a>
+                );
+              })}
+            </div>
           </div>
         </div>
 
