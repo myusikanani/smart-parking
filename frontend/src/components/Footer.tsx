@@ -6,43 +6,43 @@ const socialLinks = [
     name: 'Instagram',
     url: 'https://instagram.com',
     icon: FaInstagram,
-    hoverClass: 'hover:bg-gradient-to-tr hover:from-amber-500 hover:via-pink-500 hover:to-purple-600 hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(236,72,153,0.6)]',
+    className: 'bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white border-pink-400/40 shadow-[0_4px_14px_rgba(220,39,67,0.35)] hover:shadow-[0_6px_22px_rgba(220,39,67,0.65)] hover:brightness-110',
   },
   {
     name: 'Facebook',
     url: 'https://facebook.com',
     icon: FaFacebookF,
-    hoverClass: 'hover:bg-[#1877F2] hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(24,119,242,0.6)]',
+    className: 'bg-gradient-to-tr from-[#1877F2] to-[#0c63d4] text-white border-blue-400/40 shadow-[0_4px_14px_rgba(24,119,242,0.35)] hover:shadow-[0_6px_22px_rgba(24,119,242,0.65)] hover:brightness-110',
   },
   {
     name: 'LinkedIn',
     url: 'https://linkedin.com',
     icon: FaLinkedinIn,
-    hoverClass: 'hover:bg-[#0A66C2] hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(10,102,194,0.6)]',
+    className: 'bg-gradient-to-tr from-[#0077B5] to-[#0A66C2] text-white border-sky-400/40 shadow-[0_4px_14px_rgba(10,102,194,0.35)] hover:shadow-[0_6px_22px_rgba(10,102,194,0.65)] hover:brightness-110',
   },
   {
     name: 'WhatsApp',
     url: 'https://wa.me/919876543210?text=Hello%20ParkEase%20Support',
     icon: FaWhatsapp,
-    hoverClass: 'hover:bg-[#25D366] hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(37,211,102,0.6)]',
+    className: 'bg-gradient-to-tr from-[#25D366] to-[#128C7E] text-white border-emerald-400/40 shadow-[0_4px_14px_rgba(37,211,102,0.35)] hover:shadow-[0_6px_22px_rgba(37,211,102,0.65)] hover:brightness-110',
   },
   {
     name: 'X (Twitter)',
     url: 'https://x.com',
     icon: FaXTwitter,
-    hoverClass: 'hover:bg-slate-900 dark:hover:bg-white hover:text-white dark:hover:text-black hover:border-transparent hover:shadow-[0_0_18px_rgba(6,182,212,0.5)]',
+    className: 'bg-gradient-to-tr from-[#000000] to-[#1e293b] text-white border-slate-700/60 dark:border-white/20 shadow-[0_4px_14px_rgba(15,23,42,0.45)] hover:shadow-[0_6px_22px_rgba(15,23,42,0.75)] hover:brightness-110',
   },
   {
     name: 'YouTube',
     url: 'https://youtube.com',
     icon: FaYoutube,
-    hoverClass: 'hover:bg-[#FF0000] hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(255,0,0,0.6)]',
+    className: 'bg-gradient-to-tr from-[#FF0000] to-[#b30000] text-white border-red-400/40 shadow-[0_4px_14px_rgba(255,0,0,0.35)] hover:shadow-[0_6px_22px_rgba(255,0,0,0.65)] hover:brightness-110',
   },
   {
     name: 'GitHub',
     url: 'https://github.com/myusikanani/smart-parking',
     icon: FaGithub,
-    hoverClass: 'hover:bg-slate-800 hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(148,163,184,0.5)]',
+    className: 'bg-gradient-to-tr from-[#24292e] to-[#0d1117] text-white border-slate-700/60 dark:border-white/20 shadow-[0_4px_14px_rgba(13,17,23,0.45)] hover:shadow-[0_6px_22px_rgba(100,116,139,0.65)] hover:brightness-110',
   },
 ];
 
@@ -111,9 +111,9 @@ const Footer = () => (
                     rel="noopener noreferrer"
                     aria-label={`Visit our ${social.name} page`}
                     title={`Visit ParkEase on ${social.name}`}
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center border border-slate-300 dark:border-white/10 bg-white/70 dark:bg-slate-900/80 text-slate-600 dark:text-gray-300 transition-all duration-300 hover:scale-110 active:scale-95 shadow-sm ${social.hoverClass}`}
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-all duration-300 hover:scale-115 hover:-translate-y-1 active:scale-95 cursor-pointer ${social.className}`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-4 h-4 text-white" />
                   </a>
                 );
               })}
