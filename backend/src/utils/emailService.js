@@ -66,11 +66,11 @@ const sendBookingEmail = async (userEmail, bookingDetails) => {
   }
 
   try {
-    const sender = process.env.SMTP_USER || process.env.EMAIL_USER || 'noreply@parksmart.com';
+    const sender = process.env.SMTP_USER || process.env.EMAIL_USER || 'noreply@parkease.com';
     await transporter.sendMail({
-      from: `"ParkSmart System" <${sender}>`,
+      from: `"ParkEase Bookings & Billing" <${sender}>`,
       to: userEmail,
-      subject: `Booking Confirmed (Slot ${bookingDetails.slotNumber}) - ParkSmart`,
+      subject: `Booking Confirmed (Slot ${bookingDetails.slotNumber}) - ParkEase`,
       html
     });
     return true;
@@ -84,7 +84,7 @@ const send2FAAlertEmail = async (userEmail, action) => {
   const transporter = createTransporter();
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #0b132b; color: #f8fafc; border-radius: 12px; border: 1px solid #1e293b;">
-      <h2 style="color: #06b6d4; margin-top: 0;">Security Alert: 2FA Update</h2>
+      <h2 style="color: #06b6d4; margin-top: 0;">ParkEase Security Alert: 2FA Update</h2>
       <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">
         A Two-Factor Authentication action occurred on your account: <strong>${action}</strong>.
       </p>
@@ -101,11 +101,11 @@ const send2FAAlertEmail = async (userEmail, action) => {
   }
 
   try {
-    const sender = process.env.SMTP_USER || process.env.EMAIL_USER || 'security@parksmart.com';
+    const sender = process.env.SMTP_USER || process.env.EMAIL_USER || 'security@parkease.com';
     await transporter.sendMail({
-      from: `"ParkSmart Security" <${sender}>`,
+      from: `"ParkEase Security Shield" <${sender}>`,
       to: userEmail,
-      subject: 'Security Alert: Two-Factor Authentication Action - ParkSmart',
+      subject: 'Security Alert: Two-Factor Authentication Action - ParkEase',
       html
     });
     return true;
@@ -120,9 +120,9 @@ const send2FAEmailCode = async (userEmail, code) => {
   const transporter = createTransporter();
   const html = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 550px; margin: 0 auto; padding: 25px; background: #0b132b; color: #e2e8f0; border-radius: 16px; border: 1px solid #1e293b; text-align: center;">
-      <h2 style="color: #06b6d4; margin-top: 0; font-size: 22px;">ParkSmart Verification Code</h2>
+      <h2 style="color: #06b6d4; margin-top: 0; font-size: 22px;">ParkEase Verification Code</h2>
       <p style="font-size: 14px; line-height: 1.6; color: #94a3b8; text-align: left;">
-        You requested a 2FA one-time verification code to sign in to your ParkSmart account:
+        You requested a 2FA one-time verification code to sign in to your ParkEase account:
       </p>
       
       <div style="margin: 25px 0;">
@@ -144,11 +144,11 @@ const send2FAEmailCode = async (userEmail, code) => {
   }
 
   try {
-    const sender = process.env.SMTP_USER || process.env.EMAIL_USER || 'security@parksmart.com';
+    const sender = process.env.SMTP_USER || process.env.EMAIL_USER || 'security@parkease.com';
     await transporter.sendMail({
-      from: `"ParkSmart Security" <${sender}>`,
+      from: `"ParkEase Security Shield" <${sender}>`,
       to: userEmail,
-      subject: `${code} is your ParkSmart Verification Code`,
+      subject: `${code} is your ParkEase Verification Code`,
       html
     });
     return true;
@@ -164,7 +164,7 @@ const sendQREmail = async (userEmail, bookingDetails) => {
   const html = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #0b132b; color: #f8fafc; border-radius: 16px; border: 1px solid #1e293b;">
       <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="color: #06b6d4; margin: 0; font-size: 22px;">Your ParkSmart Entry QR Pass</h2>
+        <h2 style="color: #06b6d4; margin: 0; font-size: 22px;">Your ParkEase Entry QR Pass</h2>
         <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Present this digital pass at the entrance scanner gate</p>
       </div>
 
@@ -194,7 +194,7 @@ const sendQREmail = async (userEmail, bookingDetails) => {
       </table>
 
       <p style="margin-top: 20px; font-size: 12px; color: #64748b; text-align: center; border-top: 1px solid #1e293b; padding-top: 14px;">
-        ParkSmart Automated Gate Access • 24/7 Security System
+        ParkEase Automated Gate Access • 24/7 Security System
       </p>
     </div>
   `;
@@ -205,11 +205,11 @@ const sendQREmail = async (userEmail, bookingDetails) => {
   }
 
   try {
-    const sender = process.env.SMTP_USER || process.env.EMAIL_USER || 'noreply@parksmart.com';
+    const sender = process.env.SMTP_USER || process.env.EMAIL_USER || 'noreply@parkease.com';
     await transporter.sendMail({
-      from: `"ParkSmart Gate Access" <${sender}>`,
+      from: `"ParkEase Digital Passes" <${sender}>`,
       to: userEmail,
-      subject: `Your Parking Entry Pass (Slot ${bookingDetails.slotNumber}) - ParkSmart`,
+      subject: `Your Parking Entry Pass (Slot ${bookingDetails.slotNumber}) - ParkEase`,
       html,
       attachments: bookingDetails.qrDataUrl
         ? [{ filename: 'parking-qr-pass.png', path: bookingDetails.qrDataUrl, cid: 'qrcode' }]
@@ -228,7 +228,7 @@ const sendResetPasswordEmail = async (userEmail, resetToken, resetCode) => {
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; background: #0b132b; color: #e2e8f0; border-radius: 12px; border: 1px solid #1e293b;">
-      <h2 style="color: #06b6d4; margin-top: 0;">ParkSmart Password Recovery</h2>
+      <h2 style="color: #06b6d4; margin-top: 0;">ParkEase Password Recovery</h2>
       <p style="font-size: 15px; line-height: 1.6; color: #94a3b8;">
         We received a request to reset your password. You can reset your password using the verification code below or by clicking the direct reset link:
       </p>
@@ -260,11 +260,11 @@ const sendResetPasswordEmail = async (userEmail, resetToken, resetCode) => {
   }
 
   try {
-    const sender = process.env.SMTP_USER || process.env.EMAIL_USER || 'security@parksmart.com';
+    const sender = process.env.SMTP_USER || process.env.EMAIL_USER || 'security@parkease.com';
     await transporter.sendMail({
-      from: `"ParkSmart Security" <${sender}>`,
+      from: `"ParkEase Account Recovery" <${sender}>`,
       to: userEmail,
-      subject: 'Password Reset Request - ParkSmart',
+      subject: 'Password Reset Request - ParkEase',
       html
     });
     return true;
