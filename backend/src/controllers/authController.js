@@ -7,6 +7,17 @@ const QRCode = require('qrcode');
 const { send2FAEmailCode, sendResetPasswordEmail } = require('../utils/emailService');
 const { logAudit } = require('../utils/auditLogger');
 
+// Indian RTO License Plate Format Validator (Requires full 4-digit suffix e.g. GJ-01-AB-1234 or GJ-05-FJ-0788)
+const isValidIndianPlate = (plate) => {
+  if (!plate || typeof plate !== 'string') return false;
+  const clean = plate.trim().toUpperCase();
+  const standardPattern = /^[A-Z]{2}-\d{2}(-[A-Z]{1,2})?-\d{4}$/;
+  const bhPattern = /^\d{2}-BH-\d{4}-[A-Z]{1,2}$/;
+  const unhyphenatedStandard = /^[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}$/;
+  const unhyphenatedBH = /^\d{2}BH\d{4}[A-Z]{1,2}$/;
+  return standardPattern.test(clean) || bhPattern.test(clean) || unhyphenatedStandard.test(clean) || unhyphenatedBH.test(clean);
+};
+
 const registerUser = async (req, res) => {
   const { name, email, phone, password, vehicleNumber, vehicleType } = req.body;
 
@@ -33,6 +44,13 @@ const registerUser = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Vehicle license plate number is required for user registration.'
+      });
+    }
+
+    if (userRole === 'user' && cleanPlate && !isValidIndianPlate(cleanPlate)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid license plate format. Plate must end with 4 digits (e.g. GJ-01-AB-1234 or GJ-05-FJ-0788).'
       });
     }
 
@@ -675,6 +693,13 @@ const updateProfile = async (req, res) => {
     }
 
     if (newPlate) {
+      if (!isValidIndianPlate(newPlate)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid license plate format. Plate must end with 4 digits (e.g. GJ-01-AB-1234 or GJ-05-FJ-0788).'
+        });
+      }
+
       const primaryClean = (user.vehicleNumber || '').trim().toUpperCase();
       // 1. Check if plate is already user's primary vehicle
       if (primaryClean === newPlate) {
@@ -724,6 +749,12 @@ const updateProfile = async (req, res) => {
       }
     } else if (vehicleNumber !== undefined && !addVehicle) {
       const cleanPrimary = String(vehicleNumber).trim().toUpperCase();
+      if (cleanPrimary && !isValidIndianPlate(cleanPrimary)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid license plate format. Plate must end with 4 digits (e.g. GJ-01-AB-1234 or GJ-05-FJ-0788).'
+        });
+      }
       user.vehicleNumber = cleanPrimary;
       if (vehicleType && ['4-wheeler', '2-wheeler', 'ev', 'accessible'].includes(vehicleType)) {
         user.vehicleType = vehicleType;

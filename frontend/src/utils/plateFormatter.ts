@@ -84,7 +84,16 @@ export function formatIndianLicensePlate(raw: string): string {
 
 export function isValidIndianLicensePlate(plate: string): boolean {
   if (!plate) return false;
-  return /^[A-Z]{2}-\d{2}-[A-Z]{1,2}-\d{4}$/.test(plate.trim().toUpperCase());
+  const clean = plate.trim().toUpperCase();
+  // Standard format (e.g., GJ-01-AB-1234 or GJ-01-A-1234 or MH-02-1234) - MUST end with exactly 4 digits!
+  const standardPattern = /^[A-Z]{2}-\d{2}(-[A-Z]{1,2})?-\d{4}$/;
+  // Bharat Series (e.g., 22-BH-1234-AA)
+  const bhPattern = /^\d{2}-BH-\d{4}-[A-Z]{1,2}$/;
+  // Unhyphenated
+  const unhyphenatedStandard = /^[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}$/;
+  const unhyphenatedBH = /^\d{2}BH\d{4}[A-Z]{1,2}$/;
+
+  return standardPattern.test(clean) || bhPattern.test(clean) || unhyphenatedStandard.test(clean) || unhyphenatedBH.test(clean);
 }
 
 /**

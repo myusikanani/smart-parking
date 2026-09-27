@@ -504,9 +504,9 @@ const BookParking = () => {
 
   const handleAddNewVehicle = async () => {
     const cleanPlate = formatIndianLicensePlate(newPlateInput.trim());
-    if (!cleanPlate || cleanPlate.length < 8) {
-      toast('Please enter a valid Indian license plate number (e.g. GJ-01-AB-1234)', 'error');
-      setAddVehicleMsg({ type: 'error', text: 'Please enter a valid Indian license plate (e.g. GJ-01-AB-1234).' });
+    if (!cleanPlate || !isValidIndianLicensePlate(cleanPlate)) {
+      toast('Invalid vehicle number! Indian license plates must end with 4 digits (e.g. GJ-01-AB-1234 or GJ-05-FJ-0788).', 'error');
+      setAddVehicleMsg({ type: 'error', text: 'Invalid plate format. Plate must end with 4 digits (e.g. GJ-01-AB-1234 or GJ-05-FJ-0788).' });
       return;
     }
 
@@ -1189,19 +1189,17 @@ const BookParking = () => {
                                     ✓ Selected
                                   </span>
                                 ) : null}
-                                {!veh.isPrimary && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleRemoveGarageVehicle(veh.plate);
-                                    }}
-                                    className="text-gray-500 hover:text-red-400 text-xs p-0.5 transition"
-                                    title="Remove vehicle"
-                                  >
-                                    ✕
-                                  </button>
-                                )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveGarageVehicle(veh.plate);
+                                  }}
+                                  className="text-gray-400 hover:text-red-400 hover:bg-red-500/20 px-1.5 py-0.5 rounded text-xs transition cursor-pointer"
+                                  title="Remove vehicle from garage"
+                                >
+                                  ✕
+                                </button>
                               </div>
                             </div>
                             <p className="font-mono font-black text-white text-base tracking-wider">{veh.plate}</p>
