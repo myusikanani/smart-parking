@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FaInstagram, FaFacebookF, FaLinkedinIn, FaXTwitter, FaGithub, FaYoutube } from 'react-icons/fa6';
+import { FaInstagram, FaFacebookF, FaLinkedinIn, FaXTwitter, FaGithub, FaYoutube, FaWhatsapp } from 'react-icons/fa6';
 
 const socialLinks = [
   {
@@ -21,22 +21,28 @@ const socialLinks = [
     hoverClass: 'hover:bg-[#0A66C2] hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(10,102,194,0.6)]',
   },
   {
+    name: 'WhatsApp',
+    url: 'https://wa.me/919876543210?text=Hello%20ParkEase%20Support',
+    icon: FaWhatsapp,
+    hoverClass: 'hover:bg-[#25D366] hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(37,211,102,0.6)]',
+  },
+  {
     name: 'X (Twitter)',
     url: 'https://x.com',
     icon: FaXTwitter,
     hoverClass: 'hover:bg-slate-900 dark:hover:bg-white hover:text-white dark:hover:text-black hover:border-transparent hover:shadow-[0_0_18px_rgba(6,182,212,0.5)]',
   },
   {
-    name: 'GitHub',
-    url: 'https://github.com/myusikanani/smart-parking',
-    icon: FaGithub,
-    hoverClass: 'hover:bg-slate-800 hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(148,163,184,0.5)]',
-  },
-  {
     name: 'YouTube',
     url: 'https://youtube.com',
     icon: FaYoutube,
     hoverClass: 'hover:bg-[#FF0000] hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(255,0,0,0.6)]',
+  },
+  {
+    name: 'GitHub',
+    url: 'https://github.com/myusikanani/smart-parking',
+    icon: FaGithub,
+    hoverClass: 'hover:bg-slate-800 hover:text-white hover:border-transparent hover:shadow-[0_0_18px_rgba(148,163,184,0.5)]',
   },
 ];
 
@@ -81,7 +87,7 @@ const Footer = () => (
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-gray-400 max-w-sm mb-4 font-sans leading-relaxed">
-            Autonomous Ecosystem Platforms. Next-generation smart parking infrastructure powered by real-time IoT sensors and 3D navigation.
+            Smart, simple, and hassle-free parking management. Real-time slot availability, instant digital passes, and 3D parking navigation.
           </p>
           
           <div className="flex items-center gap-2.5 text-xs text-emerald-600 dark:text-emerald-400 font-mono mb-5">
