@@ -6,43 +6,50 @@ const socialLinks = [
     name: 'Instagram',
     url: 'https://instagram.com',
     icon: FaInstagram,
-    className: 'bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white border-pink-400/40 shadow-[0_4px_14px_rgba(220,39,67,0.35)] hover:shadow-[0_6px_22px_rgba(220,39,67,0.65)] hover:brightness-110',
+    defaultClass: 'bg-white/80 dark:bg-slate-900/80 text-[#E1306C] border-pink-500/20 shadow-sm',
+    hoverClass: 'hover:bg-gradient-to-tr hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888] hover:text-white hover:border-transparent hover:shadow-[0_0_22px_rgba(225,48,108,0.7)]',
   },
   {
     name: 'Facebook',
     url: 'https://facebook.com',
     icon: FaFacebookF,
-    className: 'bg-gradient-to-tr from-[#1877F2] to-[#0c63d4] text-white border-blue-400/40 shadow-[0_4px_14px_rgba(24,119,242,0.35)] hover:shadow-[0_6px_22px_rgba(24,119,242,0.65)] hover:brightness-110',
+    defaultClass: 'bg-white/80 dark:bg-slate-900/80 text-[#1877F2] border-blue-500/20 shadow-sm',
+    hoverClass: 'hover:bg-gradient-to-tr hover:from-[#1877F2] hover:to-[#0c63d4] hover:text-white hover:border-transparent hover:shadow-[0_0_22px_rgba(24,119,242,0.7)]',
   },
   {
     name: 'LinkedIn',
     url: 'https://linkedin.com',
     icon: FaLinkedinIn,
-    className: 'bg-gradient-to-tr from-[#0077B5] to-[#0A66C2] text-white border-sky-400/40 shadow-[0_4px_14px_rgba(10,102,194,0.35)] hover:shadow-[0_6px_22px_rgba(10,102,194,0.65)] hover:brightness-110',
+    defaultClass: 'bg-white/80 dark:bg-slate-900/80 text-[#0A66C2] border-sky-500/20 shadow-sm',
+    hoverClass: 'hover:bg-gradient-to-tr hover:from-[#0077B5] hover:to-[#0A66C2] hover:text-white hover:border-transparent hover:shadow-[0_0_22px_rgba(10,102,194,0.7)]',
   },
   {
     name: 'WhatsApp',
     url: 'https://wa.me/919876543210?text=Hello%20ParkEase%20Support',
     icon: FaWhatsapp,
-    className: 'bg-gradient-to-tr from-[#25D366] to-[#128C7E] text-white border-emerald-400/40 shadow-[0_4px_14px_rgba(37,211,102,0.35)] hover:shadow-[0_6px_22px_rgba(37,211,102,0.65)] hover:brightness-110',
+    defaultClass: 'bg-white/80 dark:bg-slate-900/80 text-[#25D366] border-emerald-500/20 shadow-sm',
+    hoverClass: 'hover:bg-gradient-to-tr hover:from-[#25D366] hover:to-[#128C7E] hover:text-white hover:border-transparent hover:shadow-[0_0_22px_rgba(37,211,102,0.7)]',
   },
   {
     name: 'X (Twitter)',
     url: 'https://x.com',
     icon: FaXTwitter,
-    className: 'bg-gradient-to-tr from-[#000000] to-[#1e293b] text-white border-slate-700/60 dark:border-white/20 shadow-[0_4px_14px_rgba(15,23,42,0.45)] hover:shadow-[0_6px_22px_rgba(15,23,42,0.75)] hover:brightness-110',
+    defaultClass: 'bg-white/80 dark:bg-slate-900/80 text-slate-800 dark:text-white border-slate-400/20 shadow-sm',
+    hoverClass: 'hover:bg-gradient-to-tr hover:from-[#000000] hover:to-[#1e293b] hover:text-white hover:border-transparent hover:shadow-[0_0_22px_rgba(15,23,42,0.8)]',
   },
   {
     name: 'YouTube',
     url: 'https://youtube.com',
     icon: FaYoutube,
-    className: 'bg-gradient-to-tr from-[#FF0000] to-[#b30000] text-white border-red-400/40 shadow-[0_4px_14px_rgba(255,0,0,0.35)] hover:shadow-[0_6px_22px_rgba(255,0,0,0.65)] hover:brightness-110',
+    defaultClass: 'bg-white/80 dark:bg-slate-900/80 text-[#FF0000] border-red-500/20 shadow-sm',
+    hoverClass: 'hover:bg-gradient-to-tr hover:from-[#FF0000] hover:to-[#b30000] hover:text-white hover:border-transparent hover:shadow-[0_0_22px_rgba(255,0,0,0.7)]',
   },
   {
     name: 'GitHub',
     url: 'https://github.com/myusikanani/smart-parking',
     icon: FaGithub,
-    className: 'bg-gradient-to-tr from-[#24292e] to-[#0d1117] text-white border-slate-700/60 dark:border-white/20 shadow-[0_4px_14px_rgba(13,17,23,0.45)] hover:shadow-[0_6px_22px_rgba(100,116,139,0.65)] hover:brightness-110',
+    defaultClass: 'bg-white/80 dark:bg-slate-900/80 text-slate-800 dark:text-gray-200 border-slate-400/20 shadow-sm',
+    hoverClass: 'hover:bg-gradient-to-tr hover:from-[#24292e] hover:to-[#0d1117] hover:text-white hover:border-transparent hover:shadow-[0_0_22px_rgba(100,116,139,0.7)]',
   },
 ];
 
@@ -111,9 +118,9 @@ const Footer = () => (
                     rel="noopener noreferrer"
                     aria-label={`Visit our ${social.name} page`}
                     title={`Visit ParkEase on ${social.name}`}
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-all duration-300 hover:scale-115 hover:-translate-y-1 active:scale-95 cursor-pointer ${social.className}`}
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-all duration-300 hover:scale-115 hover:-translate-y-1 active:scale-95 cursor-pointer ${social.defaultClass} ${social.hoverClass}`}
                   >
-                    <Icon className="w-4 h-4 text-white" />
+                    <Icon className="w-4 h-4 transition-colors duration-300" />
                   </a>
                 );
               })}
