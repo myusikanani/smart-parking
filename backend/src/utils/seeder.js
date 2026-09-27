@@ -27,9 +27,12 @@ const seedAll = async () => {
   const admin2 = await User.create({
     name: 'Myusi Kanani',
     email: 'myusiudaynkanani@gmail.com',
-    phone: '9999999999',
+    phone: '6351000152',
     password: 'Myusi128',
     role: 'admin',
+    vehicleNumber: 'GJ-05-AB-1234',
+    vehicleType: '4-wheeler',
+    vehicles: [{ plate: 'GJ-05-AB-1234', type: '4-wheeler' }]
   });
 
   const security = await User.create({
@@ -46,6 +49,9 @@ const seedAll = async () => {
     phone: '7777777777',
     password: 'password123',
     role: 'user',
+    vehicleNumber: 'GJ-05-CD-5678',
+    vehicleType: '4-wheeler',
+    vehicles: [{ plate: 'GJ-05-CD-5678', type: '4-wheeler' }]
   });
 
   const user2 = await User.create({
@@ -54,6 +60,9 @@ const seedAll = async () => {
     phone: '9876543210',
     password: 'user123',
     role: 'user',
+    vehicleNumber: 'GJ-01-AB-1234',
+    vehicleType: '4-wheeler',
+    vehicles: [{ plate: 'GJ-01-AB-1234', type: '4-wheeler' }]
   });
 
   // --- SEED SURAT PARKING LOCATIONS & MALLS ---

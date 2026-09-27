@@ -33,6 +33,16 @@ const Profile = () => {
   const [savingPrimaryLoading, setSavingPrimaryLoading] = useState(false);
 
   useEffect(() => {
+    authApi.getMe()
+      .then((res) => {
+        if (res.user) {
+          updateUser(res.user as Partial<User>);
+        }
+      })
+      .catch(() => {});
+  }, [updateUser]);
+
+  useEffect(() => {
     if (user) {
       setName(user.name || '');
       setEmail(user.email || '');

@@ -570,8 +570,51 @@ const disableTwoFactor = async (req, res) => {
 };
 
 const getMe = async (req, res) => {
-  const user = await User.findById(req.user.id);
-  res.status(200).json({ success: true, user });
+  try {
+    const userId = req.user?._id || req.user?.id;
+    let user = userId ? await User.findById(userId) : req.user;
+    if (!user && req.user) user = req.user;
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Auto-sync vehicles array & primary vehicle
+    let vehiclesList = Array.isArray(user.vehicles) ? [...user.vehicles] : [];
+    let primaryNumber = user.vehicleNumber ? String(user.vehicleNumber).trim().toUpperCase() : '';
+    let primaryType = user.vehicleType || '4-wheeler';
+
+    if (primaryNumber) {
+      const existsInList = vehiclesList.some(v => (typeof v === 'object' && v !== null ? v.plate : v) === primaryNumber);
+      if (!existsInList) {
+        vehiclesList.unshift({ plate: primaryNumber, type: primaryType });
+      }
+    } else if (vehiclesList.length > 0) {
+      const first = vehiclesList[0];
+      primaryNumber = typeof first === 'object' && first !== null ? first.plate : String(first);
+      primaryType = typeof first === 'object' && first !== null && first.type ? first.type : '4-wheeler';
+      user.vehicleNumber = primaryNumber;
+      user.vehicleType = primaryType;
+      await user.save().catch(() => {});
+    }
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id || user.id,
+        _id: user._id || user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        vehicleNumber: primaryNumber,
+        vehicleType: primaryType,
+        vehicles: vehiclesList,
+        twoFactorEnabled: user.twoFactorEnabled
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 };
 
 const updateProfile = async (req, res) => {
