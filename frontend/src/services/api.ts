@@ -319,6 +319,9 @@ export const securityApi = {
       allowed: boolean;
       type: string;
       message: string;
+      alreadyInside?: boolean;
+      notEnteredYet?: boolean;
+      alreadyCompleted?: boolean;
       paymentRequired?: boolean;
       blacklisted?: boolean;
       blacklistDetails?: Record<string, unknown>;

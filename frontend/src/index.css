@@ -1456,5 +1456,40 @@ html:not(.dark) .cyber-btn-shimmer:hover {
   animation: radarSweep 8s linear infinite;
 }
 
+/* QR Camera Scanner Viewport Overrides */
+#qr-reader,
+#qr-scanner-viewport {
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+  overflow: hidden !important;
+  border-radius: 0.75rem !important;
+  background-color: #000000 !important;
+  border: none !important;
+}
+
+#qr-reader video,
+#qr-scanner-viewport video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 0.75rem !important;
+}
+
+#qr-reader__scan_region,
+#qr-scanner-viewport__scan_region {
+  background: transparent !important;
+}
+
+#qr-reader img,
+#qr-scanner-viewport img {
+  display: none !important;
+}
+
+#qr-reader__dashboard_section,
+#qr-scanner-viewport__dashboard_section {
+  display: none !important;
+}
+
 
 

@@ -55,6 +55,10 @@ interface ScanResult {
   blacklistDetails?: Record<string, unknown>;
   vehicleNumber?: string;
   unbookedVehicle?: boolean;
+  alreadyInside?: boolean;
+  notEnteredYet?: boolean;
+  alreadyCompleted?: boolean;
+  paymentRequired?: boolean;
 }
 
 // Web Audio API Beep & Siren Generator
@@ -103,7 +107,7 @@ const playBeep = (isSuccess: boolean, isBlacklisted: boolean = false) => {
 
 const QRScanner = () => {
   // Gate & Scan Modes
-  const [gateMode, setGateMode] = useState<'entry' | 'exit'>('entry');
+  const [gateMode, setGateMode] = useState<'auto' | 'entry' | 'exit'>('auto');
   const [scannerType, setScannerType] = useState<'qr' | 'plate_ocr'>('qr');
   const [bookingId, setBookingId] = useState('');
   const [scans, setScans] = useState<ScanRecord[]>([]);
@@ -124,7 +128,11 @@ const QRScanner = () => {
   const [scannerActive, setScannerActive] = useState(false);
   const [cameraPermissionError, setCameraPermissionError] = useState('');
   const [scannerStatus, setScannerStatus] = useState<'idle' | 'perm' | 'scanning' | 'detected'>('idle');
+  const [availableCameras, setAvailableCameras] = useState<Array<{ id: string; label: string }>>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const lastScannedTextRef = useRef<{ text: string; time: number }>({ text: '', time: 0 });
 
   // OCR Pipeline States & Refs
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -192,10 +200,10 @@ const QRScanner = () => {
     }
   };
 
-  // Start QR Camera Scanner
-  const startQRScanner = async () => {
+  // Start QR Camera Scanner with multi-camera fallback
+  const startQRScanner = async (cameraId?: string) => {
     setCameraPermissionError('');
-    if (!window.isSecureContext) {
+    if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
       setCameraPermissionError('Camera requires a secure connection. Open over HTTPS or localhost.');
       return;
     }
@@ -214,29 +222,78 @@ const QRScanner = () => {
           qrScannerRef.current = null;
         }
 
+        // Query available cameras to populate camera selector
+        try {
+          const devices = await Html5Qrcode.getCameras();
+          if (devices && devices.length > 0) {
+            setAvailableCameras(devices.map((d) => ({ id: d.id, label: d.label || `Camera ${d.id.slice(0, 5)}` })));
+            if (!selectedCameraId && !cameraId) {
+              setSelectedCameraId(devices[0].id);
+            }
+          }
+        } catch (camListErr) {
+          console.warn('Could not enumerate cameras:', camListErr);
+        }
+
         const html5QrCode = new Html5Qrcode('qr-scanner-viewport');
         qrScannerRef.current = html5QrCode;
         setScannerStatus('scanning');
 
-        await html5QrCode.start(
-          { facingMode: 'environment' },
-          {
-            fps: 12,
-            qrbox: (vw: number, vh: number) => {
-              const side = Math.min(260, Math.floor(Math.min(vw, vh) * 0.75));
-              return { width: side, height: side };
-            },
+        const scanConfig = {
+          fps: 15,
+          qrbox: (vw: number, vh: number) => {
+            const side = Math.min(280, Math.floor(Math.min(vw, vh) * 0.8));
+            return { width: side, height: side };
           },
-          (decodedText) => {
-            setScannerStatus('detected');
-            if (soundEnabled) playBeep(true);
-            stopScanner();
-            handleVerify(decodedText);
-          },
-          () => {
-            // Frame mismatch ignored
+          aspectRatio: 1.0,
+        };
+
+        const onScanSuccess = (decodedText: string) => {
+          const now = Date.now();
+          if (
+            lastScannedTextRef.current.text === decodedText &&
+            now - lastScannedTextRef.current.time < 2500
+          ) {
+            return;
           }
-        );
+          lastScannedTextRef.current = { text: decodedText, time: now };
+
+          setScannerStatus('detected');
+          if (soundEnabled) playBeep(true);
+          stopScanner();
+          handleVerify(decodedText);
+        };
+
+        const onScanFailure = () => {
+          // Frame mismatch ignored
+        };
+
+        const targetCam = cameraId || selectedCameraId;
+        if (targetCam) {
+          try {
+            await html5QrCode.start(targetCam, scanConfig, onScanSuccess, onScanFailure);
+            return;
+          } catch (camErr) {
+            console.warn('Starting with specific camera failed, trying fallback...', camErr);
+          }
+        }
+
+        // Try environment (rear) camera first
+        try {
+          await html5QrCode.start({ facingMode: 'environment' }, scanConfig, onScanSuccess, onScanFailure);
+        } catch (envErr) {
+          console.warn('Environment camera failed, falling back to front camera or default...', envErr);
+          try {
+            await html5QrCode.start({ facingMode: 'user' }, scanConfig, onScanSuccess, onScanFailure);
+          } catch (userErr) {
+            const cameras = await Html5Qrcode.getCameras();
+            if (cameras && cameras.length > 0) {
+              await html5QrCode.start(cameras[0].id, scanConfig, onScanSuccess, onScanFailure);
+            } else {
+              throw userErr;
+            }
+          }
+        }
       } catch (err: unknown) {
         console.error('QR Scanner error:', err);
         setScannerActive(false);
@@ -244,7 +301,7 @@ const QRScanner = () => {
         const msg = err instanceof Error ? err.message : String(err);
         setCameraPermissionError(
           msg.includes('NotAllowedError') || msg.includes('Permission')
-            ? 'Camera permission denied. Please enable permissions in your browser.'
+            ? 'Camera permission denied. Please enable permissions in your browser, or upload an image.'
             : 'Camera could not be started. Please ensure no other app is using the camera.'
         );
       }
@@ -263,13 +320,21 @@ const QRScanner = () => {
       setScannerStatus('perm');
       setScannerActive(true);
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        });
+      } catch (envErr) {
+        console.warn('Ideal environment stream failed, falling back to default video stream...', envErr);
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+      }
 
       activeMediaStreamRef.current = stream;
       const track = stream.getVideoTracks()[0];
@@ -428,11 +493,56 @@ const QRScanner = () => {
     }
   };
 
-  const startScanner = () => {
+  const startScanner = (cameraId?: string) => {
     if (scannerType === 'qr') {
-      startQRScanner();
+      startQRScanner(cameraId);
     } else {
       startPlateOcrScanner();
+    }
+  };
+
+  // Image / File Upload Scanning for Pass QR Code & License Plates
+  const handleScanImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setScanning(true);
+    setCameraPermissionError('');
+
+    try {
+      if (scannerType === 'qr') {
+        const html5QrCode = qrScannerRef.current || new Html5Qrcode('qr-scanner-viewport');
+        const decodedText = await html5QrCode.scanFile(file, true);
+        if (decodedText) {
+          if (soundEnabled) playBeep(true);
+          setBookingId(decodedText);
+          handleVerify(decodedText);
+        }
+      } else {
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = () => {
+          img.onload = async () => {
+            const recognized = await processImageForPlateOCR(
+              img,
+              img.naturalWidth || img.width,
+              img.naturalHeight || img.height,
+              true
+            );
+            if (!recognized) {
+              setCameraPermissionError('Could not clearly read the plate from image. Please enter manually.');
+            }
+          };
+          img.src = reader.result as string;
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (err) {
+      console.warn('File scan error:', err);
+      setCameraPermissionError('Could not decode QR code or plate from this image. Please try a clearer picture or enter manually.');
+    } finally {
+      setScanning(false);
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -462,15 +572,78 @@ const QRScanner = () => {
   };
 
   // Master Verification Handler (Processes QR Token or Vehicle License Plate)
-  const handleVerify = useCallback(async (manualToken?: string) => {
-    const token = (manualToken || bookingId).trim();
-    if (!token) return;
+  const handleVerify = useCallback(async (manualToken?: string, overrideMode?: 'auto' | 'entry' | 'exit') => {
+    const raw = (manualToken || bookingId).trim();
+    if (!raw) return;
+
+    const activeMode = overrideMode || gateMode;
+    if (overrideMode && overrideMode !== gateMode) {
+      setGateMode(overrideMode);
+    }
+
+    // Smart query normalization
+    let token = raw;
+
+    // 1. If query is a URL, extract the token / ID / booking parameter
+    if (token.startsWith('http://') || token.startsWith('https://')) {
+      try {
+        const parsedUrl = new URL(token);
+        const extracted =
+          parsedUrl.searchParams.get('qrToken') ||
+          parsedUrl.searchParams.get('token') ||
+          parsedUrl.searchParams.get('bookingId') ||
+          parsedUrl.searchParams.get('id') ||
+          parsedUrl.searchParams.get('data') ||
+          parsedUrl.searchParams.get('code') ||
+          parsedUrl.pathname.split('/').filter(Boolean).pop();
+        if (extracted) {
+          token = decodeURIComponent(extracted).trim();
+        }
+      } catch {
+        // keep token
+      }
+    }
+
+    // 2. If query is JSON string, extract the token / ID
+    if ((token.startsWith('{') && token.endsWith('}')) || (token.startsWith('[') && token.endsWith(']'))) {
+      try {
+        const parsed = JSON.parse(token);
+        if (typeof parsed === 'object' && parsed !== null) {
+          token = String(
+            parsed.qrToken ||
+            parsed.token ||
+            parsed.bookingId ||
+            parsed.id ||
+            parsed._id ||
+            parsed.vehicleNumber ||
+            token
+          ).trim();
+        }
+      } catch {
+        // keep token
+      }
+    }
+
+    // 3. Strip Pass ID prefix (e.g. "PASS ID: #ABC12345" or "#ABC12345")
+    if (/^PASS\s*ID\s*:\s*#?/i.test(token)) {
+      token = token.replace(/^PASS\s*ID\s*:\s*#?/i, '').trim();
+    } else if (token.startsWith('#')) {
+      token = token.slice(1).trim();
+    }
+
+    // 4. Do not uppercase dynamic tokens to keep HMAC hash case intact
+    if (!token.toUpperCase().startsWith('PS-DYN|')) {
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!UUID_RE.test(token)) {
+        token = token.toUpperCase();
+      }
+    }
 
     setScanning(true);
     setLastResult(null);
 
     try {
-      const res = await securityApi.scanQR(token, gateMode);
+      const res = await securityApi.scanQR(token, activeMode);
       const isSuccess = Boolean(res.success && res.allowed);
       const isBlacklist = Boolean(res.blacklisted);
 
@@ -480,13 +653,14 @@ const QRScanner = () => {
       const bId = String(b.bookingId || b._id || b.id || token);
       const slotNum = String(b.slotNumber || (b.slot as Record<string, unknown>)?.number || 'A-01');
       const vehicleNum = String(res.vehicleNumber || b.vehicleNumber || token);
+      const resolvedType = (res.type as 'entry' | 'exit') || (activeMode === 'auto' ? 'entry' : activeMode);
 
       const newScan: ScanRecord = {
         id: Date.now(),
         bookingId: bId,
         slotNumber: slotNum,
         vehicleNumber: vehicleNum,
-        type: gateMode,
+        type: resolvedType,
         status: isSuccess ? 'success' : 'failed',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
@@ -495,13 +669,17 @@ const QRScanner = () => {
       setLastResult({
         bookingId: bId,
         status: isSuccess ? 'success' : 'failed',
-        message: res.message || (isSuccess ? (gateMode === 'entry' ? 'ENTRY ALLOWED 🟢' : 'EXIT SUCCESSFUL 🟢') : 'Scan validation failed'),
-        type: gateMode,
+        message: res.message || (isSuccess ? (resolvedType === 'entry' ? 'ENTRY ALLOWED 🟢' : 'EXIT SUCCESSFUL 🟢') : 'Scan validation failed'),
+        type: resolvedType,
         booking: b,
         blacklisted: isBlacklist,
         blacklistDetails: res.blacklistDetails as Record<string, unknown> | undefined,
         vehicleNumber: vehicleNum,
         unbookedVehicle: Boolean(res.unbookedVehicle),
+        alreadyInside: Boolean(res.alreadyInside),
+        notEnteredYet: Boolean(res.notEnteredYet),
+        alreadyCompleted: Boolean(res.alreadyCompleted),
+        paymentRequired: Boolean(res.paymentRequired),
       });
 
       setBookingId('');
@@ -511,7 +689,22 @@ const QRScanner = () => {
         setCooldownSeconds(2);
       }
     } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : 'Invalid or expired pass';
+      let errMsg = 'Invalid or expired pass';
+      let alreadyInside = false;
+      let notEnteredYet = false;
+      let alreadyCompleted = false;
+      let bookingData: Record<string, unknown> | undefined = undefined;
+
+      if (err && typeof err === 'object') {
+        const apiErr = err as { message?: string; data?: any };
+        const data = apiErr.data || {};
+        errMsg = data.message || apiErr.message || errMsg;
+        alreadyInside = Boolean(data.alreadyInside);
+        notEnteredYet = Boolean(data.notEnteredYet);
+        alreadyCompleted = Boolean(data.alreadyCompleted);
+        bookingData = data.booking;
+      }
+
       const isBlacklisted = errMsg.includes('BLACKLISTED') || errMsg.includes('CRITICAL');
       if (soundEnabled) playBeep(false, isBlacklisted);
 
@@ -519,7 +712,7 @@ const QRScanner = () => {
         id: Date.now(),
         bookingId: token,
         vehicleNumber: token,
-        type: gateMode,
+        type: activeMode === 'auto' ? 'entry' : activeMode,
         status: 'failed',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
@@ -530,8 +723,12 @@ const QRScanner = () => {
         vehicleNumber: token,
         status: 'failed',
         message: errMsg.includes('DENIED') || errMsg.includes('CRITICAL') ? errMsg : `ACCESS DENIED: ${errMsg}`,
-        type: gateMode,
+        type: activeMode === 'auto' ? 'entry' : activeMode,
+        booking: bookingData,
         blacklisted: isBlacklisted,
+        alreadyInside,
+        notEnteredYet,
+        alreadyCompleted,
       });
 
       setBookingId('');
@@ -666,35 +863,49 @@ const QRScanner = () => {
           </button>
         </motion.div>
 
-        {/* GATE DIRECTION TOGGLE: ENTRY SCAN VS EXIT SCAN */}
-        <motion.div variants={itemVariants} className="glass-card p-1.5 rounded-2xl flex items-center gap-2">
+        {/* GATE DIRECTION TOGGLE: AUTO VS ENTRY VS EXIT */}
+        <motion.div variants={itemVariants} className="glass-card p-1.5 rounded-2xl grid grid-cols-3 gap-2">
+          <button
+            onClick={() => {
+              setGateMode('auto');
+              setLastResult(null);
+            }}
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+              gateMode === 'auto'
+                ? 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-lg shadow-cyan-500/30'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <HiOutlineSparkles className="w-4 h-4 text-cyan-300" />
+            <span>AUTO ⚡</span>
+          </button>
           <button
             onClick={() => {
               setGateMode('entry');
               setLastResult(null);
             }}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${
               gateMode === 'entry'
                 ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
                 : 'text-gray-400 hover:text-white hover:bg-white/5'
             }`}
           >
-            <HiOutlineArrowRightOnRectangle className="w-5 h-5" />
-            ENTRY GATE 🟢
+            <HiOutlineArrowRightOnRectangle className="w-4 h-4" />
+            <span>ENTRY 🟢</span>
           </button>
           <button
             onClick={() => {
               setGateMode('exit');
               setLastResult(null);
             }}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${
               gateMode === 'exit'
                 ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/30'
                 : 'text-gray-400 hover:text-white hover:bg-white/5'
             }`}
           >
-            <HiOutlineArrowLeftOnRectangle className="w-5 h-5" />
-            EXIT GATE 🔴
+            <HiOutlineArrowLeftOnRectangle className="w-4 h-4" />
+            <span>EXIT 🔴</span>
           </button>
         </motion.div>
 
@@ -803,30 +1014,72 @@ const QRScanner = () => {
                   : 'Camera is currently in standby mode'}
               </p>
 
-              <div className="w-full max-w-md flex flex-col sm:flex-row gap-3">
+              <div className="w-full max-w-md flex flex-col sm:flex-row gap-3 flex-wrap">
+                {/* Hidden File Input for Image Scanning */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleScanImageFile}
+                  accept="image/*"
+                  className="hidden"
+                />
+
                 {!scannerActive ? (
-                  <button
-                    onClick={startScanner}
-                    className="flex-1 py-3 px-5 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-600 via-indigo-600 to-emerald-600 hover:opacity-90 text-white shadow-xl flex items-center justify-center gap-2"
-                  >
-                    <HiOutlineCamera className="w-5 h-5" /> Start {scannerType === 'qr' ? 'QR Pass Scanner' : 'AI Plate Scanner'}
-                  </button>
+                  <>
+                    <button
+                      onClick={() => startScanner()}
+                      className="flex-1 min-w-[180px] py-3 px-5 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-600 via-indigo-600 to-emerald-600 hover:opacity-90 text-white shadow-xl flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <HiOutlineCamera className="w-5 h-5" /> Start {scannerType === 'qr' ? 'QR Pass Scanner' : 'AI Plate Scanner'}
+                    </button>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="py-3 px-4 rounded-xl font-bold text-xs sm:text-sm bg-slate-800/80 hover:bg-slate-700 border border-white/10 text-white flex items-center justify-center gap-2 transition-all cursor-pointer"
+                      title="Upload photo of QR code pass or vehicle plate"
+                    >
+                      <HiOutlinePhoto className="w-5 h-5 text-cyan-400" />
+                      <span>Upload Photo</span>
+                    </button>
+                  </>
                 ) : (
                   <>
                     <button
                       onClick={stopScanner}
-                      className="flex-1 py-3 px-5 rounded-xl font-bold text-sm bg-white/10 hover:bg-white/15 text-white flex items-center justify-center gap-2"
+                      className="flex-1 py-3 px-5 rounded-xl font-bold text-sm bg-white/10 hover:bg-white/15 text-white flex items-center justify-center gap-2 cursor-pointer"
                     >
                       🛑 Stop Camera
                     </button>
+                    {availableCameras.length > 1 && scannerType === 'qr' && (
+                      <select
+                        value={selectedCameraId}
+                        onChange={(e) => {
+                          setSelectedCameraId(e.target.value);
+                          startQRScanner(e.target.value);
+                        }}
+                        className="py-2.5 px-3 rounded-xl text-xs bg-slate-900 border border-white/20 text-white"
+                      >
+                        {availableCameras.map((cam) => (
+                          <option key={cam.id} value={cam.id}>
+                            📷 {cam.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                     {scannerType === 'plate_ocr' && (
                       <button
                         onClick={handleCaptureFrame}
-                        className="py-3 px-5 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-600 to-cyan-600 hover:opacity-95 text-white shadow-lg flex items-center justify-center gap-2"
+                        className="py-3 px-5 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-600 to-cyan-600 hover:opacity-95 text-white shadow-lg flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <HiOutlineSparkles className="w-5 h-5" /> Capture Now
                       </button>
                     )}
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="py-3 px-4 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 border border-white/10 text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <HiOutlinePhoto className="w-4 h-4 text-cyan-400" />
+                      <span>Upload File</span>
+                    </button>
                   </>
                 )}
               </div>
@@ -936,10 +1189,32 @@ const QRScanner = () => {
                   </div>
                 )}
 
-                {/* 1-CLICK ACTIONS FOR FAILED / UNBOOKED / BLACKLISTED SCANS */}
+                {/* 1-CLICK ACTIONS FOR ALREADY INSIDE / NOT ENTERED / FAILED SCANS */}
                 {lastResult.status === 'failed' && (
                   <div className="mt-4 pt-4 border-t border-white/10 flex flex-wrap gap-2 items-center">
                     <span className="text-xs text-gray-400 font-medium mr-2">Quick Gate Actions:</span>
+
+                    {/* 1-Click Switch to Exit if already inside */}
+                    {lastResult.alreadyInside && (
+                      <button
+                        onClick={() => handleVerify(lastResult.bookingId, 'exit')}
+                        className="btn-neon flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500"
+                      >
+                        <HiOutlineArrowLeftOnRectangle className="w-4 h-4" />
+                        <span>Switch to EXIT GATE & Allow Exit</span>
+                      </button>
+                    )}
+
+                    {/* 1-Click Switch to Entry if not entered yet */}
+                    {lastResult.notEnteredYet && (
+                      <button
+                        onClick={() => handleVerify(lastResult.bookingId, 'entry')}
+                        className="btn-neon flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500"
+                      >
+                        <HiOutlineArrowRightOnRectangle className="w-4 h-4" />
+                        <span>Switch to ENTRY GATE & Allow Entry</span>
+                      </button>
+                    )}
 
                     {/* 1-Click Blacklist Flag */}
                     <button
@@ -966,7 +1241,7 @@ const QRScanner = () => {
                     </button>
 
                     {/* 1-Click Issue Walk-in Pass */}
-                    {gateMode === 'entry' && !lastResult.blacklisted && (
+                    {!lastResult.blacklisted && !lastResult.alreadyInside && (
                       <button
                         onClick={() => {
                           setActionVehiclePlate(lastResult.vehicleNumber || lastResult.bookingId);

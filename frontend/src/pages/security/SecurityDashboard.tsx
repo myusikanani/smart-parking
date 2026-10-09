@@ -21,6 +21,8 @@ import {
   HiOutlineMegaphone,
   HiOutlineShieldCheck,
   HiOutlineCamera,
+  HiOutlinePhoto,
+  HiOutlineArrowPath,
 } from 'react-icons/hi2';
 import { createWorker, type Worker } from 'tesseract.js';
 import StatCard from '../../components/StatCard';
@@ -73,13 +75,19 @@ interface ActivityLog {
 interface ScanResult {
   status: 'granted' | 'denied';
   message: string;
+  alreadyInside?: boolean;
+  notEnteredYet?: boolean;
+  alreadyCompleted?: boolean;
   paymentRequired?: boolean;
+  resolvedMode?: 'entry' | 'exit';
   bookingDetails?: {
     slotNumber: string;
     vehicleNumber: string;
     userName: string;
     startTime: string;
     endTime: string;
+    entryTime?: string;
+    exitTime?: string;
     bookingId: string;
     overstayFee?: number;
   };
@@ -114,7 +122,7 @@ const playBeep = (isSuccess: boolean) => {
 };
 
 const SecurityDashboard = () => {
-  const [gateMode, setGateMode] = useState<'entry' | 'exit'>('entry');
+  const [gateMode, setGateMode] = useState<'auto' | 'entry' | 'exit'>('auto');
   const [time, setTime] = useState(new Date());
   const [stats, setStats] = useState({
     entries: 0,
@@ -152,9 +160,14 @@ const SecurityDashboard = () => {
   // Reusable Universal QR & Plate Scanner states
   const [scannerType, setScannerType] = useState<'qr' | 'plate_ocr'>('qr');
   const [scannerActive, setScannerActive] = useState(false);
+  const [continuousScan, setContinuousScan] = useState(false);
   const [cameraPermissionError, setCameraPermissionError] = useState('');
   const [scannerStatus, setScannerStatus] = useState<'idle' | 'perm' | 'scanning' | 'detected'>('idle');
+  const [availableCameras, setAvailableCameras] = useState<Array<{ id: string; label: string }>>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const lastScannedTextRef = useRef<{ text: string; time: number }>({ text: '', time: 0 });
 
   // OCR Pipeline States & Refs
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -299,17 +312,17 @@ const SecurityDashboard = () => {
         setManualInput(finalPlate);
         setScannerStatus('detected');
         if (soundEnabled) playBeep(true);
-        stopScanner();
+        if (!continuousScan) stopScanner();
         handleValidateAccess(finalPlate);
         return true;
       }
 
-      // On continuous auto-scan: strictly require matching full plate format and high confidence (>= 50%) to prevent false auto-stops on noise
+      // On continuous auto-scan: strictly require matching full plate format and high confidence (>= 50%)
       if (match && confidence >= 50) {
         setManualInput(extractedPlate);
         setScannerStatus('detected');
         if (soundEnabled) playBeep(true);
-        stopScanner();
+        if (!continuousScan) stopScanner();
         handleValidateAccess(extractedPlate);
         return true;
       }
@@ -354,10 +367,10 @@ const SecurityDashboard = () => {
     }
   };
 
-  // Start QR Camera Scanner
-  const startQRScanner = async () => {
+  // Start QR Camera Scanner with automatic multi-camera fallback
+  const startQRScanner = async (cameraId?: string) => {
     setCameraPermissionError('');
-    if (!window.isSecureContext) {
+    if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
       setCameraPermissionError(
         'Camera requires a secure HTTPS connection. Please open over HTTPS or localhost.'
       );
@@ -379,29 +392,81 @@ const SecurityDashboard = () => {
           qrScannerRef.current = null;
         }
 
+        // Query available cameras to populate camera selector
+        try {
+          const devices = await Html5Qrcode.getCameras();
+          if (devices && devices.length > 0) {
+            setAvailableCameras(devices.map((d) => ({ id: d.id, label: d.label || `Camera ${d.id.slice(0, 5)}` })));
+            if (!selectedCameraId && !cameraId) {
+              setSelectedCameraId(devices[0].id);
+            }
+          }
+        } catch (camListErr) {
+          console.warn('Could not enumerate cameras:', camListErr);
+        }
+
         const html5QrCode = new Html5Qrcode('qr-reader');
         qrScannerRef.current = html5QrCode;
         setScannerStatus('scanning');
 
-        await html5QrCode.start(
-          { facingMode: 'environment' },
-          {
-            fps: 12,
-            qrbox: (vw: number, vh: number) => {
-              const side = Math.min(260, Math.floor(Math.min(vw, vh) * 0.75));
-              return { width: side, height: side };
-            }
+        const scanConfig = {
+          fps: 15,
+          qrbox: (vw: number, vh: number) => {
+            const side = Math.min(280, Math.floor(Math.min(vw, vh) * 0.8));
+            return { width: side, height: side };
           },
-          (decodedText) => {
-            setScannerStatus('detected');
-            if (soundEnabled) playBeep(true);
-            stopScanner();
-            handleValidateAccess(decodedText);
-          },
-          () => {
-            // silent frame mismatch handler
+          aspectRatio: 1.0,
+        };
+
+        const onScanSuccess = (decodedText: string) => {
+          const now = Date.now();
+          if (
+            lastScannedTextRef.current.text === decodedText &&
+            now - lastScannedTextRef.current.time < 2500
+          ) {
+            return;
           }
-        );
+          lastScannedTextRef.current = { text: decodedText, time: now };
+
+          setScannerStatus('detected');
+          if (soundEnabled) playBeep(true);
+          
+          if (!continuousScan) {
+            stopScanner();
+          }
+          handleValidateAccess(decodedText);
+        };
+
+        const onScanFailure = () => {
+          // silent frame mismatch handler
+        };
+
+        const targetCam = cameraId || selectedCameraId;
+        if (targetCam) {
+          try {
+            await html5QrCode.start(targetCam, scanConfig, onScanSuccess, onScanFailure);
+            return;
+          } catch (camErr) {
+            console.warn('Starting with specific camera failed, trying fallback...', camErr);
+          }
+        }
+
+        // Try environment (rear) camera first
+        try {
+          await html5QrCode.start({ facingMode: 'environment' }, scanConfig, onScanSuccess, onScanFailure);
+        } catch (envErr) {
+          console.warn('Environment camera failed, falling back to front camera or default...', envErr);
+          try {
+            await html5QrCode.start({ facingMode: 'user' }, scanConfig, onScanSuccess, onScanFailure);
+          } catch (userErr) {
+            const cameras = await Html5Qrcode.getCameras();
+            if (cameras && cameras.length > 0) {
+              await html5QrCode.start(cameras[0].id, scanConfig, onScanSuccess, onScanFailure);
+            } else {
+              throw userErr;
+            }
+          }
+        }
       } catch (err: unknown) {
         console.error('Camera Scanner start error:', err);
         setScannerActive(false);
@@ -410,13 +475,13 @@ const SecurityDashboard = () => {
         setCameraPermissionError(
           msg.includes('NotAllowedError') || msg.includes('Permission')
             ? 'Camera permission denied. Please allow camera access in your browser settings and try again.'
-            : 'Camera could not be started. Please ensure no other app is using the camera.'
+            : 'Camera could not be started. Please ensure no other app is using the camera, or upload a pass image below.'
         );
       }
     }, 150);
   };
 
-  // Start AI Number Plate OCR Scanner
+  // Start AI Number Plate OCR Scanner with fallback
   const startPlateOcrScanner = async () => {
     setCameraPermissionError('');
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -428,13 +493,21 @@ const SecurityDashboard = () => {
       setScannerStatus('perm');
       setScannerActive(true);
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        });
+      } catch (envErr) {
+        console.warn('Ideal environment stream failed, falling back to default video stream...', envErr);
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+      }
 
       activeMediaStreamRef.current = stream;
 
@@ -466,9 +539,9 @@ const SecurityDashboard = () => {
     }
   };
 
-  const startScanner = () => {
+  const startScanner = (cameraId?: string) => {
     if (scannerType === 'qr') {
-      startQRScanner();
+      startQRScanner(cameraId);
     } else {
       startPlateOcrScanner();
     }
@@ -498,6 +571,52 @@ const SecurityDashboard = () => {
     setScannerStatus('idle');
   };
 
+  // Image / File Upload Scanning for Pass QR Code & License Plates
+  const handleScanImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    setCameraPermissionError('');
+
+    try {
+      if (scannerType === 'qr') {
+        const html5QrCode = qrScannerRef.current || new Html5Qrcode('qr-reader');
+        const decodedText = await html5QrCode.scanFile(file, true);
+        if (decodedText) {
+          if (soundEnabled) playBeep(true);
+          setManualInput(decodedText);
+          handleValidateAccess(decodedText);
+        }
+      } else {
+        // AI Plate OCR on uploaded photo
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = () => {
+          img.onload = async () => {
+            const recognized = await processImageForPlateOCR(
+              img,
+              img.naturalWidth || img.width,
+              img.naturalHeight || img.height,
+              true
+            );
+            if (!recognized) {
+              setCameraPermissionError('Could not clearly read the plate from image. Please type plate number manually.');
+            }
+          };
+          img.src = reader.result as string;
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (err) {
+      console.warn('File scan error:', err);
+      setCameraPermissionError('Could not decode QR code or plate from this image. Please try a clearer picture or enter manually.');
+    } finally {
+      setLoading(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
   // Manual Frame Capture
   const handleCaptureFrame = async () => {
     if (!videoRef.current || videoRef.current.videoWidth === 0) {
@@ -512,52 +631,179 @@ const SecurityDashboard = () => {
     }
   };
 
-  const handleValidateAccess = async (searchQuery?: string) => {
+  const handleValidateAccess = async (searchQuery?: string, overrideMode?: 'auto' | 'entry' | 'exit') => {
     const raw = (searchQuery || manualInput).trim();
     if (!raw) return;
-    // Preserve UUID-shaped QR tokens verbatim (case-sensitive backend match);
-    // uppercase everything else (plates / booking ids).
-    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const query = UUID_RE.test(raw) ? raw : raw.toUpperCase();
+
+    const activeMode = overrideMode || gateMode;
+    if (overrideMode && overrideMode !== gateMode) {
+      setGateMode(overrideMode);
+    }
+
+    // Smart query normalization
+    let query = raw;
+
+    // 1. If query is a URL, extract the token / ID / booking parameter
+    if (query.startsWith('http://') || query.startsWith('https://')) {
+      try {
+        const parsedUrl = new URL(query);
+        const extracted =
+          parsedUrl.searchParams.get('qrToken') ||
+          parsedUrl.searchParams.get('token') ||
+          parsedUrl.searchParams.get('bookingId') ||
+          parsedUrl.searchParams.get('id') ||
+          parsedUrl.searchParams.get('data') ||
+          parsedUrl.searchParams.get('code') ||
+          parsedUrl.pathname.split('/').filter(Boolean).pop();
+        if (extracted) {
+          query = decodeURIComponent(extracted).trim();
+        }
+      } catch {
+        // keep query
+      }
+    }
+
+    // 2. If query is JSON string, extract the token / ID
+    if ((query.startsWith('{') && query.endsWith('}')) || (query.startsWith('[') && query.endsWith(']'))) {
+      try {
+        const parsed = JSON.parse(query);
+        if (typeof parsed === 'object' && parsed !== null) {
+          query = String(
+            parsed.qrToken ||
+            parsed.token ||
+            parsed.bookingId ||
+            parsed.id ||
+            parsed._id ||
+            parsed.vehicleNumber ||
+            query
+          ).trim();
+        }
+      } catch {
+        // keep query
+      }
+    }
+
+    // 3. Strip Pass ID prefix (e.g. "PASS ID: #ABC12345" or "#ABC12345")
+    if (/^PASS\s*ID\s*:\s*#?/i.test(query)) {
+      query = query.replace(/^PASS\s*ID\s*:\s*#?/i, '').trim();
+    } else if (query.startsWith('#')) {
+      query = query.slice(1).trim();
+    }
+
+    // 4. Do not uppercase dynamic tokens to keep HMAC hash case intact
+    if (!query.toUpperCase().startsWith('PS-DYN|')) {
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!UUID_RE.test(query)) {
+        query = query.toUpperCase();
+      }
+    }
 
     setLoading(true);
     setScanResult(null);
 
     try {
-      const res = await securityApi.scanQR(query, gateMode);
+      const res = await securityApi.scanQR(query, activeMode);
+      const b = (res.booking || {}) as Record<string, unknown>;
+      const startStr = b.startTime ? new Date(String(b.startTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      const endStr = b.endTime ? new Date(String(b.endTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      const entryStr = b.entryTime ? new Date(String(b.entryTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      const exitStr = b.exitTime ? new Date(String(b.exitTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+      const details = {
+        slotNumber: String(b.slotNumber || (b.slot as Record<string, unknown>)?.number || 'Assigned'),
+        vehicleNumber: String(b.vehicleNumber || res.vehicleNumber || query),
+        userName: String(b.userName || (b.user as Record<string, unknown>)?.name || 'Driver'),
+        startTime: startStr,
+        endTime: endStr,
+        entryTime: entryStr,
+        exitTime: exitStr,
+        bookingId: String(b.id || b._id || b.bookingId || query),
+        overstayFee: b.overstayPenalty ? Number(b.overstayPenalty) : undefined
+      };
+
+      const resolvedMode = (res.type as 'entry' | 'exit') || (activeMode === 'auto' ? 'entry' : activeMode);
+
       if (res.success && res.allowed) {
         if (soundEnabled) playBeep(true);
-        const b = res.booking as Record<string, unknown>;
-        const startStr = b.startTime ? new Date(String(b.startTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-        const endStr = b.endTime ? new Date(String(b.endTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-
         setScanResult({
           status: 'granted',
-          message: res.message || (gateMode === 'entry' ? 'ACCESS GRANTED: Valid Parking Booking' : 'EXIT GRANTED: Session Completed'),
+          resolvedMode,
+          message: res.message || (resolvedMode === 'entry' ? 'ACCESS GRANTED: Valid Parking Booking' : 'EXIT GRANTED: Session Completed'),
           paymentRequired: Boolean(res.paymentRequired),
-          bookingDetails: {
-            slotNumber: String(b.slotNumber || (b.slot as Record<string, unknown>)?.number || 'A-01'),
-            vehicleNumber: String(b.vehicleNumber || ''),
-            userName: String(b.userName || (b.user as Record<string, unknown>)?.name || 'Driver'),
-            startTime: startStr,
-            endTime: endStr,
-            bookingId: String(b.id || b._id || ''),
-            overstayFee: b.overstayPenalty ? Number(b.overstayPenalty) : undefined
-          }
+          bookingDetails: details
+        });
+      } else if (res.alreadyInside) {
+        if (soundEnabled) playBeep(false);
+        setScanResult({
+          status: 'denied',
+          alreadyInside: true,
+          resolvedMode: 'entry',
+          message: res.message || `Vehicle ${details.vehicleNumber} is already parked inside (Slot ${details.slotNumber}).`,
+          bookingDetails: details
+        });
+      } else if (res.notEnteredYet) {
+        if (soundEnabled) playBeep(false);
+        setScanResult({
+          status: 'denied',
+          notEnteredYet: true,
+          resolvedMode: 'exit',
+          message: res.message || `Vehicle ${details.vehicleNumber} has not entered the parking facility yet.`,
+          bookingDetails: details
+        });
+      } else if (res.alreadyCompleted) {
+        if (soundEnabled) playBeep(false);
+        setScanResult({
+          status: 'denied',
+          alreadyCompleted: true,
+          message: res.message || 'Booking session has already been completed and vehicle has exited.',
+          bookingDetails: details
         });
       } else {
         if (soundEnabled) playBeep(false);
         setScanResult({
           status: 'denied',
-          message: res.message || 'ACCESS DENIED: Verification failed.'
+          message: res.message || 'ACCESS DENIED: Verification failed.',
+          paymentRequired: Boolean(res.paymentRequired),
+          bookingDetails: (b && (b.vehicleNumber || b.slotNumber)) ? details : undefined
         });
       }
     } catch (err: unknown) {
       if (soundEnabled) playBeep(false);
-      const errMsg = err instanceof Error ? err.message : 'ACCESS DENIED: Invalid or expired QR code/booking.';
+      let errMsg = 'ACCESS DENIED: Invalid or expired QR code/booking.';
+      let alreadyInside = false;
+      let notEnteredYet = false;
+      let alreadyCompleted = false;
+      let bookingDetails: ScanResult['bookingDetails'] = undefined;
+
+      if (err && typeof err === 'object') {
+        const apiErr = err as { message?: string; data?: any };
+        const data = apiErr.data || {};
+        errMsg = data.message || apiErr.message || errMsg;
+        alreadyInside = Boolean(data.alreadyInside);
+        notEnteredYet = Boolean(data.notEnteredYet);
+        alreadyCompleted = Boolean(data.alreadyCompleted);
+        if (data.booking) {
+          const b = data.booking;
+          bookingDetails = {
+            slotNumber: String(b.slotNumber || 'Assigned'),
+            vehicleNumber: String(b.vehicleNumber || query),
+            userName: String(b.userName || 'Driver'),
+            startTime: b.startTime ? new Date(String(b.startTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+            endTime: b.endTime ? new Date(String(b.endTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+            entryTime: b.entryTime ? new Date(String(b.entryTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+            exitTime: b.exitTime ? new Date(String(b.exitTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+            bookingId: String(b.id || b._id || query)
+          };
+        }
+      }
+
       setScanResult({
         status: 'denied',
-        message: errMsg.includes('DENIED') ? errMsg : `ACCESS DENIED: ${errMsg}`
+        alreadyInside,
+        notEnteredYet,
+        alreadyCompleted,
+        message: errMsg.includes('DENIED') ? errMsg : `ACCESS DENIED: ${errMsg}`,
+        bookingDetails
       });
     } finally {
       setLoading(false);
@@ -566,11 +812,6 @@ const SecurityDashboard = () => {
 
   const handleGrantAccess = async () => {
     if (!scanResult || !scanResult.bookingDetails) return;
-
-    // NOTE: securityApi.scanQR already processed the entry/exit on the backend
-    // (booking status, timestamps, slot state). This handler only opens the
-    // barrier and records the local activity log — no second processing call,
-    // so a QR is processed exactly once per scan.
     setLoading(true);
 
     try {
@@ -578,9 +819,11 @@ const SecurityDashboard = () => {
       setBarrierOpen(true);
       if (soundEnabled) playBeep(true);
 
+      const effectiveType = scanResult.resolvedMode || (gateMode === 'auto' ? 'entry' : gateMode);
+
       const newLog: ActivityLog = {
         id: Date.now(),
-        type: gateMode,
+        type: effectiveType,
         vehicleNumber: scanResult.bookingDetails.vehicleNumber,
         slot: scanResult.bookingDetails.slotNumber,
         driverName: scanResult.bookingDetails.userName,
@@ -589,7 +832,7 @@ const SecurityDashboard = () => {
       };
 
       setLogs((prev) => [newLog, ...prev]);
-      if (gateMode === 'entry') {
+      if (effectiveType === 'entry') {
         setStats((s) => ({ ...s, entries: s.entries + 1, occupancy: Math.min(100, s.occupancy + 2) }));
       } else {
         setStats((s) => ({ ...s, exits: s.exits + 1, occupancy: Math.max(0, s.occupancy - 2) }));
@@ -827,29 +1070,41 @@ const SecurityDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* SCANNER & VERIFICATION WORKSTATION */}
         <motion.div variants={itemVariants} className="lg:col-span-2 space-y-5">
-          {/* MODE TOGGLE: ENTRY GATE VS EXIT GATE */}
-          <div className="glass-card p-2 rounded-2xl flex items-center gap-2">
+          {/* MODE TOGGLE: AUTO GATE VS ENTRY GATE VS EXIT GATE */}
+          <div className="glass-card p-2 rounded-2xl grid grid-cols-3 gap-2">
+            <button
+              onClick={() => { setGateMode('auto'); setScanResult(null); }}
+              className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                gateMode === 'auto'
+                  ? 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-lg shadow-cyan-500/30'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+              title="Auto Detect: Allows entry for confirmed bookings, exit for parked vehicles"
+            >
+              <HiOutlineSparkles className="w-4 h-4 text-cyan-300" />
+              <span>SMART AUTO ⚡</span>
+            </button>
             <button
               onClick={() => { setGateMode('entry'); setScanResult(null); }}
-              className={`flex-1 flex items-center justify-center gap-2.5 py-3 rounded-xl font-bold text-sm transition-all ${
+              className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${
                 gateMode === 'entry'
                   ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <HiOutlineArrowRightOnRectangle className="w-5 h-5" />
-              ENTRY GATE MODE 🟢
+              <HiOutlineArrowRightOnRectangle className="w-4 h-4" />
+              <span>ENTRY 🟢</span>
             </button>
             <button
               onClick={() => { setGateMode('exit'); setScanResult(null); }}
-              className={`flex-1 flex items-center justify-center gap-2.5 py-3 rounded-xl font-bold text-sm transition-all ${
+              className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${
                 gateMode === 'exit'
                   ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/30'
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <HiOutlineArrowLeftOnRectangle className="w-5 h-5" />
-              EXIT GATE MODE 🔴
+              <HiOutlineArrowLeftOnRectangle className="w-4 h-4" />
+              <span>EXIT 🔴</span>
             </button>
           </div>
 
@@ -887,7 +1142,7 @@ const SecurityDashboard = () => {
 
           {/* SCANNER & PLATE LOOKUP CONTROL BOX */}
           <div className="glass-card p-5 sm:p-6 rounded-2xl space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 {scannerType === 'qr' ? (
                   <HiOutlineQrCode className="w-5 h-5 text-cyan-400" />
@@ -896,9 +1151,17 @@ const SecurityDashboard = () => {
                 )}
                 {scannerType === 'qr' ? 'Scan Customer QR Pass' : 'Real-Time AI License Plate Scanner'}
               </h2>
-              <span className="text-xs text-gray-400 font-mono">
-                {scannerType === 'qr' ? 'QR Viewfinder' : 'Live ALPR Vision'}
-              </span>
+              
+              {/* Continuous Scan Toggle */}
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <span className="text-xs text-gray-400">Keep Camera Open:</span>
+                <input
+                  type="checkbox"
+                  checked={continuousScan}
+                  onChange={(e) => setContinuousScan(e.target.checked)}
+                  className="w-4 h-4 rounded bg-slate-900 border-white/20 text-cyan-500 focus:ring-0 cursor-pointer"
+                />
+              </label>
             </div>
 
             {/* Viewfinder Container */}
@@ -956,9 +1219,9 @@ const SecurityDashboard = () => {
                         ? 'Allow Camera Access'
                         : scannerStatus === 'scanning'
                         ? scannerType === 'qr'
-                          ? 'Scanning QR Pass...'
+                          ? 'Point camera at Driver QR Pass'
                           : 'AI Reading License Plate...'
-                        : 'Target Detected!'}
+                        : '⚡ Pass Detected! Checking...'}
                     </div>
                     
                     <div className="flex justify-between">
@@ -988,29 +1251,71 @@ const SecurityDashboard = () => {
               </div>
 
               <div className="w-full mt-4 flex gap-3 flex-wrap">
+                {/* Hidden File Input for Image Scanning */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleScanImageFile}
+                  accept="image/*"
+                  className="hidden"
+                />
+
                 {!scannerActive ? (
-                  <button
-                    onClick={startScanner}
-                    className="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-600 via-indigo-600 to-emerald-600 hover:opacity-90 text-white shadow-lg flex items-center justify-center gap-2 transition-all"
-                  >
-                    <HiOutlineCamera className="w-5 h-5" /> Start {scannerType === 'qr' ? 'QR Pass Scanner' : 'AI Plate Scanner'}
-                  </button>
+                  <>
+                    <button
+                      onClick={() => startScanner()}
+                      className="flex-1 min-w-[200px] py-3 px-6 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-600 via-indigo-600 to-emerald-600 hover:opacity-90 text-white shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer"
+                    >
+                      <HiOutlineCamera className="w-5 h-5" /> Start {scannerType === 'qr' ? 'QR Pass Scanner' : 'AI Plate Scanner'}
+                    </button>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="py-3 px-4 rounded-xl font-bold text-xs sm:text-sm bg-slate-800/80 hover:bg-slate-700 border border-white/10 text-white flex items-center justify-center gap-2 transition-all cursor-pointer"
+                      title="Upload photo of QR code pass or vehicle plate"
+                    >
+                      <HiOutlinePhoto className="w-5 h-5 text-cyan-400" />
+                      <span>Upload Photo / Screenshot</span>
+                    </button>
+                  </>
                 ) : (
                   <>
                     <button
                       onClick={stopScanner}
-                      className="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-white/5 border border-white/10 hover:bg-white/10 text-white flex items-center justify-center gap-2 transition-all"
+                      className="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-white/5 border border-white/10 hover:bg-white/10 text-white flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
                       🛑 Stop Camera Scanner
                     </button>
+                    {availableCameras.length > 1 && scannerType === 'qr' && (
+                      <select
+                        value={selectedCameraId}
+                        onChange={(e) => {
+                          setSelectedCameraId(e.target.value);
+                          startQRScanner(e.target.value);
+                        }}
+                        className="py-2.5 px-3 rounded-xl text-xs bg-slate-900 border border-white/20 text-white"
+                      >
+                        {availableCameras.map((cam) => (
+                          <option key={cam.id} value={cam.id}>
+                            📷 {cam.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                     {scannerType === 'plate_ocr' && (
                       <button
                         onClick={handleCaptureFrame}
-                        className="py-3 px-6 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-600 to-cyan-600 hover:opacity-95 text-white shadow-lg flex items-center justify-center gap-2"
+                        className="py-3 px-6 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-600 to-cyan-600 hover:opacity-95 text-white shadow-lg flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <HiOutlineSparkles className="w-5 h-5" /> Capture Now
                       </button>
                     )}
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="py-3 px-4 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 border border-white/10 text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <HiOutlinePhoto className="w-4 h-4 text-cyan-400" />
+                      <span>Upload File</span>
+                    </button>
                   </>
                 )}
               </div>
@@ -1049,7 +1354,7 @@ const SecurityDashboard = () => {
 
           </div>
 
-          {/* INSTANT RESULT VERIFICATION CARD (GREEN = GRANTED, RED = DENIED) */}
+          {/* INSTANT RESULT VERIFICATION CARD */}
           <AnimatePresence mode="wait">
             {scanResult && (
               <motion.div
@@ -1060,6 +1365,12 @@ const SecurityDashboard = () => {
                 className={`rounded-2xl p-6 border shadow-2xl relative overflow-hidden ${
                   scanResult.status === 'granted'
                     ? 'bg-gradient-to-r from-emerald-950/80 via-slate-900 to-emerald-900/40 border-emerald-500/50 shadow-emerald-500/20'
+                    : scanResult.alreadyInside
+                    ? 'bg-gradient-to-r from-amber-950/80 via-slate-900 to-purple-950/40 border-amber-500/50 shadow-amber-500/20'
+                    : scanResult.notEnteredYet
+                    ? 'bg-gradient-to-r from-indigo-950/80 via-slate-900 to-cyan-950/40 border-cyan-500/50 shadow-cyan-500/20'
+                    : scanResult.alreadyCompleted
+                    ? 'bg-gradient-to-r from-slate-900 via-slate-950 to-blue-950/40 border-slate-600/50 shadow-slate-500/20'
                     : 'bg-gradient-to-r from-red-950/80 via-slate-900 to-pink-950/40 border-red-500/50 shadow-red-500/20'
                 }`}
               >
@@ -1070,6 +1381,14 @@ const SecurityDashboard = () => {
                       <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 shadow-[0_0_20px_#10b981]">
                         <HiOutlineCheckCircle className="w-8 h-8" />
                       </div>
+                    ) : scanResult.alreadyInside ? (
+                      <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 shadow-[0_0_20px_#f59e0b]">
+                        <HiOutlineExclamationTriangle className="w-8 h-8" />
+                      </div>
+                    ) : scanResult.notEnteredYet ? (
+                      <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400 shadow-[0_0_20px_#06b6d4]">
+                        <HiOutlineClock className="w-8 h-8" />
+                      </div>
                     ) : (
                       <div className="w-12 h-12 rounded-2xl bg-red-500/20 border border-red-400/40 flex items-center justify-center text-red-400 shadow-[0_0_20px_#ef4444]">
                         <HiOutlineXCircle className="w-8 h-8" />
@@ -1077,17 +1396,45 @@ const SecurityDashboard = () => {
                     )}
                     <div>
                       <span className={`text-xs font-extrabold uppercase tracking-widest ${
-                        scanResult.status === 'granted' ? 'text-emerald-400' : 'text-red-400'
+                        scanResult.status === 'granted'
+                          ? 'text-emerald-400'
+                          : scanResult.alreadyInside
+                          ? 'text-amber-400'
+                          : scanResult.notEnteredYet
+                          ? 'text-cyan-400'
+                          : scanResult.alreadyCompleted
+                          ? 'text-blue-400'
+                          : 'text-red-400'
                       }`}>
-                        {scanResult.status === 'granted' ? 'ACCESS GRANTED 🟢' : 'ACCESS DENIED 🔴'}
+                        {scanResult.status === 'granted'
+                          ? 'ACCESS GRANTED 🟢'
+                          : scanResult.alreadyInside
+                          ? 'VEHICLE ALREADY PARKED INSIDE 🚗'
+                          : scanResult.notEnteredYet
+                          ? 'VEHICLE HAS NOT ENTERED YET 🕒'
+                          : scanResult.alreadyCompleted
+                          ? 'SESSION COMPLETED & EXITED 🏁'
+                          : 'ACCESS DENIED 🔴'}
                       </span>
                       <h3 className="text-lg font-bold text-white mt-0.5">{scanResult.message}</h3>
                     </div>
                   </div>
+
+                  <button
+                    onClick={() => {
+                      setScanResult(null);
+                      if (!scannerActive) startScanner();
+                    }}
+                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition flex items-center gap-1.5 text-xs font-bold"
+                    title="Scan Next Pass"
+                  >
+                    <HiOutlineArrowPath className="w-4 h-4" />
+                    <span className="hidden sm:inline">Scan Next</span>
+                  </button>
                 </div>
 
                 {/* BOOKING DETAILS BODY */}
-                {scanResult.bookingDetails ? (
+                {scanResult.bookingDetails && (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
                       <div>
@@ -1109,12 +1456,49 @@ const SecurityDashboard = () => {
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400">Booking Time</p>
+                        <p className="text-xs text-gray-400">
+                          {scanResult.bookingDetails.entryTime ? 'Entry Recorded' : 'Booking Time'}
+                        </p>
                         <p className="text-xs font-semibold text-gray-300 mt-1">
-                          {scanResult.bookingDetails.startTime} - {scanResult.bookingDetails.endTime}
+                          {scanResult.bookingDetails.entryTime
+                            ? scanResult.bookingDetails.entryTime
+                            : `${scanResult.bookingDetails.startTime} - ${scanResult.bookingDetails.endTime}`}
                         </p>
                       </div>
                     </div>
+
+                    {/* SPECIAL RECOVERY ACTIONS FOR ALREADY INSIDE / NOT ENTERED */}
+                    {scanResult.alreadyInside && (
+                      <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between flex-wrap gap-3">
+                        <div>
+                          <p className="text-xs font-bold text-purple-300">Driver wants to leave?</p>
+                          <p className="text-[11px] text-gray-400">Switch to Exit Gate mode to complete session & open exit barrier.</p>
+                        </div>
+                        <button
+                          onClick={() => handleValidateAccess(scanResult.bookingDetails?.bookingId, 'exit')}
+                          className="px-5 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm uppercase tracking-wider bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg shadow-purple-600/30 flex items-center gap-2 cursor-pointer"
+                        >
+                          <HiOutlineArrowLeftOnRectangle className="w-4 h-4" />
+                          <span>Switch to EXIT GATE & Allow Exit</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {scanResult.notEnteredYet && (
+                      <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-between flex-wrap gap-3">
+                        <div>
+                          <p className="text-xs font-bold text-cyan-300">Driver is arriving at Entrance?</p>
+                          <p className="text-[11px] text-gray-400">Switch to Entry Gate mode to check-in & open entrance barrier.</p>
+                        </div>
+                        <button
+                          onClick={() => handleValidateAccess(scanResult.bookingDetails?.bookingId, 'entry')}
+                          className="px-5 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm uppercase tracking-wider bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white shadow-lg shadow-emerald-600/30 flex items-center gap-2 cursor-pointer"
+                        >
+                          <HiOutlineArrowRightOnRectangle className="w-4 h-4" />
+                          <span>Switch to ENTRY GATE & Allow Entry</span>
+                        </button>
+                      </div>
+                    )}
 
                     {/* OVERSTAY PENALTY COLLECTION (exit blocked until paid) */}
                     {scanResult.paymentRequired && (
@@ -1145,44 +1529,79 @@ const SecurityDashboard = () => {
                       </div>
                     )}
 
-                    {/* GATE ALLOW ACTION BUTTON */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                      <div className="flex items-center gap-2">
-                        {barrierOpen ? (
-                          <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm animate-pulse">
-                            <HiOutlineLockOpen className="w-5 h-5" />
-                            Barrier Opening... Gate Unlocked!
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2 text-gray-400 text-xs">
-                            <HiOutlineLockClosed className="w-4 h-4 text-cyan-400" />
-                            Barrier Locked & Ready
-                          </div>
-                        )}
-                      </div>
+                    {/* GATE ALLOW ACTION BUTTON (when granted) */}
+                    {scanResult.status === 'granted' && !scanResult.paymentRequired && (
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                        <div className="flex items-center gap-2">
+                          {barrierOpen ? (
+                            <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm animate-pulse">
+                              <HiOutlineLockOpen className="w-5 h-5" />
+                              Barrier Opening... Gate Unlocked!
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 text-gray-400 text-xs">
+                              <HiOutlineLockClosed className="w-4 h-4 text-cyan-400" />
+                              Barrier Locked & Ready
+                            </div>
+                          )}
+                        </div>
 
-                      {!scanResult.paymentRequired && (
-                        <button
-                          onClick={handleGrantAccess}
-                          disabled={barrierOpen}
-                          className={`px-7 py-3 rounded-xl font-extrabold text-sm uppercase tracking-wider shadow-lg transition-all ${
-                            gateMode === 'entry'
-                              ? 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/30'
-                              : 'bg-pink-500 hover:bg-pink-400 text-white shadow-pink-500/30'
-                          }`}
-                        >
-                          {barrierOpen
-                            ? 'Opening Gate Barrier...'
-                            : gateMode === 'entry'
-                            ? 'Confirm & Allow Entry'
-                            : 'Confirm & Allow Exit'}
-                        </button>
-                      )}
-                    </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => {
+                              setScanResult(null);
+                              startScanner();
+                            }}
+                            className="px-4 py-3 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-white border border-white/10"
+                          >
+                            📷 Scan Next
+                          </button>
+                          <button
+                            onClick={handleGrantAccess}
+                            disabled={barrierOpen}
+                            className={`px-7 py-3 rounded-xl font-extrabold text-sm uppercase tracking-wider shadow-lg transition-all ${
+                              (scanResult.resolvedMode || gateMode) === 'exit'
+                                ? 'bg-pink-500 hover:bg-pink-400 text-white shadow-pink-500/30'
+                                : 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/30'
+                            }`}
+                          >
+                            {barrierOpen
+                              ? 'Opening Gate Barrier...'
+                              : (scanResult.resolvedMode || gateMode) === 'exit'
+                              ? 'Confirm & Allow Exit'
+                              : 'Confirm & Allow Entry'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="text-sm text-red-300 pt-1">
-                    Please instruct the driver to make a valid booking via the driver app or contact the parking desk.
+                )}
+
+                {/* NO BOOKING FOUND BODY */}
+                {!scanResult.bookingDetails && (
+                  <div className="space-y-3 pt-2">
+                    <p className="text-xs text-red-300">
+                      Please instruct the driver to make a valid booking via the driver app or issue a walk-in pass below.
+                    </p>
+                    <div className="flex items-center gap-3 pt-2">
+                      <button
+                        onClick={() => {
+                          setScanResult(null);
+                          startScanner();
+                        }}
+                        className="px-4 py-2.5 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-white border border-white/10 flex items-center gap-1.5"
+                      >
+                        <HiOutlineCamera className="w-4 h-4 text-cyan-400" />
+                        <span>Reopen Scanner</span>
+                      </button>
+                      <button
+                        onClick={() => setWalkinOpen(true)}
+                        className="px-4 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 text-white shadow-md flex items-center gap-1.5"
+                      >
+                        <HiOutlineTicket className="w-4 h-4" />
+                        <span>Issue Walk-in Pass</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </motion.div>

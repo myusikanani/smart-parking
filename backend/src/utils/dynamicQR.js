@@ -32,46 +32,56 @@ const generateDynamicQRToken = (bookingId, offsetSteps = 0) => {
  * @returns {{ isValid: boolean, bookingId: string|null, expired?: boolean }}
  */
 const verifyDynamicQRToken = (rawToken) => {
-  if (!rawToken || typeof rawToken !== 'string' || !rawToken.startsWith('PS-DYN|')) {
+  if (!rawToken || typeof rawToken !== 'string') {
     return { isValid: false, bookingId: null };
   }
 
-  const parts = rawToken.split('|');
+  const trimmed = rawToken.trim();
+  if (!trimmed.toUpperCase().startsWith('PS-DYN|')) {
+    return { isValid: false, bookingId: null };
+  }
+
+  const parts = trimmed.split('|');
   if (parts.length !== 4) {
     return { isValid: false, bookingId: null };
   }
 
   const [, bookingId, timeStepStr, providedHash] = parts;
   const tokenStep = parseInt(timeStepStr, 10);
-  if (isNaN(tokenStep) || !bookingId) {
+  if (isNaN(tokenStep) || !bookingId || !providedHash) {
     return { isValid: false, bookingId: null };
   }
 
-  // 1. Check if token's cryptographic HMAC matches the tokenStep
-  const directHash = crypto
-    .createHmac('sha256', SECRET_KEY)
-    .update(`${bookingId}:${tokenStep}`)
-    .digest('hex')
-    .substring(0, 16);
+  const cleanProvidedHash = providedHash.trim().toLowerCase();
+  const cleanBookingId = bookingId.trim();
+  const lowerBookingId = cleanBookingId.toLowerCase();
 
-  if (directHash === providedHash) {
+  const checkHash = (bId, step) =>
+    crypto
+      .createHmac('sha256', SECRET_KEY)
+      .update(`${bId}:${step}`)
+      .digest('hex')
+      .substring(0, 16)
+      .toLowerCase();
+
+  // 1. Check if token's cryptographic HMAC matches the tokenStep
+  if (
+    checkHash(cleanBookingId, tokenStep) === cleanProvidedHash ||
+    checkHash(lowerBookingId, tokenStep) === cleanProvidedHash
+  ) {
     // Valid cryptographic token created by ParkSmart!
-    // Tolerates reasonable window at entry gate barrier
-    return { isValid: true, bookingId };
+    return { isValid: true, bookingId: cleanBookingId };
   }
 
-  // 2. Also check ±30 steps in case of slight secret mismatch/offset
+  // 2. Also check ±30 steps (15 minutes window) in case of clock drift or slight delay at gate barrier
   const currentStep = Math.floor(Date.now() / (ROTATION_INTERVAL_SEC * 1000));
-  for (let offset = -30; offset <= 10; offset++) {
+  for (let offset = -30; offset <= 30; offset++) {
     const checkStep = currentStep + offset;
-    const expectedHash = crypto
-      .createHmac('sha256', SECRET_KEY)
-      .update(`${bookingId}:${checkStep}`)
-      .digest('hex')
-      .substring(0, 16);
-
-    if (expectedHash === providedHash) {
-      return { isValid: true, bookingId };
+    if (
+      checkHash(cleanBookingId, checkStep) === cleanProvidedHash ||
+      checkHash(lowerBookingId, checkStep) === cleanProvidedHash
+    ) {
+      return { isValid: true, bookingId: cleanBookingId };
     }
   }
 

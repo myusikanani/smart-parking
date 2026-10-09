@@ -190,13 +190,36 @@ exports.getMyBookings = async (req, res) => {
 
 exports.getBookingById = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id)
-      .populate({
-        path: 'slot',
-        populate: { path: 'locationId' }
+    const rawId = String(req.params.id || '').trim();
+    const mongoose = require('mongoose');
+    let booking = null;
+
+    if (mongoose.Types.ObjectId.isValid(rawId)) {
+      booking = await Booking.findById(rawId)
+        .populate({
+          path: 'slot',
+          populate: { path: 'locationId' }
+        })
+        .populate('locationId')
+        .populate('user', 'name email phone');
+    }
+
+    if (!booking) {
+      booking = await Booking.findOne({
+        $or: [
+          { qrToken: { $regex: `^${rawId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } },
+          { vehicleNumber: rawId.toUpperCase() },
+          { vehicleNumber: rawId.toUpperCase().replace(/[^A-Z0-9]/g, '') }
+        ]
       })
-      .populate('locationId')
-      .populate('user', 'name email phone');
+        .sort({ createdAt: -1 })
+        .populate({
+          path: 'slot',
+          populate: { path: 'locationId' }
+        })
+        .populate('locationId')
+        .populate('user', 'name email phone');
+    }
 
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
@@ -221,9 +244,13 @@ exports.getBookingById = async (req, res) => {
 exports.verifyQR = async (req, res) => {
   try {
     const { qrToken } = req.body;
+    const rawToken = String(qrToken || '').trim();
 
     const booking = await Booking.findOne({
-      qrToken,
+      $or: [
+        { qrToken: { $regex: `^${rawToken.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } },
+        { vehicleNumber: rawToken.toUpperCase() }
+      ],
       status: { $in: ['confirmed', 'active'] }
     }).populate('user', 'name').populate('slot', 'number');
 
@@ -246,14 +273,27 @@ exports.verifyQR = async (req, res) => {
 
 exports.markEntry = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id);
+    const query = String(req.params.id || '').trim();
+    const mongoose = require('mongoose');
+    let booking = mongoose.Types.ObjectId.isValid(query) ? await Booking.findById(query) : null;
+    
+    if (!booking) {
+      booking = await Booking.findOne({
+        $or: [
+          { qrToken: { $regex: `^${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } },
+          { vehicleNumber: query.toUpperCase() },
+          { vehicleNumber: query.toUpperCase().replace(/[^A-Z0-9]/g, '') }
+        ],
+        status: 'confirmed'
+      }).sort({ createdAt: -1 });
+    }
 
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
     if (booking.status !== 'confirmed') {
-      return res.status(400).json({ success: false, message: 'Booking is not confirmed' });
+      return res.status(400).json({ success: false, message: `Booking is not confirmed (status: ${booking.status})` });
     }
 
     booking.status = 'active';
@@ -281,14 +321,27 @@ exports.markEntry = async (req, res) => {
 
 exports.markExit = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id).populate('slot');
+    const query = String(req.params.id || '').trim();
+    const mongoose = require('mongoose');
+    let booking = mongoose.Types.ObjectId.isValid(query) ? await Booking.findById(query).populate('slot') : null;
+
+    if (!booking) {
+      booking = await Booking.findOne({
+        $or: [
+          { qrToken: { $regex: `^${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } },
+          { vehicleNumber: query.toUpperCase() },
+          { vehicleNumber: query.toUpperCase().replace(/[^A-Z0-9]/g, '') }
+        ],
+        status: 'active'
+      }).sort({ createdAt: -1 }).populate('slot');
+    }
 
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
     if (booking.status !== 'active') {
-      return res.status(400).json({ success: false, message: 'Booking is not active' });
+      return res.status(400).json({ success: false, message: `Booking is not active (status: ${booking.status})` });
     }
 
     const exitTime = Date.now();
@@ -298,7 +351,7 @@ exports.markExit = async (req, res) => {
 
     if (exitTime > new Date(booking.endTime)) {
       const overstayDuration = Math.ceil((exitTime - new Date(booking.endTime)) / 3600000);
-      const overstayRate = parseFloat(process.env.OVERSTAY_RATE) || booking.slot.pricePerHour * 1.5;
+      const overstayRate = parseFloat(process.env.OVERSTAY_RATE) || (booking.slot ? booking.slot.pricePerHour * 1.5 : 45);
       booking.overstayDuration = overstayDuration;
       booking.overstayPenalty = overstayDuration * overstayRate;
     }
@@ -306,8 +359,11 @@ exports.markExit = async (req, res) => {
     booking.status = 'completed';
     await booking.save();
 
-    await ParkingSlot.findByIdAndUpdate(booking.slot._id || booking.slot, { status: 'available' });
-    emitSlotUpdate({ slotId: booking.slot._id || booking.slot, status: 'available' });
+    if (booking.slot) {
+      await ParkingSlot.findByIdAndUpdate(booking.slot._id || booking.slot, { status: 'available' });
+      emitSlotUpdate({ slotId: booking.slot._id || booking.slot, status: 'available' });
+      emitVehicleMotion({ slotId: booking.slot._id || booking.slot, phase: 'exiting' });
+    }
     emitVehicleMotion({ slotId: booking.slot._id || booking.slot, phase: 'exiting' });
 
     await Notification.create({

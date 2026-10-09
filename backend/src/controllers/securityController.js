@@ -143,7 +143,7 @@ exports.scanQR = async (req, res) => {
 
     if (mongoose.connection.readyState !== 1) {
       const type = gateMode || 'entry';
-      const slotNum = qrToken.length === 3 ? qrToken : 'A-04';
+      const slotNum = String(qrToken).length === 3 || String(qrToken).length === 4 ? String(qrToken).toUpperCase() : 'A-04';
       const mockBooking = {
         _id: 'mock_' + Date.now(),
         bookingId: 'mock_' + Date.now(),
@@ -169,11 +169,59 @@ exports.scanQR = async (req, res) => {
       });
     }
 
-    const rawToken = String(qrToken).trim();
+    let rawToken = String(qrToken).trim();
+
+    // 0. URL Parsing: If scanned payload is a URL, extract query params or path segment
+    if (rawToken.startsWith('http://') || rawToken.startsWith('https://')) {
+      try {
+        const parsedUrl = new URL(rawToken);
+        const extracted =
+          parsedUrl.searchParams.get('qrToken') ||
+          parsedUrl.searchParams.get('token') ||
+          parsedUrl.searchParams.get('bookingId') ||
+          parsedUrl.searchParams.get('id') ||
+          parsedUrl.searchParams.get('data') ||
+          parsedUrl.searchParams.get('code') ||
+          parsedUrl.pathname.split('/').filter(Boolean).pop();
+        if (extracted) {
+          rawToken = decodeURIComponent(extracted).trim();
+        }
+      } catch {
+        // keep original rawToken
+      }
+    }
+
+    // 0b. JSON Parsing: If scanned payload is JSON, extract token or booking ID
+    if ((rawToken.startsWith('{') && rawToken.endsWith('}')) || (rawToken.startsWith('[') && rawToken.endsWith(']'))) {
+      try {
+        const parsed = JSON.parse(rawToken);
+        if (typeof parsed === 'object' && parsed !== null) {
+          rawToken = String(
+            parsed.qrToken ||
+            parsed.token ||
+            parsed.bookingId ||
+            parsed.id ||
+            parsed._id ||
+            parsed.vehicleNumber ||
+            rawToken
+          ).trim();
+        }
+      } catch {
+        // keep original rawToken
+      }
+    }
+
+    // 0c. Strip Pass ID UI prefixes (e.g., "PASS ID: #ABC12345", "PASS ID: ABC12345", "#ABC12345", "BK-ABC12345")
+    if (/^PASS\s*ID\s*:\s*#?/i.test(rawToken)) {
+      rawToken = rawToken.replace(/^PASS\s*ID\s*:\s*#?/i, '').trim();
+    } else if (rawToken.startsWith('#')) {
+      rawToken = rawToken.slice(1).trim();
+    }
+
     let booking = null;
 
-    // 1. Check if token is a Dynamic Rotating QR Token
-    if (rawToken.startsWith('PS-DYN|')) {
+    // 1. Check if token is a Dynamic Rotating QR Token (PS-DYN|...)
+    if (rawToken.toUpperCase().startsWith('PS-DYN|')) {
       const dynamicCheck = verifyDynamicQRToken(rawToken);
       const candidateId = dynamicCheck.bookingId;
       if (candidateId) {
@@ -194,12 +242,12 @@ exports.scanQR = async (req, res) => {
         return res.status(400).json({
           success: false,
           allowed: false,
-          message: 'Dynamic QR token is expired or invalid. Please refresh the QR screen.'
+          message: 'Dynamic QR token is expired or invalid. Please refresh the driver app pass screen.'
         });
       }
     }
 
-    // 2. Fallback to standard UUID qrToken
+    // 2. Fallback to standard UUID qrToken (case-insensitive regex)
     if (!booking) {
       booking = await Booking.findOne({
         qrToken: { $regex: `^${rawToken.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' }
@@ -208,15 +256,32 @@ exports.scanQR = async (req, res) => {
         .populate('user');
     }
 
-    // 3. Fallback to MongoDB _id or vehicleNumber / License Plate
+    // 3. Fallback to full MongoDB 24-character _id
+    if (!booking && mongoose.Types.ObjectId.isValid(rawToken)) {
+      booking = await Booking.findById(rawToken).populate('slot').populate('user');
+    }
+
+    // 4. Fallback to Pass ID / Hex Suffix of _id (6 to 24 hex characters)
+    if (!booking && /^[0-9a-fA-F]{6,24}$/.test(rawToken)) {
+      booking = await Booking.findOne({
+        $expr: {
+          $regexMatch: {
+            input: { $toString: '$_id' },
+            regex: `${rawToken}$`,
+            options: 'i'
+          }
+        },
+        status: gateMode === 'exit' ? 'active' : { $in: ['confirmed', 'active'] }
+      })
+        .populate('slot')
+        .populate('user');
+    }
+
+    // 5. Fallback to Vehicle License Plate
     if (!booking) {
-      if (mongoose.Types.ObjectId.isValid(rawToken)) {
-        booking = await Booking.findById(rawToken).populate('slot').populate('user');
-      }
-      
       const cleanPlate = rawToken.toUpperCase().replace(/[^A-Z0-9]/g, '');
-      
-      // If it looks like a vehicle plate, check blacklist first
+
+      // Check blacklist for direct plate input
       if (cleanPlate.length >= 4 && cleanPlate.length <= 16) {
         const directBlacklist = await Blacklist.findOne({
           vehicleNumber: { $regex: `^${cleanPlate}$|^${rawToken.toUpperCase()}$`, $options: 'i' },
@@ -250,15 +315,33 @@ exports.scanQR = async (req, res) => {
         }
       }
 
-      if (!booking) {
-        // Try finding active/confirmed booking by vehicleNumber (exact or regex)
+      if (cleanPlate.length >= 4) {
         booking = await Booking.findOne({
           $or: [
             { vehicleNumber: rawToken.toUpperCase() },
             { vehicleNumber: { $regex: `^${cleanPlate.split('').join('[- ]?')}$`, $options: 'i' } }
           ],
           status: gateMode === 'exit' ? 'active' : { $in: ['confirmed', 'active'] }
-        }).populate('slot').populate('user');
+        })
+          .sort({ createdAt: -1 })
+          .populate('slot')
+          .populate('user');
+      }
+    }
+
+    // 6. Fallback to Slot Number (e.g. A-01, B-04)
+    if (!booking && /^[A-Za-z0-9-]{2,6}$/.test(rawToken)) {
+      const slotDoc = await ParkingSlot.findOne({
+        number: { $regex: `^${rawToken.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' }
+      });
+      if (slotDoc) {
+        booking = await Booking.findOne({
+          slot: slotDoc._id,
+          status: gateMode === 'exit' ? 'active' : { $in: ['confirmed', 'active'] }
+        })
+          .sort({ createdAt: -1 })
+          .populate('slot')
+          .populate('user');
       }
     }
 
@@ -268,11 +351,11 @@ exports.scanQR = async (req, res) => {
         allowed: false,
         unbookedVehicle: true,
         vehicleNumber: rawToken.toUpperCase(),
-        message: `No active paid booking found for vehicle plate / token "${rawToken}".`
+        message: `No active paid booking found for pass token / vehicle plate "${rawToken}".`
       });
     }
 
-    // 4. Blacklist Check on Confirmed Booking Vehicle Number
+    // 7. Blacklist Check on Confirmed Booking Vehicle Number
     const vehicleNum = (booking.vehicleNumber || '').toUpperCase().trim();
     const blacklistMatch = await Blacklist.findOne({ vehicleNumber: vehicleNum, isActive: true });
     if (blacklistMatch) {
@@ -309,7 +392,10 @@ exports.scanQR = async (req, res) => {
 };
 
 const processScan = async (req, res, booking, mode, blacklistMatch = null) => {
-  const type = mode || (booking.status === 'active' ? 'exit' : 'entry');
+  let type = mode || 'auto';
+  if (type === 'auto') {
+    type = booking.status === 'active' ? 'exit' : 'entry';
+  }
 
   if (type === 'entry') {
     // Payment check
@@ -324,19 +410,44 @@ const processScan = async (req, res, booking, mode, blacklistMatch = null) => {
 
     // Status state check
     if (booking.status === 'active') {
-      return res.status(400).json({
-        success: false,
+      return res.status(200).json({
+        success: true,
         allowed: false,
+        alreadyInside: true,
         type: 'entry',
-        message: 'ENTRY DENIED: Vehicle has already entered the parking lot.'
+        message: `ENTRY DENIED: Vehicle ${booking.vehicleNumber || ''} has already entered the parking lot (Parked in Slot ${booking.slot?.number || 'Assigned'}).`,
+        booking: {
+          id: booking._id,
+          bookingId: booking._id,
+          slotNumber: booking.slot?.number || 'Assigned',
+          vehicleNumber: booking.vehicleNumber,
+          userName: booking.user?.name || 'Driver',
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          entryTime: booking.entryTime,
+          status: booking.status
+        }
       });
     }
     if (booking.status === 'completed') {
-      return res.status(400).json({
-        success: false,
+      return res.status(200).json({
+        success: true,
         allowed: false,
+        alreadyCompleted: true,
         type: 'entry',
-        message: 'ENTRY DENIED: Booking session has already been completed.'
+        message: 'ENTRY DENIED: Booking session has already been completed and vehicle has exited.',
+        booking: {
+          id: booking._id,
+          bookingId: booking._id,
+          slotNumber: booking.slot?.number || 'Assigned',
+          vehicleNumber: booking.vehicleNumber,
+          userName: booking.user?.name || 'Driver',
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          entryTime: booking.entryTime,
+          exitTime: booking.exitTime,
+          status: booking.status
+        }
       });
     }
     if (booking.status !== 'confirmed') {
@@ -344,31 +455,31 @@ const processScan = async (req, res, booking, mode, blacklistMatch = null) => {
         success: false,
         allowed: false,
         type: 'entry',
-        message: `ENTRY DENIED: Booking is not in a valid state (${booking.status}).`
+        message: `ENTRY DENIED: Booking is not in a confirmed state (${booking.status}).`
       });
     }
 
-    // Time Window check: Valid 10 mins before startTime until 15 mins after startTime for initial entry
+    // Time Window check: Valid from 15 mins before startTime until endTime
     const now = new Date();
     const startTime = new Date(booking.startTime);
     const endTime = new Date(booking.endTime);
-    const earlyEntryWindow = new Date(startTime.getTime() - 10 * 60 * 1000);
-    const graceExpiryWindow = new Date(startTime.getTime() + 15 * 60 * 1000);
+    const earlyEntryWindow = new Date(startTime.getTime() - 15 * 60 * 1000); // 15 min early buffer
 
     if (now.getTime() < earlyEntryWindow.getTime()) {
       return res.status(400).json({
         success: false,
         allowed: false,
         type: 'entry',
-        message: `ENTRY DENIED: Too early. QR pass activates 10 minutes before slot start time (at ${earlyEntryWindow.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}).`
+        message: `ENTRY DENIED: Too early. QR pass activates 15 minutes before slot start time (at ${earlyEntryWindow.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}). Scheduled: ${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`
       });
     }
-    if (now.getTime() > graceExpiryWindow.getTime() && booking.status !== 'active') {
+
+    if (now.getTime() > endTime.getTime()) {
       return res.status(400).json({
         success: false,
         allowed: false,
         type: 'entry',
-        message: `ENTRY DENIED: 15-minute gate entry grace period expired at ${graceExpiryWindow.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Slot released.`
+        message: `ENTRY DENIED: Booking reservation end time (${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}) has already passed.`
       });
     }
 
@@ -525,6 +636,48 @@ const processScan = async (req, res, booking, mode, blacklistMatch = null) => {
     });
   } else {
     // Exit scan
+    if (booking.status === 'confirmed') {
+      return res.status(200).json({
+        success: true,
+        allowed: false,
+        notEnteredYet: true,
+        type: 'exit',
+        message: `EXIT DENIED: Vehicle ${booking.vehicleNumber || ''} has not entered the parking lot yet.`,
+        booking: {
+          id: booking._id,
+          bookingId: booking._id,
+          slotNumber: booking.slot?.number || 'Assigned',
+          vehicleNumber: booking.vehicleNumber,
+          userName: booking.user?.name || 'Driver',
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          status: booking.status
+        }
+      });
+    }
+
+    if (booking.status === 'completed') {
+      return res.status(200).json({
+        success: true,
+        allowed: false,
+        alreadyCompleted: true,
+        type: 'exit',
+        message: `EXIT DENIED: Vehicle ${booking.vehicleNumber || ''} has already completed session and exited.`,
+        booking: {
+          id: booking._id,
+          bookingId: booking._id,
+          slotNumber: booking.slot?.number || 'Assigned',
+          vehicleNumber: booking.vehicleNumber,
+          userName: booking.user?.name || 'Driver',
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          entryTime: booking.entryTime,
+          exitTime: booking.exitTime,
+          status: booking.status
+        }
+      });
+    }
+
     if (booking.status !== 'active') {
       return res.status(400).json({
         success: false,
@@ -661,7 +814,12 @@ exports.manualVerify = async (req, res) => {
       });
     }
 
-    const searchStatus = gateMode === 'exit' ? 'active' : 'confirmed';
+    const searchStatus =
+      gateMode === 'exit'
+        ? 'active'
+        : gateMode === 'entry'
+        ? 'confirmed'
+        : { $in: ['confirmed', 'active'] };
 
     const bookings = await Booking.find({
       vehicleNumber: { $regex: new RegExp(`^${cleanPlate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
@@ -671,10 +829,11 @@ exports.manualVerify = async (req, res) => {
       .populate('user');
 
     if (!bookings.length) {
+      const modeLabel = typeof searchStatus === 'string' ? searchStatus : 'active/confirmed';
       return res.status(400).json({
         success: false,
         blacklistAlert: blacklistMatch,
-        message: `No ${searchStatus} booking found for vehicle ${cleanPlate}`
+        message: `No ${modeLabel} booking found for vehicle ${cleanPlate}`
       });
     }
 
