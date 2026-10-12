@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://backend-myusi.vercel.app/api/:path*"
+      "destination": "https://backend-eta-jet-79.vercel.app/api/:path*"
     },
     {
       "source": "/(.*)",
