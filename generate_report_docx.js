@@ -545,44 +545,94 @@ async function generateDocx() {
           // CHAPTER 4
           pageBreak(),
           heading1("CHAPTER 4: REQUIREMENTS ANALYSIS AND PROJECT SCOPE"),
-          heading2("Table 4.1: Functional Requirements"),
-          tableTitle("Table 4.1: Functional Requirements"),
+          heading2("4.1 Functional Requirements Specification"),
+          bodyPara("The functional requirements specify the operational capabilities, authentication protocols, dynamic ticketing, and automated gate validation procedures implemented in the ParkSmart system:"),
+          tableTitle("Table 4.1: Functional Requirements Specification"),
           createTable(
             ["Req. ID", "Requirement", "Priority", "Source / Basis", "Status"],
             [
-              ["FR-01", "User login and secure authentication through JWT & 2FA", "High", "Project requirements", "Implemented"],
-              ["FR-02", "Driver registration with vehicle license plate", "High", "Project objectives", "Implemented"],
-              ["FR-03", "Interactive 2D floor map showing live slot availability", "High", "Core functionality", "Implemented"],
-              ["FR-04", "Parking slot filtering by category (Two-Wheeler, Four-Wheeler, EV Charging)", "High", "User requirements", "Implemented"],
-              ["FR-05", "Online payment processing via Razorpay test gateway", "High", "Project objectives", "Implemented"],
-              ["FR-06", "Dynamic QR pass generation with HMAC-SHA256 token rotation (30s)", "High", "Security requirements", "Implemented"],
-              ["FR-07", "Security Gate scanner with Smart Auto Entry/Exit mode", "High", "Gate operations", "Implemented"],
-              ["FR-08", "Fallback manual vehicle number plate verification for guards", "Medium", "Usability", "Implemented"],
-              ["FR-09", "Automated overstay penalty fee calculation and billing", "High", "Billing module", "Implemented"],
-              ["FR-10", "Automated email notifications via Nodemailer SMTP", "High", "Notification service", "Implemented"],
-              ["FR-11", "Real-time slot status synchronization using Socket.IO", "High", "Architecture design", "Implemented"],
-              ["FR-12", "Admin dashboard for slot management, pricing, revenue, and reports", "High", "Management module", "Implemented"]
+              ["FR-01", "User registration, login, and JWT session authorization", "High", "System Security", "Completed"],
+              ["FR-02", "Real-time visual 2D parking bay matrix", "High", "User Experience", "Completed"],
+              ["FR-03", "Slot reservation with vehicle type & duration filters", "High", "Core Function", "Completed"],
+              ["FR-04", "HMAC-SHA256 Dynamic QR token generation (30 s rotation)", "High", "Anti-Fraud", "Completed"],
+              ["FR-05", "Security Desk camera scanner with Smart Auto Mode", "High", "Gate Operations", "Completed"],
+              ["FR-06", "1-Click Gate mode recovery for active/confirmed vehicles", "Medium", "Error Prevention", "Completed"],
+              ["FR-07", "Automated overstay penalty billing at checkout", "High", "Billing Module", "Completed"],
+              ["FR-08", "Admin dashboard for slot management and revenue logs", "High", "Management", "Completed"]
             ],
-            [10, 48, 12, 18, 12]
+            [12, 46, 12, 18, 12]
           ),
-          heading2("Table 4.4: Software Requirements"),
-          tableTitle("Table 4.4: Software Requirements"),
+
+          heading2("4.2 Non-Functional Requirements Specification"),
+          bodyPara("The non-functional requirements define the quality attributes, throughput targets, security controls, responsiveness across client devices, and error tolerances:"),
+          tableTitle("Table 4.2: Non-Functional Requirements Specification"),
+          createTable(
+            ["Req. ID", "Category", "Requirement", "Target / Measure", "Status"],
+            [
+              ["NFR-01", "Performance", "API response time < 200 ms under standard loads", "< 200 ms", "Met"],
+              ["NFR-02", "Security", "bcrypt password hashing (10 salt rounds), JWT expiration", "10 salt rounds", "Met"],
+              ["NFR-03", "Responsiveness", "Fluid layout across 320 px to 1920 px viewports", "320 px–1920 px", "Met"],
+              ["NFR-04", "Reliability", "±15-minute clock drift tolerance for dynamic tokens", "±15 minutes", "Met"],
+              ["NFR-05", "Availability", "Zero-configuration camera fallback on web browsers", "Multi-camera auto fallback", "Met"]
+            ],
+            [12, 16, 42, 18, 12]
+          ),
+
+          heading2("4.3 Hardware Requirements"),
+          bodyPara("The minimum and recommended hardware components required for end-user client access, optical gate barcode scanning, cloud application hosting, and gate boom simulation:"),
+          tableTitle("Table 4.3: Hardware Requirements"),
+          createTable(
+            ["Component", "Specification", "Purpose", "Availability"],
+            [
+              ["Client Device", "Chrome, Edge, Firefox or Safari on Windows, Android, macOS or iOS", "Driver, admin and security interfaces", "Available"],
+              ["Camera", "Standard webcam, smartphone rear/front camera or USB camera", "QR scanning at security gate desk", "Available"],
+              ["Server", "Node.js v18+, MongoDB v6.0+, minimum 2 GB RAM", "Hosting REST API and database", "Available"],
+              ["Network", "Active internet connection", "Real-time verification against cloud database", "Available"],
+              ["Boom Barrier Controller", "ESP32 / Arduino with servo (future scope)", "Physical gate control", "Simulated via UI"]
+            ],
+            [22, 38, 26, 14]
+          ),
+
+          heading2("4.4 Software Requirements Specification"),
+          bodyPara("The software frameworks, runtimes, database systems, and development tools utilized to build and deploy ParkSmart:"),
+          tableTitle("Table 4.4: Software Requirements Specification"),
           createTable(
             ["Software / Tool", "Version", "Purpose", "Source / License"],
             [
-              ["React.js", "React 18.2", "Frontend Development", "Open Source"],
-              ["Tailwind CSS", "Version 3.4", "Responsive UI Styling", "Open Source"],
-              ["Node.js", "Node.js 20.x", "Backend Development Server", "Open Source"],
-              ["Express.js", "Express 4.18", "REST API Development", "Open Source"],
-              ["MongoDB Atlas", "MongoDB 6.0+", "Cloud Database Management", "Free / Community"],
-              ["Razorpay Checkout SDK", "Latest", "Online Payment Integration", "Payment Service"],
-              ["Html5Qrcode", "Version 2.3+", "Camera-based Barcode Scanning", "Open Source"],
-              ["Socket.IO", "Version 4.7+", "Real-Time WebSocket Events", "Open Source"],
-              ["Nodemailer", "Version 6.9+", "SMTP Transactional Email", "Open Source"],
-              ["Vercel", "Cloud Platform", "Production Hosting & CI/CD", "Free / Cloud"]
+              ["Node.js", "v20+", "Backend runtime", "Open source (MIT)"],
+              ["MongoDB Atlas", "6.0+", "Cloud NoSQL database", "Free tier / SSPL"],
+              ["React", "18.2", "Frontend UI framework", "Open source (MIT)"],
+              ["Tailwind CSS", "3.4", "Responsive styling framework", "Open source (MIT)"],
+              ["TypeScript", "ES2022 target", "Type-safe full-stack development", "Open source (Apache-2.0)"],
+              ["Express.js", "4.18", "REST routing and middleware", "Open source (MIT)"],
+              ["Html5Qrcode", "2.3+", "In-browser QR scanning", "Open source (Apache-2.0)"],
+              ["qrcode.react", "Stable release", "QR code rendering for driver pass", "Open source (ISC)"],
+              ["bcryptjs / jsonwebtoken", "Stable release", "Password hashing and JWT sessions", "Open source (MIT)"],
+              ["Postman / Git & GitHub", "Latest", "API testing and version control", "Free tier"]
             ],
-            [25, 18, 37, 20]
+            [22, 16, 42, 20]
           ),
+
+          heading2("4.5 Data / Dataset Requirements"),
+          bodyPara("The application generates transactional operational data during real-time user bookings, vehicle check-ins, and security logs:"),
+          tableTitle("Table 4.5: Data / Dataset Requirements"),
+          createTable(
+            ["Data Source", "Type", "Size / Records", "Pre-processing", "Purpose"],
+            [
+              ["Application-generated data", "Users collection", "Created at runtime (user registrations)", "Password hashing (bcrypt), validation", "Authentication and RBAC"],
+              ["Application-generated data", "Slots collection", "Parking bays configured by admin", "Normalization of slot type and status", "Floor grid and availability"],
+              ["Application-generated data", "Bookings collection", "Created per reservation", "Time-window validation, QR token generation", "Reservations and gate validation"],
+              ["Application-generated data", "SecurityLogs & Blacklists", "One record per gate scan / blocked vehicle", "Timestamp, gate mode tagging, uppercase vehicle numbers", "Audit and access control"]
+            ],
+            [20, 20, 20, 20, 20]
+          ),
+
+          heading2("4.6 Constraints and Assumptions"),
+          bulletItem("Verification of dynamic QR tokens is performed against the cloud database and requires continuous connectivity.", "• Internet dependency: "),
+          bulletItem("Camera streams require a modern browser and user permission (HTTPS or localhost).", "• Browser camera access: "),
+          bulletItem("The boom barrier is simulated through software triggers and Razorpay payments run in test mode only.", "• Simulated hardware / test-mode payment: "),
+          bulletItem("The phone clock and server clock differ by no more than ±15 minutes (validated via ±30 token steps drift window).", "• Assumption: "),
+          bulletItem("The facility operates as a single parking location managed by one admin team.", "• Assumption: "),
 
           // CHAPTER 5
           pageBreak(),
