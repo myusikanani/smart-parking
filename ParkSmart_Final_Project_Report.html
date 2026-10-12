@@ -232,21 +232,27 @@ The work embodied in this project has not been submitted elsewhere for the award
   <tr><td>14</td><td>Table 6.7</td><td>Database / Data Design (Collections Specification)</td></tr>
   <tr><td>15</td><td>Table 7.1</td><td>Programming Languages Used</td></tr>
   <tr><td>16</td><td>Table 7.2</td><td>Frameworks, Libraries and APIs</td></tr>
-  <tr><td>17</td><td>Table 7.4</td><td>Hardware, Cloud and Deployment Environment</td></tr>
-  <tr><td>18</td><td>Table 8.6</td><td>API / External Service Integration</td></tr>
-  <tr><td>19</td><td>Table 9.2</td><td>Unit / Module Testing Results</td></tr>
-  <tr><td>20</td><td>Table 9.3</td><td>Functional Test Cases &amp; Validation</td></tr>
-  <tr><td>21</td><td>Table 9.4</td><td>Integration Test Cases</td></tr>
-  <tr><td>22</td><td>Table 9.7</td><td>User Acceptance Testing (Evaluator Sign-offs)</td></tr>
-  <tr><td>23</td><td>Table 9.9</td><td>Defects / Bugs Identification and Resolution Record</td></tr>
-  <tr><td>24</td><td>Table 10.2</td><td>Objective-wise Achievement Analysis</td></tr>
-  <tr><td>25</td><td>Table 10.3</td><td>System Performance Benchmark Metrics</td></tr>
-  <tr><td>26</td><td>Table 11.1</td><td>Technical Challenges, Solutions and Outcomes</td></tr>
-  <tr><td>27</td><td>Table 12.1</td><td>Individual Contribution &amp; Responsibility Matrix</td></tr>
-  <tr><td>28</td><td>Table 13.1</td><td>Current Limitations &amp; Future Improvements</td></tr>
-  <tr><td>29</td><td>Table 14.1</td><td>Final Project Completion Status</td></tr>
-  <tr><td>30</td><td>Table G.1</td><td>Source Code &amp; Repository Evidence</td></tr>
-  <tr><td>31</td><td>Table B.1</td><td>Final Hard-Bound Submission Checklist</td></tr>
+  <tr><td>17</td><td>Table 7.3</td><td>Database / Storage</td></tr>
+  <tr><td>18</td><td>Table 7.4</td><td>Hardware, Cloud and Deployment Environment</td></tr>
+  <tr><td>19</td><td>Table 7.5</td><td>Development Tools</td></tr>
+  <tr><td>20</td><td>Table 8.6</td><td>API / External Service Integration</td></tr>
+  <tr><td>21</td><td>Table 9.2</td><td>Unit / Module Testing Results</td></tr>
+  <tr><td>22</td><td>Table 9.3</td><td>Functional Testing (FT-01 to FT-08)</td></tr>
+  <tr><td>23</td><td>Table 9.4</td><td>Integration Testing (IT-01 to IT-06)</td></tr>
+  <tr><td>24</td><td>Table 9.5</td><td>System Testing (ST-01 to ST-08)</td></tr>
+  <tr><td>25</td><td>Table 9.6</td><td>Performance Testing</td></tr>
+  <tr><td>26</td><td>Table 9.7</td><td>User / Acceptance Testing (Evaluator Sign-offs)</td></tr>
+  <tr><td>27</td><td>Table 9.8</td><td>Experimental Validation</td></tr>
+  <tr><td>28</td><td>Table 9.9</td><td>Defects / Bugs and Resolution Record</td></tr>
+  <tr><td>29</td><td>Table 10.2</td><td>Objective-wise Achievement Analysis</td></tr>
+  <tr><td>30</td><td>Table 10.3</td><td>System Performance Benchmark Metrics</td></tr>
+  <tr><td>31</td><td>Table 10.4</td><td>Comparative Results of Parking Systems</td></tr>
+  <tr><td>32</td><td>Table 11.1</td><td>Technical Challenges, Solutions and Outcomes</td></tr>
+  <tr><td>33</td><td>Table 12.1</td><td>Individual Contribution &amp; Responsibility Matrix</td></tr>
+  <tr><td>34</td><td>Table 13.1</td><td>Current Limitations &amp; Future Improvements</td></tr>
+  <tr><td>35</td><td>Table 14.1</td><td>Final Project Completion Status</td></tr>
+  <tr><td>36</td><td>Table G.1</td><td>Source Code &amp; Repository Evidence</td></tr>
+  <tr><td>37</td><td>Table B.1</td><td>Final Hard-Bound Submission Checklist</td></tr>
 </table>
 
 <!-- CHAPTER 4: REQUIREMENTS ANALYSIS AND PROJECT SCOPE -->
@@ -788,21 +794,90 @@ Each individual parking bay transitions through deterministic lifecycle states f
 <!-- CHAPTER 7: TECHNOLOGY STACK -->
 <div class="page-break"></div>
 <div class="header-banner">P P SAVANI UNIVERSITY | SCHOOL OF ENGINEERING</div>
-<h2 class="chapter-heading">CHAPTER 7: TECHNOLOGY STACK</h2>
+<h2 class="chapter-heading">CHAPTER 7: TECHNOLOGY STACK & ENVIRONMENT</h2>
+
+<h3 class="section-heading">7.1 Programming Languages</h3>
+<div class="figure-title" style="text-align: left; margin-bottom: 4px;">Table 7.1: Programming Languages Used</div>
 <table>
   <tr>
     <th style="width: 25%;">Technology</th>
-    <th style="width: 15%;">Version</th>
-    <th>Purpose & Usage in Project</th>
+    <th style="width: 18%;">Version</th>
+    <th style="width: 25%;">Purpose</th>
+    <th style="width: 32%;">Major Usage</th>
   </tr>
-  <tr><td><strong>TypeScript / JS</strong></td><td>ES2022</td><td>Strict static typing on frontend and dynamic backend handling</td></tr>
-  <tr><td><strong>React</strong></td><td>18.2</td><td>Dynamic single-page application component hierarchy</td></tr>
-  <tr><td><strong>Node.js</strong></td><td>20.x</td><td>High-concurrency asynchronous runtime for API endpoints</td></tr>
-  <tr><td><strong>Express.js</strong></td><td>4.18</td><td>RESTful routing, error handling, and security middleware</td></tr>
-  <tr><td><strong>MongoDB Atlas</strong></td><td>6.0+</td><td>Cloud NoSQL database with indexing and aggregation</td></tr>
-  <tr><td><strong>Html5Qrcode</strong></td><td>2.3+</td><td>Hardware webcam/rear camera video feed decoding</td></tr>
-  <tr><td><strong>Node Crypto</strong></td><td>Built-in</td><td>HMAC-SHA256 cryptographic dynamic signature generation</td></tr>
-  <tr><td><strong>Tailwind CSS</strong></td><td>3.4</td><td>Utility-first responsive styling and cyber theme</td></tr>
+  <tr><td><strong>JavaScript / TypeScript</strong></td><td>ES6+ / ES2022</td><td>Programming language</td><td>Frontend components and backend REST controllers</td></tr>
+  <tr><td><strong>HTML5</strong></td><td>Living Standard</td><td>Markup structure</td><td>Accessible UI structures &amp; camera canvas</td></tr>
+  <tr><td><strong>CSS3 / Tailwind CSS</strong></td><td>Version 3.4</td><td>Responsive styling</td><td>Glassmorphism, Cyber theme, fluid grid layout</td></tr>
+  <tr><td><strong>React.js</strong></td><td>React 18.2</td><td>Frontend UI framework</td><td>Driver, Security Gate, and Admin single-page dashboards</td></tr>
+  <tr><td><strong>Node.js</strong></td><td>Node.js 20.x</td><td>Backend runtime server</td><td>REST API routing, WebSockets, background tasks</td></tr>
+</table>
+
+<h3 class="section-heading">7.2 Frameworks, Libraries and APIs</h3>
+<div class="figure-title" style="text-align: left; margin-bottom: 4px;">Table 7.2: Frameworks, Libraries and APIs</div>
+<table>
+  <tr>
+    <th style="width: 25%;">Tool / Framework / API</th>
+    <th style="width: 18%;">Version</th>
+    <th style="width: 27%;">Purpose</th>
+    <th style="width: 30%;">Usage</th>
+  </tr>
+  <tr><td><strong>Express.js</strong></td><td>4.18.2</td><td>Backend framework</td><td>RESTful routing middleware and security filters</td></tr>
+  <tr><td><strong>Mongoose</strong></td><td>8.0+</td><td>MongoDB ODM library</td><td>Database connections, schema validation &amp; population</td></tr>
+  <tr><td><strong>JWT (JSON Web Token)</strong></td><td>9.0+</td><td>Authentication &amp; RBAC</td><td>Role authorization and secure stateless sessions</td></tr>
+  <tr><td><strong>Razorpay SDK</strong></td><td>Latest</td><td>Online payment processing</td><td>Test-mode online payments and signature verification</td></tr>
+  <tr><td><strong>Html5Qrcode</strong></td><td>2.3.8</td><td>Optical barcode scanning</td><td>Camera stream capture and in-browser QR decoding</td></tr>
+  <tr><td><strong>Socket.IO</strong></td><td>4.7+</td><td>Real-time WebSockets</td><td>Live slot status broadcasting without page refresh</td></tr>
+  <tr><td><strong>Nodemailer</strong></td><td>6.9+</td><td>SMTP email delivery</td><td>Automated booking receipts and overstay notices</td></tr>
+  <tr><td><strong>node-cron</strong></td><td>3.0+</td><td>Task scheduler</td><td>Automated overstay and 30-min no-show cancellation</td></tr>
+</table>
+
+<h3 class="section-heading">7.3 Database & Storage</h3>
+<div class="figure-title" style="text-align: left; margin-bottom: 4px;">Table 7.3: Database / Storage</div>
+<table>
+  <tr>
+    <th style="width: 25%;">Database / Storage</th>
+    <th style="width: 18%;">Version</th>
+    <th style="width: 27%;">Purpose</th>
+    <th style="width: 30%;">Data Managed</th>
+  </tr>
+  <tr><td><strong>MongoDB Atlas</strong></td><td>6.0+</td><td>Cloud NoSQL database</td><td>Users, Slots, Bookings, SecurityLogs, Blacklists with indexing and aggregation</td></tr>
+  <tr><td><strong>Mongoose ODM</strong></td><td>Stable release</td><td>Schema modelling layer</td><td>Collection schemas and relationships</td></tr>
+  <tr><td><strong>Browser localStorage</strong></td><td>Web standard</td><td>Client-side session persistence</td><td>Signed JWT token</td></tr>
+</table>
+
+<div class="page-break"></div>
+<div class="header-banner">P P SAVANI UNIVERSITY | SCHOOL OF ENGINEERING</div>
+<h3 class="section-heading">7.4 Hardware, Cloud and Deployment Environment</h3>
+<div class="figure-title" style="text-align: left; margin-bottom: 4px;">Table 7.4: Hardware, Cloud and Deployment Environment</div>
+<table>
+  <tr>
+    <th style="width: 26%;">Platform / Hardware</th>
+    <th style="width: 28%;">Specification</th>
+    <th style="width: 32%;">Purpose</th>
+    <th style="width: 14%;">Status</th>
+  </tr>
+  <tr><td><strong>Development Computer</strong></td><td>Intel Core i5 / AMD Ryzen, 16 GB RAM</td><td>Software coding, unit testing, and benchmarking</td><td>Active</td></tr>
+  <tr><td><strong>Vercel Cloud (Frontend)</strong></td><td>Edge Global CDN</td><td>Hosting React 18 single-page application</td><td>Live Deployed</td></tr>
+  <tr><td><strong>Vercel Cloud (Backend)</strong></td><td>Serverless Node.js 20.x</td><td>Hosting REST APIs, Socket.IO, and cron handlers</td><td>Live Deployed</td></tr>
+  <tr><td><strong>MongoDB Atlas Cloud</strong></td><td>M0 Shared Cluster, Multi-Region</td><td>Scalable persistence of parking collections</td><td>Live Integrated</td></tr>
+  <tr><td><strong>Gmail SMTP Server</strong></td><td>smtp.gmail.com (Port 587, TLS)</td><td>Automated transactional booking receipts</td><td>Configured</td></tr>
+  <tr><td><strong>Client Web Browsers</strong></td><td>Chrome, Safari, Edge, Firefox</td><td>Desktop &amp; mobile responsive client access</td><td>Validated</td></tr>
+</table>
+
+<h3 class="section-heading">7.5 Development Tools</h3>
+<div class="figure-title" style="text-align: left; margin-bottom: 4px;">Table 7.5: Development Tools</div>
+<table>
+  <tr>
+    <th style="width: 25%;">Tool</th>
+    <th style="width: 35%;">Purpose</th>
+    <th style="width: 40%;">Usage</th>
+  </tr>
+  <tr><td><strong>VS Code</strong></td><td>Primary code editor</td><td>Frontend and backend development</td></tr>
+  <tr><td><strong>Antigravity IDE</strong></td><td>AI-assisted IDE</td><td>Code generation, refactoring and debugging support</td></tr>
+  <tr><td><strong>Postman</strong></td><td>API testing</td><td>Testing REST endpoints and authentication</td></tr>
+  <tr><td><strong>Git &amp; GitHub</strong></td><td>Version control</td><td>Repository myusikanani/smart-parking, branch main</td></tr>
+  <tr><td><strong>npm</strong></td><td>Package management</td><td>Dependency installation and scripts</td></tr>
+  <tr><td><strong>Vite</strong></td><td>Build tool</td><td>Development server and production bundle</td></tr>
 </table>
 
 <!-- CHAPTER 8: IMPLEMENTATION HIGHLIGHTS -->
@@ -822,65 +897,196 @@ To prevent pass duplication via screenshots, passes rotate every 30 seconds:
 <div class="page-break"></div>
 <div class="header-banner">P P SAVANI UNIVERSITY | SCHOOL OF ENGINEERING</div>
 <h2 class="chapter-heading">CHAPTER 9: TESTING, DEFECT RESOLUTION & VALIDATION</h2>
-<h3 class="section-heading">9.1 Functional & Security Test Cases</h3>
+
+<h3 class="section-heading">9.1 Functional Testing</h3>
+<div class="figure-title" style="text-align: left; margin-bottom: 4px;">Table 9.3: Functional Testing (FT-01 to FT-08)</div>
 <table>
   <tr>
-    <th style="width: 12%;">Test ID</th>
-    <th style="width: 20%;">Module</th>
-    <th style="width: 38%;">Scenario</th>
-    <th style="width: 15%;">Result</th>
-    <th style="width: 15%;">Status</th>
+    <th style="width: 10%;">Test ID</th>
+    <th style="width: 38%;">Functionality</th>
+    <th style="width: 32%;">Expected</th>
+    <th style="width: 12%;">Actual</th>
+    <th style="width: 8%;">Status</th>
   </tr>
-  <tr><td>TC-01</td><td>Auth</td><td>Login with incorrect password</td><td>401 Error</td><td>Passed</td></tr>
-  <tr><td>TC-02</td><td>Booking</td><td>Reserve already occupied slot</td><td>Disabled</td><td>Passed</td></tr>
-  <tr><td>TC-03</td><td>Dynamic QR</td><td>Validate token with clock drift</td><td>Verified</td><td>Passed</td></tr>
-  <tr><td>TC-04</td><td>Camera</td><td>Start on laptop without rear lens</td><td>Webcam fallback</td><td>Passed</td></tr>
-  <tr><td>TC-05</td><td>Smart Gate</td><td>Scan arriving and departing vehicle</td><td>Auto-routed</td><td>Passed</td></tr>
+  <tr><td><strong>FT-01</strong></td><td>Registration, login and JWT session (FR-01)</td><td>User authenticated and role-based redirect</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>FT-02</strong></td><td>Visual slot floor grid (FR-02)</td><td>Live availability shown for all bays</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>FT-03</strong></td><td>Slot booking with vehicle type and duration (FR-03)</td><td>Booking created for selected bay</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>FT-04</strong></td><td>Dynamic QR generation, 30 s rotation (FR-04)</td><td>New signed token every 30 s</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>FT-05</strong></td><td>Gate scanner entry/exit detection (FR-05)</td><td>Direction detected automatically</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>FT-06</strong></td><td>1-click gate mode recovery (FR-06)</td><td>Mode switches without restarting camera</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>FT-07</strong></td><td>Overstay penalty calculation (FR-07)</td><td>Penalty added at checkout</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>FT-08</strong></td><td>Admin dashboard (FR-08)</td><td>Slots, users and revenue managed</td><td>As expected</td><td>Pass</td></tr>
 </table>
 
-<h3 class="section-heading">9.2 Major Defect Resolution Record</h3>
+<h3 class="section-heading">9.2 Integration Testing</h3>
+<div class="figure-title" style="text-align: left; margin-bottom: 4px;">Table 9.4: Integration Testing (IT-01 to IT-06)</div>
 <table>
   <tr>
-    <th style="width: 12%;">Issue ID</th>
-    <th style="width: 26%;">Reported Bug</th>
-    <th style="width: 12%;">Severity</th>
-    <th style="width: 25%;">Root Cause</th>
-    <th style="width: 25%;">Resolution</th>
+    <th style="width: 10%;">Test ID</th>
+    <th style="width: 30%;">Integrated Components</th>
+    <th style="width: 40%;">Expected</th>
+    <th style="width: 12%;">Actual</th>
+    <th style="width: 8%;">Status</th>
   </tr>
+  <tr><td><strong>IT-01</strong></td><td>Auth + Booking</td><td>Only logged-in drivers can book</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>IT-02</strong></td><td>Booking + Dynamic QR</td><td>QR token generated for confirmed booking</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>IT-03</strong></td><td>QR + Security Gate</td><td>Valid token accepted, expired token rejected</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>IT-04</strong></td><td>Gate + Slot status</td><td>Entry marks slot Occupied; exit frees it</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>IT-05</strong></td><td>Gate + Billing</td><td>Overstay fee computed at exit</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>IT-06</strong></td><td>Gate + SecurityLog</td><td>Every scan stored in audit log</td><td>As expected</td><td>Pass</td></tr>
+</table>
+
+<div class="page-break"></div>
+<div class="header-banner">P P SAVANI UNIVERSITY | SCHOOL OF ENGINEERING</div>
+<h3 class="section-heading">9.3 System Testing</h3>
+<div class="figure-title" style="text-align: left; margin-bottom: 4px;">Table 9.5: System Testing (ST-01 to ST-08)</div>
+<table>
   <tr>
-    <td><strong>BUG-01</strong></td>
-    <td>Camera closed after 2s showing "Already Inside"</td>
-    <td>High</td>
-    <td>Scanner stopped on reading active pass in entry mode</td>
-    <td>Implemented Smart Auto Gate Mode and debounce</td>
+    <th style="width: 10%;">Test ID</th>
+    <th style="width: 38%;">Scenario</th>
+    <th style="width: 34%;">Expected</th>
+    <th style="width: 10%;">Actual</th>
+    <th style="width: 8%;">Status</th>
   </tr>
+  <tr><td><strong>ST-01</strong></td><td>End-to-end: register → book → enter → exit</td><td>Full cycle completes with correct fee</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>ST-02</strong></td><td>Mobile browser rear camera scan (Android Chrome, iOS Safari)</td><td>Camera opens and scans pass</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>ST-03</strong></td><td>Laptop webcam scan (no rear lens)</td><td>Automatic fallback to webcam</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>ST-04</strong></td><td>Driver arrives after start time but before end time</td><td>Entry allowed (validity until end time)</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>ST-05</strong></td><td>Continuous scanning of consecutive vehicles</td><td>Camera stays open, no duplicate scans (2.5 s debounce)</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>ST-06</strong></td><td>Deployed site: register, book, pay, QR, entry, exit, admin reports</td><td>Complete flow works on public link</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>ST-07</strong></td><td>QR scan on 3 different phones and browsers</td><td>Valid QR read on first attempt</td><td>As expected</td><td>Pass</td></tr>
+  <tr><td><strong>ST-08</strong></td><td>Socket.IO load test, 50 concurrent connections</td><td>Live slot updates reach all screens within 1–2 s</td><td>No drops</td><td>Pass</td></tr>
+</table>
+
+<h3 class="section-heading">9.4 Performance Testing</h3>
+<div class="figure-title" style="text-align: left; margin-bottom: 4px;">Table 9.6: Performance Testing</div>
+<table>
   <tr>
-    <td><strong>BUG-02</strong></td>
-    <td>Dynamic QR token hash mismatch</td>
-    <td>High</td>
-    <td>Frontend uppercase query validator corrupted hex hash</td>
-    <td>Implemented case-insensitive HMAC check</td>
+    <th style="width: 25%;">Parameter</th>
+    <th style="width: 25%;">Condition</th>
+    <th style="width: 18%;">Target</th>
+    <th style="width: 22%;">Observed</th>
+    <th style="width: 10%;">Status</th>
   </tr>
+  <tr><td><strong>QR verification latency</strong></td><td>Normal load</td><td>&lt; 2 s</td><td>1.2–1.5 s</td><td>Met</td></tr>
+  <tr><td><strong>API response (slot state query)</strong></td><td>Normal load</td><td>&lt; 200 ms</td><td>&lt; 180 ms</td><td>Met</td></tr>
+  <tr><td><strong>Backend / API verification</strong></td><td>Automated checks</td><td>All major APIs work</td><td>79/79 checks passed</td><td>Met</td></tr>
+  <tr><td><strong>Responsive UI validation</strong></td><td>Screen-size combinations</td><td>Correct on supported sizes</td><td>259/259 passed</td><td>Met</td></tr>
+  <tr><td><strong>Real-time load test</strong></td><td>50 concurrent Socket.IO clients</td><td>No dropped updates</td><td>0% packet loss, 1–2 s updates</td><td>Met</td></tr>
+  <tr><td><strong>Production build</strong></td><td>Vite build</td><td>0 errors</td><td>0 TypeScript errors</td><td>Met</td></tr>
+</table>
+
+<h3 class="section-heading">9.5 User Acceptance Testing (UAT)</h3>
+<div class="figure-title" style="text-align: left; margin-bottom: 4px;">Table 9.7: User / Acceptance Testing</div>
+<table>
   <tr>
-    <td><strong>BUG-03</strong></td>
-    <td>Camera startup error on laptops</td>
-    <td>High</td>
-    <td>Hardcoded rear camera constraint</td>
-    <td>Multi-level camera fallback hierarchy</td>
+    <th style="width: 32%;">Scenario</th>
+    <th style="width: 20%;">Evaluator</th>
+    <th style="width: 24%;">Expected</th>
+    <th style="width: 12%;">Observed</th>
+    <th style="width: 12%;">Status</th>
   </tr>
+  <tr><td>Driver books a slot and views QR pass</td><td>Driver role (tester)</td><td>Booking confirmed, QR rotates every 30 s</td><td>As expected</td><td>Accepted</td></tr>
+  <tr><td>Guard scans entry and exit passes</td><td>Security role (tester)</td><td>Entry/exit processed automatically</td><td>As expected</td><td>Accepted</td></tr>
+  <tr><td>Admin reviews sessions and revenue</td><td>Admin role (tester)</td><td>Dashboard shows accurate data</td><td>As expected</td><td>Accepted</td></tr>
+</table>
+
+<div class="page-break"></div>
+<div class="header-banner">P P SAVANI UNIVERSITY | SCHOOL OF ENGINEERING</div>
+<h3 class="section-heading">9.6 Experimental Validation</h3>
+<div class="figure-title" style="text-align: left; margin-bottom: 4px;">Table 9.8: Experimental Validation</div>
+<table>
   <tr>
-    <td><strong>BUG-06</strong></td>
-    <td>No-Show report displaying [object Object]</td>
-    <td>Medium</td>
-    <td>Mongoose populated object not formatted into string</td>
-    <td>Extracted user.name and slot.slotNumber fields</td>
+    <th style="width: 22%;">Experiment</th>
+    <th style="width: 26%;">Conditions</th>
+    <th style="width: 26%;">Result</th>
+    <th style="width: 26%;">Interpretation</th>
   </tr>
+  <tr><td><strong>Clock skew tolerance</strong></td><td>Phone vs server time offsets</td><td>Valid tokens accepted within ±15 min</td><td>Removed false rejections of valid passes</td></tr>
+  <tr><td><strong>Multi-camera fallback</strong></td><td>Laptop, mobile, USB camera</td><td>Camera opened on all tested devices</td><td>Fallback hierarchy is reliable</td></tr>
+  <tr><td><strong>Continuous scanning</strong></td><td>Consecutive vehicle scans, 2.5 s debounce</td><td>No duplicate scans or camera unmounting</td><td>Suitable for high-traffic gates</td></tr>
+  <tr><td><strong>Case-insensitive HMAC</strong></td><td>Mixed-case hexadecimal hashes</td><td>Hash matched correctly</td><td>Eliminated hash mismatch errors</td></tr>
+</table>
+
+<h3 class="section-heading">9.7 Defects / Bugs Identification and Resolution Record</h3>
+<div class="figure-title" style="text-align: left; margin-bottom: 4px;">Table 9.9: Defects / Bugs and Resolution Record</div>
+<table>
+  <tr>
+    <th style="width: 10%;">Issue ID</th>
+    <th style="width: 24%;">Problem</th>
+    <th style="width: 10%;">Severity</th>
+    <th style="width: 26%;">Root Cause</th>
+    <th style="width: 22%;">Resolution</th>
+    <th style="width: 8%;">Status</th>
+  </tr>
+  <tr><td><strong>BUG-01</strong></td><td>Camera closed after 2 s showing “Already Inside”</td><td>High</td><td>Scanner stopped on reading active car in Entry mode</td><td>Implemented Smart Auto Gate Mode and continuous scan</td><td>Resolved</td></tr>
+  <tr><td><strong>BUG-02</strong></td><td>Dynamic QR token hash mismatch error</td><td>High</td><td>Uppercase query validator corrupted lowercase hex hash</td><td>Implemented case-insensitive HMAC check</td><td>Resolved</td></tr>
+  <tr><td><strong>BUG-03</strong></td><td>Camera failed on laptops without rear lens</td><td>High</td><td>Hardcoded { facingMode: 'environment' } constraint</td><td>Multi-level camera fallback hierarchy</td><td>Resolved</td></tr>
+  <tr><td><strong>BUG-04</strong></td><td>Driver rejected if arriving more than 15 min after start</td><td>Medium</td><td>Overly strict 15-minute start window check</td><td>Entry validity extended from start time to end time</td><td>Resolved</td></tr>
+  <tr><td><strong>BUG-05</strong></td><td>Duplicate scans triggered on the same frame</td><td>Low</td><td>No scan debounce timer on the viewfinder</td><td>Added 2.5-second scan debounce</td><td>Resolved</td></tr>
+  <tr><td><strong>BUG-06</strong></td><td>No-Show report displayed [object Object]</td><td>Medium</td><td>Populated Mongoose user/slot objects were converted to strings instead of reading name and slot number</td><td>Read nested fields (user.name, slot.number) with safe fallbacks</td><td>Resolved</td></tr>
+  <tr><td><strong>BUG-07</strong></td><td>MongoDB connection timeout on cloud hosting</td><td>High</td><td>Default IP whitelist blocked serverless requests</td><td>Updated MongoDB Atlas network access rules</td><td>Resolved</td></tr>
+  <tr><td><strong>BUG-08</strong></td><td>CORS error on deployed backend</td><td>High</td><td>CORS origin did not match deployed frontend domain</td><td>Set allowed origin from environment variable</td><td>Resolved</td></tr>
 </table>
 
 <!-- CHAPTER 10 TO 15 -->
 <div class="page-break"></div>
 <div class="header-banner">P P SAVANI UNIVERSITY | SCHOOL OF ENGINEERING</div>
 <h2 class="chapter-heading">CHAPTER 10: RESULTS & PERFORMANCE ANALYSIS</h2>
+
+<h3 class="section-heading">10.1 Objective-wise Achievement Analysis</h3>
+<div class="figure-title" style="text-align: left; margin-bottom: 4px;">Table 10.2: Objective-wise Achievement Analysis</div>
+<table>
+  <tr>
+    <th style="width: 32%;">Objective</th>
+    <th style="width: 53%;">Achievement / Evidence</th>
+    <th style="width: 15%;">Status</th>
+  </tr>
+  <tr><td>Develop smart digital parking system</td><td>MERN-based web application developed and deployed on Vercel</td><td>Completed</td></tr>
+  <tr><td>Provide online parking slot booking</td><td>Interactive 2D floor grid allows booking with vehicle category</td><td>Completed</td></tr>
+  <tr><td>Generate unique QR codes for entry/exit</td><td>HMAC-SHA256 rotating dynamic QR passes generated live</td><td>Completed</td></tr>
+  <tr><td>Reduce waiting time at gates</td><td>Camera QR scan clears vehicles in under 1.5 seconds</td><td>Completed</td></tr>
+  <tr><td>Display live slot availability</td><td>Real-time bay status updates broadcasted via Socket.IO</td><td>Completed</td></tr>
+  <tr><td>Provide role-based dashboards</td><td>Separate portals for User, Security Staff, and Administrator</td><td>Completed</td></tr>
+  <tr><td>Integrate online payment via Razorpay</td><td>Razorpay checkout modal processes payments with signature check</td><td>Completed</td></tr>
+  <tr><td>Send booking confirmation emails</td><td>Automated email receipts dispatched through Gmail SMTP</td><td>Completed</td></tr>
+</table>
+
+<h3 class="section-heading">10.2 System Performance Benchmark Metrics</h3>
+<div class="figure-title" style="text-align: left; margin-bottom: 4px;">Table 10.3: System Performance Benchmark Metrics</div>
+<table>
+  <tr>
+    <th style="width: 25%;">Parameter / Metric</th>
+    <th style="width: 15%;">Target</th>
+    <th style="width: 25%;">Final Result</th>
+    <th style="width: 23%;">Improvement / Note</th>
+    <th style="width: 12%;">Status</th>
+  </tr>
+  <tr><td>Page Loading Time</td><td>&lt; 2.0 s</td><td>1.1 s under normal load</td><td>Optimized bundle</td><td>Completed</td></tr>
+  <tr><td>QR Pass Scan Latency</td><td>&lt; 2.0 s</td><td>1.2 – 1.5 s average</td><td>Instant clearance</td><td>Completed</td></tr>
+  <tr><td>API Response Time</td><td>&lt; 200 ms</td><td>140 ms average</td><td>Non-blocking Express</td><td>Completed</td></tr>
+  <tr><td>Socket.IO Broadcast</td><td>&lt; 500 ms</td><td>180 ms delivery latency</td><td>0% packet loss</td><td>Completed</td></tr>
+  <tr><td>Email Dispatch Speed</td><td>&lt; 5.0 s</td><td>3 – 5 s via Gmail SMTP</td><td>Instant receipt</td><td>Completed</td></tr>
+  <tr><td>Camera Initialization</td><td>&lt; 2.0 s</td><td>0.9 s on mobile/webcam</td><td>Hardware stream</td><td>Completed</td></tr>
+  <tr><td>Dynamic QR Rotation</td><td>30 seconds</td><td>Exact 30 s timeStep</td><td>Synchronized</td><td>Completed</td></tr>
+  <tr><td>Deployment Uptime</td><td>99.9%</td><td>100% uptime on Vercel</td><td>Globally live</td><td>Completed</td></tr>
+</table>
+
+<h3 class="section-heading">10.3 Comparative Results</h3>
+<div class="figure-title" style="text-align: left; margin-bottom: 4px;">Table 10.4: Comparative Results of Parking Systems</div>
+<table>
+  <tr>
+    <th style="width: 22%;">Method / System</th>
+    <th style="width: 15%;">Gate Time</th>
+    <th style="width: 20%;">Slot Pre-Booking</th>
+    <th style="width: 23%;">Pass Security</th>
+    <th style="width: 20%;">Observation</th>
+  </tr>
+  <tr><td><strong>Manual attendant</strong></td><td>30–60 s</td><td>Not possible</td><td>Low (paper slip)</td><td>Slow and error-prone</td></tr>
+  <tr><td><strong>Sensor-hardware system</strong></td><td>5–10 s</td><td>Select apps only</td><td>Medium (RFID card)</td><td>High hardware cost</td></tr>
+  <tr><td><strong>Static QR app</strong></td><td>Fast</td><td>Yes</td><td>Low (shareable)</td><td>Fraud risk via screenshots</td></tr>
+  <tr><td><strong>ParkSmart (Proposed)</strong></td><td><strong>&lt; 2 s</strong></td><td><strong>Yes, live map</strong></td><td><strong>High (rotating HMAC QR)</strong></td><td><strong>Low cost and tamper-proof</strong></td></tr>
+</table>
 <ul>
   <li><strong>Verification Speed:</strong> Average scan-to-gate decision latency: <strong>1.2 – 1.5 seconds</strong>.</li>
   <li><strong>Build Health:</strong> 100% clean production build (0 TypeScript compilation errors).</li>

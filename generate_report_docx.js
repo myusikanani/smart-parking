@@ -427,9 +427,11 @@ async function generateDocx() {
               ["Table 9.5", "System Testing (ST-01 to ST-10)", "55"],
               ["Table 9.6", "Performance Testing", "57"],
               ["Table 9.7", "User / Acceptance Testing (UAT Evaluators)", "58"],
+              ["Table 9.8", "Experimental Validation", "59"],
               ["Table 9.9", "Defects / Bugs and Resolution (BUG-01 to BUG-08)", "59"],
               ["Table 10.2", "Objective-wise Achievement", "61"],
               ["Table 10.3", "Performance Metrics", "61"],
+              ["Table 10.4", "Comparative Results of Parking Systems", "62"],
               ["Table 11.1", "Major Challenges & Solutions", "79"],
               ["Table 11.4", "Improvements Made During Development", "82"],
               ["Table 12.1", "Individual Contribution (Kanani Myusi)", "86"],
@@ -823,6 +825,17 @@ async function generateDocx() {
             ],
             [24, 16, 28, 32]
           ),
+          heading2("Table 7.3: Database / Storage"),
+          tableTitle("Table 7.3: Database / Storage"),
+          createTable(
+            ["Database / Storage", "Version", "Purpose", "Data Managed"],
+            [
+              ["MongoDB Atlas", "6.0+", "Cloud NoSQL database", "Users, Slots, Bookings, SecurityLogs, Blacklists with indexing and aggregation"],
+              ["Mongoose ODM", "Stable release", "Schema modelling layer", "Collection schemas and relationships"],
+              ["Browser localStorage", "Web standard", "Client-side session persistence", "Signed JWT token"]
+            ],
+            [22, 16, 28, 34]
+          ),
           heading2("Table 7.4: Hardware / Cloud / Deployment Environment"),
           tableTitle("Table 7.4: Hardware / Cloud / Deployment Environment"),
           createTable(
@@ -836,6 +849,20 @@ async function generateDocx() {
               ["Client Web Browsers", "Chrome, Safari, Edge (Desktop & Mobile)", "Run and test the parking web application", "Validated"]
             ],
             [22, 28, 35, 15]
+          ),
+          heading2("Table 7.5: Development Tools"),
+          tableTitle("Table 7.5: Development Tools"),
+          createTable(
+            ["Tool", "Purpose", "Usage"],
+            [
+              ["VS Code", "Primary code editor", "Frontend and backend development"],
+              ["Antigravity IDE", "AI-assisted IDE", "Code generation, refactoring and debugging support"],
+              ["Postman", "API testing", "Testing REST endpoints and authentication"],
+              ["Git & GitHub", "Version control", "Repository myusikanani/smart-parking, branch main"],
+              ["npm", "Package management", "Dependency installation and scripts"],
+              ["Vite", "Build tool", "Development server and production bundle"]
+            ],
+            [25, 35, 40]
           ),
 
           // CHAPTER 8
@@ -959,7 +986,37 @@ async function generateDocx() {
             ],
             [10, 28, 32, 22, 8]
           ),
-          heading2("Table 9.7: User / Acceptance Testing (UAT Evaluators with Real Names)"),
+          heading2("Table 9.5: System Testing"),
+          tableTitle("Table 9.5: System Testing"),
+          createTable(
+            ["Test ID", "Scenario", "Expected", "Actual", "Status"],
+            [
+              ["ST-01", "End-to-end: register → book → enter → exit", "Full cycle completes with correct fee", "As expected", "Pass"],
+              ["ST-02", "Mobile browser rear camera scan (Android Chrome, iOS Safari)", "Camera opens and scans pass", "As expected", "Pass"],
+              ["ST-03", "Laptop webcam scan (no rear lens)", "Automatic fallback to webcam", "As expected", "Pass"],
+              ["ST-04", "Driver arrives after start time but before end time", "Entry allowed (validity until end time)", "As expected", "Pass"],
+              ["ST-05", "Continuous scanning of consecutive vehicles", "Camera stays open, no duplicate scans (2.5 s debounce)", "As expected", "Pass"],
+              ["ST-06", "Deployed site: register, book, pay, QR, entry, exit, admin reports", "Complete flow works on public link", "As expected", "Pass"],
+              ["ST-07", "QR scan on 3 different phones and browsers", "Valid QR read on first attempt", "As expected", "Pass"],
+              ["ST-08", "Socket.IO load test, 50 concurrent connections", "Live slot updates reach all screens within 1–2 s", "No drops observed", "Pass"]
+            ],
+            [10, 38, 34, 10, 8]
+          ),
+          heading2("Table 9.6: Performance Testing"),
+          tableTitle("Table 9.6: Performance Testing"),
+          createTable(
+            ["Parameter", "Condition", "Target", "Observed", "Status"],
+            [
+              ["QR verification latency", "Normal load", "< 2 s", "1.2–1.5 s", "Met"],
+              ["API response (slot state query)", "Normal load", "< 200 ms", "< 180 ms", "Met"],
+              ["Backend / API verification", "Automated checks", "All major APIs work", "79/79 checks passed", "Met"],
+              ["Responsive UI validation", "Screen-size combinations", "Correct on supported sizes", "259/259 passed", "Met"],
+              ["Real-time load test", "50 concurrent Socket.IO clients", "No dropped updates", "0% packet loss, 1–2 s updates", "Met"],
+              ["Production build", "Vite build", "0 errors", "0 TypeScript errors", "Met"]
+            ],
+            [25, 25, 18, 22, 10]
+          ),
+          heading2("Table 9.7: User / Acceptance Testing"),
           tableTitle("Table 9.7: User / Acceptance Testing"),
           createTable(
             ["Scenario", "Evaluator Name", "Expected", "Observed", "Feedback / Status"],
@@ -977,6 +1034,18 @@ async function generateDocx() {
               ["Email Notification Delivery", "Sahil Kanani", "Receive confirmation email", "Delivered in Gmail inbox", "Passed - Professional"]
             ],
             [22, 16, 26, 20, 16]
+          ),
+          heading2("Table 9.8: Experimental Validation"),
+          tableTitle("Table 9.8: Experimental Validation"),
+          createTable(
+            ["Experiment", "Conditions", "Result", "Interpretation"],
+            [
+              ["Clock skew tolerance", "Phone vs server time offsets", "Valid tokens accepted within ±15 min", "Removed false rejections of valid passes"],
+              ["Multi-camera fallback", "Laptop, mobile, USB camera", "Camera opened on all tested devices", "Fallback hierarchy is reliable"],
+              ["Continuous scanning", "Consecutive vehicle scans, 2.5 s debounce", "No duplicate scans or camera unmounting", "Suitable for high-traffic gates"],
+              ["Case-insensitive HMAC", "Mixed-case hexadecimal hashes", "Hash matched correctly", "Eliminated hash mismatch errors"]
+            ],
+            [22, 26, 26, 26]
           ),
           heading2("Table 9.9: Defects / Bugs and Resolution"),
           tableTitle("Table 9.9: Defects / Bugs and Resolution"),
@@ -1032,6 +1101,18 @@ async function generateDocx() {
               ["Deployment Uptime", "99.9%", "100% uptime on Vercel", "Globally accessible", "Completed"]
             ],
             [22, 14, 24, 28, 12]
+          ),
+          heading2("Table 10.4: Comparative Results"),
+          tableTitle("Table 10.4: Comparative Results"),
+          createTable(
+            ["Method / System", "Gate Time", "Slot Pre-Booking", "Pass Security", "Observation"],
+            [
+              ["Manual attendant", "30–60 s", "Not possible", "Low (paper slip)", "Slow and error-prone"],
+              ["Sensor-hardware system", "5–10 s", "Select apps only", "Medium (RFID card)", "High hardware cost"],
+              ["Static QR app", "Fast", "Yes", "Low (shareable)", "Fraud risk via screenshots"],
+              ["ParkSmart", "< 2 s", "Yes, live map", "High (rotating HMAC QR)", "Low cost and tamper-proof"]
+            ],
+            [22, 15, 20, 23, 20]
           ),
           heading2("10.5 Output / Result Screenshots (Capture Guide & Descriptions)"),
           ...figureBlock(
