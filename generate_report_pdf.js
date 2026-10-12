@@ -300,6 +300,77 @@ const svgFig6_3_7 = `
 </svg>
 `;
 
+// -----------------------------------------------------------------------------
+// SVG 5: Figure 6.3.5 - Dynamic QR Generation & Verification Sequence Diagram
+// -----------------------------------------------------------------------------
+const svgFig6_3_5 = `
+<svg viewBox="0 0 740 430" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="background:#ffffff; border:1px solid #cbd5e1; border-radius:8px;">
+  ${svgDefs}
+  <!-- Lifeline Header Boxes -->
+  <rect x="20" y="15" width="105" height="34" rx="5" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5" />
+  <text x="72" y="36" fill="#0369a1" font-size="10" font-weight="bold" text-anchor="middle" font-family="Cambria, sans-serif">Driver Phone</text>
+
+  <rect x="165" y="15" width="105" height="34" rx="5" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5" />
+  <text x="217" y="36" fill="#0369a1" font-size="10" font-weight="bold" text-anchor="middle" font-family="Cambria, sans-serif">React Frontend</text>
+
+  <rect x="310" y="15" width="115" height="34" rx="5" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5" />
+  <text x="367" y="36" fill="#047857" font-size="10" font-weight="bold" text-anchor="middle" font-family="Cambria, sans-serif">Express Backend</text>
+
+  <rect x="465" y="15" width="115" height="34" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5" />
+  <text x="522" y="36" fill="#b45309" font-size="10" font-weight="bold" text-anchor="middle" font-family="Cambria, sans-serif">Security Camera</text>
+
+  <rect x="615" y="15" width="105" height="34" rx="5" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.5" />
+  <text x="667" y="36" fill="#6d28d9" font-size="10" font-weight="bold" text-anchor="middle" font-family="Cambria, sans-serif">Boom Barrier</text>
+
+  <!-- Vertical Dashed Lines -->
+  <line x1="72" y1="49" x2="72" y2="415" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,4" />
+  <line x1="217" y1="49" x2="217" y2="415" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,4" />
+  <line x1="367" y1="49" x2="367" y2="415" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,4" />
+  <line x1="522" y1="49" x2="522" y2="415" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,4" />
+  <line x1="667" y1="49" x2="667" y2="415" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,4" />
+
+  <!-- Message 1: Driver -> React -->
+  <line x1="72" y1="78" x2="212" y2="78" stroke="#003366" stroke-width="1.5" marker-end="url(#arrow)" />
+  <text x="144" y="71" fill="#003366" font-size="8.5" font-weight="bold" text-anchor="middle" font-family="Cambria, sans-serif">1: View Active Pass</text>
+
+  <!-- Message 2: React -> Express -->
+  <line x1="217" y1="112" x2="362" y2="112" stroke="#003366" stroke-width="1.5" marker-end="url(#arrow)" />
+  <text x="290" y="105" fill="#003366" font-size="8.5" font-weight="bold" text-anchor="middle" font-family="Cambria, sans-serif">2: GET /token (timestamp)</text>
+
+  <!-- Message 3: Express Self HMAC Compute -->
+  <path d="M 367 130 L 415 130 L 415 150 L 372 150" fill="none" stroke="#047857" stroke-width="1.5" marker-end="url(#arrow-green)" />
+  <text x="425" y="143" fill="#047857" font-size="8" font-weight="bold" font-family="Cambria, sans-serif">3: HMAC-SHA256(bookingId:timeStep)</text>
+
+  <!-- Message 4: Express -> React -->
+  <line x1="367" y1="180" x2="222" y2="180" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrow)" />
+  <text x="290" y="173" fill="#0284c7" font-size="8.5" font-weight="bold" text-anchor="middle" font-family="Cambria, sans-serif">4: Signed Token (PS-DYN|id|step|hash)</text>
+
+  <!-- Message 5: React -> Driver -->
+  <line x1="217" y1="215" x2="77" y2="215" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrow)" />
+  <text x="144" y="208" fill="#0284c7" font-size="8.5" font-weight="bold" text-anchor="middle" font-family="Cambria, sans-serif">5: Render Dynamic QR (30s Timer)</text>
+
+  <!-- Message 6: Driver -> Security Camera -->
+  <line x1="72" y1="255" x2="517" y2="255" stroke="#b45309" stroke-width="1.8" marker-end="url(#arrow)" />
+  <text x="295" y="248" fill="#b45309" font-size="9" font-weight="bold" text-anchor="middle" font-family="Cambria, sans-serif">6: Present QR Pass to Camera Scanner</text>
+
+  <!-- Message 7: Camera -> Express -->
+  <line x1="522" y1="290" x2="372" y2="290" stroke="#003366" stroke-width="1.5" marker-end="url(#arrow)" />
+  <text x="447" y="283" fill="#003366" font-size="8.5" font-weight="bold" text-anchor="middle" font-family="Cambria, sans-serif">7: POST /api/security/scan (token)</text>
+
+  <!-- Message 8: Express Self Hash & Drift Check -->
+  <path d="M 367 310 L 415 310 L 415 330 L 372 330" fill="none" stroke="#047857" stroke-width="1.5" marker-end="url(#arrow-green)" />
+  <text x="425" y="323" fill="#047857" font-size="8" font-weight="bold" font-family="Cambria, sans-serif">8: Verify Hash & Clock Drift (±15m)</text>
+
+  <!-- Message 9: Express -> Boom Barrier -->
+  <line x1="367" y1="360" x2="662" y2="360" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)" />
+  <text x="515" y="353" fill="#15803d" font-size="9" font-weight="bold" text-anchor="middle" font-family="Cambria, sans-serif">9: Open Gate Command (Barrier UP)</text>
+
+  <!-- Message 10: Express -> Camera UI -->
+  <line x1="367" y1="392" x2="517" y2="392" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrow-green)" />
+  <text x="442" y="386" fill="#15803d" font-size="8.5" font-weight="bold" text-anchor="middle" font-family="Cambria, sans-serif">10: 200 OK (Entry Granted / Green UI)</text>
+</svg>
+`;
+
 // Read base template and assemble updated report HTML
 const buildReportHtml = () => {
   return `<!DOCTYPE html>
@@ -480,34 +551,35 @@ The work embodied in this project has not been submitted elsewhere for the award
   <tr><td>7</td><td>Figure 6.3.2</td><td>Security Gate Scanner Engine Flowchart</td><td>Scanner Engine</td></tr>
   <tr><td>8</td><td>Figure 6.3.3</td><td>UML Class Diagram of ParkSmart Entities</td><td>UML Class Model</td></tr>
   <tr><td>9</td><td>Figure 6.3.4</td><td>Block Diagram of Customer Dashboard</td><td>Block Diagram</td></tr>
-  <tr><td>10</td><td>Figure 6.3.6</td><td>Payment Gateway Sequence Diagram</td><td>Sequence Diagram</td></tr>
-  <tr><td>11</td><td>Figure 6.3.7</td><td>Slot State Transition Diagram</td><td>State Machine</td></tr>
-  <tr><td>12</td><td>Figure 6.4</td><td>Major Interface / UI Wireframe Design</td><td>UI Wireframe</td></tr>
-  <tr><td>13</td><td>Figure 8.1</td><td>Module 1 User Authentication Interface</td><td>Implementation</td></tr>
-  <tr><td>14</td><td>Figure 8.2.1</td><td>Module 2 Interactive 2D Visual Slot Grid Layout</td><td>Implementation</td></tr>
-  <tr><td>15</td><td>Figure 8.2.2</td><td>Module 2 Duration &amp; Vehicle Booking Modal</td><td>Implementation</td></tr>
-  <tr><td>16</td><td>Figure 8.2.3</td><td>Module 2 Dynamic QR Digital Pass with Timer</td><td>Implementation</td></tr>
-  <tr><td>17</td><td>Figure 8.3</td><td>Module 3 Security Gate Access Desk &amp; Viewfinder</td><td>Implementation</td></tr>
-  <tr><td>18</td><td>Figure 10.1</td><td>Deployed Landing Page of ParkSmart</td><td>Output Screen</td></tr>
-  <tr><td>19</td><td>Figure 10.2</td><td>Customer Dashboard on Deployed Site</td><td>Output Screen</td></tr>
-  <tr><td>20</td><td>Figure 10.3</td><td>Book Parking Page with Interactive Floor Map</td><td>Output Screen</td></tr>
-  <tr><td>21</td><td>Figure 10.4</td><td>Payment Page with Razorpay Gateway Trigger</td><td>Output Screen</td></tr>
-  <tr><td>22</td><td>Figure 10.5</td><td>Razorpay Payment Successful Screen</td><td>Output Screen</td></tr>
-  <tr><td>23</td><td>Figure 10.6</td><td>Dynamic QR Digital Pass Generated</td><td>Output Screen</td></tr>
-  <tr><td>24</td><td>Figure 10.7</td><td>Security QR Code Scanner Desk</td><td>Output Screen</td></tr>
-  <tr><td>25</td><td>Figure 10.8</td><td>Today's Movement Logs on Security Dashboard</td><td>Output Screen</td></tr>
-  <tr><td>26</td><td>Figure 10.9</td><td>Admin 3D Layout Designer</td><td>Output Screen</td></tr>
-  <tr><td>27</td><td>Figure 10.10</td><td>Admin Pricing Management</td><td>Output Screen</td></tr>
-  <tr><td>28</td><td>Figure 10.11</td><td>Admin Overstay Tracking &amp; Penalty Audit</td><td>Output Screen</td></tr>
-  <tr><td>29</td><td>Figure 10.12</td><td>Admin No-Show Report after Object Bug Fix</td><td>Output Screen</td></tr>
-  <tr><td>30</td><td>Figure 10.13</td><td>Admin Payment Management after Webhook Setup</td><td>Output Screen</td></tr>
-  <tr><td>31</td><td>Figure 10.14</td><td>Backend SMTP Email Notification System</td><td>Output Screen</td></tr>
-  <tr><td>32</td><td>Figure 10.15</td><td>Booking Confirmation Email Received</td><td>Output Screen</td></tr>
-  <tr><td>33</td><td>Figure 10.16</td><td>Socket.IO Load Test Benchmark Terminal Output</td><td>Output Screen</td></tr>
-  <tr><td>34</td><td>Figure 10.17</td><td>QR Scan on Mobile Device</td><td>Output Screen</td></tr>
-  <tr><td>35</td><td>Figure A.1</td><td>Socket.IO Load Test Terminal Output (50 Clients)</td><td>Appendix Evidence</td></tr>
-  <tr><td>36</td><td>Figure A.2</td><td>GitHub Repository Page &amp; Commit History</td><td>Appendix Evidence</td></tr>
-  <tr><td>37</td><td>Figure A.3</td><td>Vercel Production Deployments Dashboard</td><td>Appendix Evidence</td></tr>
+  <tr><td>10</td><td>Figure 6.3.5</td><td>Dynamic QR Pass Generation &amp; Verification Sequence Diagram</td><td>UML Sequence</td></tr>
+  <tr><td>11</td><td>Figure 6.3.6</td><td>Payment Gateway Sequence Diagram</td><td>Sequence Diagram</td></tr>
+  <tr><td>12</td><td>Figure 6.3.7</td><td>Slot State Transition Diagram</td><td>State Machine</td></tr>
+  <tr><td>13</td><td>Figure 6.4</td><td>Major Interface / UI Wireframe Design</td><td>UI Wireframe</td></tr>
+  <tr><td>14</td><td>Figure 8.1</td><td>Module 1 User Authentication Interface</td><td>Implementation</td></tr>
+  <tr><td>15</td><td>Figure 8.2.1</td><td>Module 2 Interactive 2D Visual Slot Grid Layout</td><td>Implementation</td></tr>
+  <tr><td>16</td><td>Figure 8.2.2</td><td>Module 2 Duration &amp; Vehicle Booking Modal</td><td>Implementation</td></tr>
+  <tr><td>17</td><td>Figure 8.2.3</td><td>Module 2 Dynamic QR Digital Pass with Timer</td><td>Implementation</td></tr>
+  <tr><td>18</td><td>Figure 8.3</td><td>Module 3 Security Gate Access Desk &amp; Viewfinder</td><td>Implementation</td></tr>
+  <tr><td>19</td><td>Figure 10.1</td><td>Deployed Landing Page of ParkSmart</td><td>Output Screen</td></tr>
+  <tr><td>20</td><td>Figure 10.2</td><td>Customer Dashboard on Deployed Site</td><td>Output Screen</td></tr>
+  <tr><td>21</td><td>Figure 10.3</td><td>Book Parking Page with Interactive Floor Map</td><td>Output Screen</td></tr>
+  <tr><td>22</td><td>Figure 10.4</td><td>Payment Page with Razorpay Gateway Trigger</td><td>Output Screen</td></tr>
+  <tr><td>23</td><td>Figure 10.5</td><td>Razorpay Payment Successful Screen</td><td>Output Screen</td></tr>
+  <tr><td>24</td><td>Figure 10.6</td><td>Dynamic QR Digital Pass Generated</td><td>Output Screen</td></tr>
+  <tr><td>25</td><td>Figure 10.7</td><td>Security QR Code Scanner Desk</td><td>Output Screen</td></tr>
+  <tr><td>26</td><td>Figure 10.8</td><td>Today's Movement Logs on Security Dashboard</td><td>Output Screen</td></tr>
+  <tr><td>27</td><td>Figure 10.9</td><td>Admin 3D Layout Designer</td><td>Output Screen</td></tr>
+  <tr><td>28</td><td>Figure 10.10</td><td>Admin Pricing Management</td><td>Output Screen</td></tr>
+  <tr><td>29</td><td>Figure 10.11</td><td>Admin Overstay Tracking &amp; Penalty Audit</td><td>Output Screen</td></tr>
+  <tr><td>30</td><td>Figure 10.12</td><td>Admin No-Show Report after Object Bug Fix</td><td>Output Screen</td></tr>
+  <tr><td>31</td><td>Figure 10.13</td><td>Admin Payment Management after Webhook Setup</td><td>Output Screen</td></tr>
+  <tr><td>32</td><td>Figure 10.14</td><td>Backend SMTP Email Notification System</td><td>Output Screen</td></tr>
+  <tr><td>33</td><td>Figure 10.15</td><td>Booking Confirmation Email Received</td><td>Output Screen</td></tr>
+  <tr><td>34</td><td>Figure 10.16</td><td>Socket.IO Load Test Benchmark Terminal Output</td><td>Output Screen</td></tr>
+  <tr><td>35</td><td>Figure 10.17</td><td>QR Scan on Mobile Device</td><td>Output Screen</td></tr>
+  <tr><td>36</td><td>Figure A.1</td><td>Socket.IO Load Test Terminal Output (50 Clients)</td><td>Appendix Evidence</td></tr>
+  <tr><td>37</td><td>Figure A.2</td><td>GitHub Repository Page &amp; Commit History</td><td>Appendix Evidence</td></tr>
+  <tr><td>38</td><td>Figure A.3</td><td>Vercel Production Deployments Dashboard</td><td>Appendix Evidence</td></tr>
 </table>
 
 <!-- LIST OF TABLES -->
@@ -730,7 +802,20 @@ To ensure fast vehicle processing under 1.5 seconds, the camera scanner dynamica
 
 <div class="page-break"></div>
 <div class="header-banner">P P SAVANI UNIVERSITY | SCHOOL OF ENGINEERING</div>
-<h3 class="section-heading">6.3 Parking Slot Lifecycle State Machine</h3>
+<h3 class="section-heading">6.3 Dynamic QR Pass Generation &amp; Verification Workflow</h3>
+<p>
+To ensure cryptographic integrity and prevent ticket duplication or screen-capture sharing, ParkSmart generates a time-stepped HMAC-SHA256 digital token rotating every 30 seconds. The sequence diagram below illustrates the complete 10-step authentication, clock-drift validation, and automated boom barrier trigger:
+</p>
+
+<div class="figure-block">
+  <div class="figure-title">Figure 6.3.5: Dynamic QR Pass Generation &amp; Verification Sequence Diagram</div>
+  ${svgFig6_3_5}
+  <div class="figure-caption">Figure 6.3.5: UML sequence diagram detailing the 10-step cryptographic handshake between Driver Phone, React Frontend, Express Backend, Gate Camera Scanner, and Boom Barrier actuator.</div>
+</div>
+
+<div class="page-break"></div>
+<div class="header-banner">P P SAVANI UNIVERSITY | SCHOOL OF ENGINEERING</div>
+<h3 class="section-heading">6.4 Parking Slot Lifecycle State Machine</h3>
 <p>
 Each individual parking bay transitions through deterministic lifecycle states from vacancy to reservation, occupancy, checkout, and release:
 </p>
@@ -741,7 +826,7 @@ Each individual parking bay transitions through deterministic lifecycle states f
   <div class="figure-caption">Figure 6.3.7: State transition diagram illustrating slot lifecycle, overstay penalty condition, and 30-min no-show auto cancellation.</div>
 </div>
 
-<h3 class="section-heading">6.4 Database Entity Specifications</h3>
+<h3 class="section-heading">6.5 Database Entity Specifications</h3>
 <table>
   <tr>
     <th style="width: 20%;">Entity</th>

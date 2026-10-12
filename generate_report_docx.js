@@ -366,10 +366,11 @@ async function generateDocx() {
               ["Figure 6.3.1", "Block Diagram - Admin Operations", "25"],
               ["Figure 6.3.2", "Security Gate Flow Chart", "26"],
               ["Figure 6.3.3", "UML Class Diagram of ParkSmart Entities", "27"],
-              ["Figure 6.3.4", "Block Diagram - Driver Portal", "28"],
-              ["Figure 6.3.6", "Dynamic QR Verification Sequence Diagram", "29"],
-              ["Figure 6.3.7", "Slot State Transition Diagram", "30"],
-              ["Figure 6.4", "Major Interface / UI Design", "31"],
+              ["Figure 6.3.4", "Block Diagram of Customer Dashboard", "28"],
+              ["Figure 6.3.5", "Dynamic QR Pass Generation & Verification Sequence Diagram", "29"],
+              ["Figure 6.3.6", "Payment Gateway Sequence Diagram", "30"],
+              ["Figure 6.3.7", "Slot State Transition Diagram", "31"],
+              ["Figure 6.4", "Major Interface / UI Design", "32"],
               ["Figure 8.1", "Module 1 User Authentication and Role Management", "38"],
               ["Figure 8.2.1", "Module 2 Interactive Visual Slot Grid", "40"],
               ["Figure 8.2.2", "Module 2 Slot Duration & Vehicle Booking Modal", "41"],
@@ -743,6 +744,12 @@ async function generateDocx() {
             "Block Diagram of Customer Dashboard",
             "Refer to User section in Block Diagram in Reporting 2: User connecting to Register, Login, View Slots, Book Slot, View History, and Manage Profile.",
             "Displays all customer capabilities including slot discovery, booking, dynamic pass viewing, and payment history."
+          ),
+          ...figureBlock(
+            "Figure 6.3.5",
+            "Dynamic QR Pass Generation & Verification Sequence Diagram",
+            "Sequence: Driver Phone -> React UI (Get Token) -> Express Backend (HMAC-SHA256 Compute) -> Render 30s Dynamic QR -> Scan at Security Camera -> Hash & Clock Drift Check -> Boom Barrier Open.",
+            "UML sequence diagram illustrating the end-to-end 10-step dynamic pass issuance, clock-drift tolerance check, and boom barrier actuation."
           ),
           ...figureBlock(
             "Figure 6.3.6",
