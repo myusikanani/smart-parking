@@ -18,6 +18,10 @@ const isValidIndianPlate = (plate) => {
   return standardPattern.test(clean) || bhPattern.test(clean) || unhyphenatedStandard.test(clean) || unhyphenatedBH.test(clean);
 };
 
+// Build an otpauth:// URI manually using the RAW base32 secret.
+const buildOtpauthUrl = (secretBase32, label, issuer) =>
+  `otpauth://totp/${encodeURIComponent(label)}?secret=${encodeURIComponent(secretBase32)}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
+
 const registerUser = async (req, res) => {
   const { name, email, phone, password, vehicleNumber, vehicleType } = req.body;
 
@@ -292,11 +296,8 @@ const hashRecoveryCode = (codeStr) => {
 };
 
 // Build an otpauth:// URL whose secret param is EXACTLY the stored base32
-// secret. WARNING: speakeasy.otpauthURL() base32-encodes whatever secret you
-// pass it (default encoding 'ascii'), so passing a base32 secret produces a
-// double-encoded QR that Authy imports but can never match.
-const buildOtpauthUrl = (secretBase32, label, issuer) =>
-  `otpauth://totp/${encodeURIComponent(label)}?secret=${encodeURIComponent(secretBase32)}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
+// OTP Auth URI generator defined at top of controller
+
 
 const verifyTwoFactor = async (req, res) => {
   const { userId, code } = req.body;
