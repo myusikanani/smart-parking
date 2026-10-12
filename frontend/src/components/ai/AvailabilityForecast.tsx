@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { predictOccupancy } from '../../utils/aiEngine';
+import { API_BASE } from '../../services/api';
 
 export default function AvailabilityForecast() {
   const [forecast, setForecast] = useState<{ hour: number; predicted: number }[]>([]);
@@ -8,7 +9,7 @@ export default function AvailabilityForecast() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/ai/analytics?range=24h`, {
+        const res = await fetch(`${API_BASE}/ai/analytics?range=24h`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
         });
         const text = await res.text();

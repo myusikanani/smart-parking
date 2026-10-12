@@ -1,8 +1,15 @@
 import { io, Socket } from 'socket.io-client';
 
-// Same-origin socket by default (proxied with websocket upgrade); VITE_SOCKET_URL wins.
+// Production cloud backend URL on Vercel
+const PRODUCTION_SOCKET = 'https://backend-eta-jet-79.vercel.app';
+
 const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL || window.location.origin;
+  import.meta.env.VITE_SOCKET_URL ||
+  (typeof window !== 'undefined' &&
+  window.location.hostname !== 'localhost' &&
+  window.location.hostname !== '127.0.0.1'
+    ? PRODUCTION_SOCKET
+    : window.location.origin);
 
 class SocketService {
   private socket: Socket | null = null;

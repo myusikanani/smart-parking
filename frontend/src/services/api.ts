@@ -1,8 +1,13 @@
-// Same-origin API by default: the dev server / preview proxy forwards /api to the
-// backend, so one build works from localhost and LAN phones over http or https.
-// Set VITE_API_URL to call the backend directly instead.
-const API_BASE =
-  import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
+// Production cloud backend URL on Vercel
+const PRODUCTION_API = 'https://backend-eta-jet-79.vercel.app/api';
+
+export const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== 'undefined' &&
+  window.location.hostname !== 'localhost' &&
+  window.location.hostname !== '127.0.0.1'
+    ? PRODUCTION_API
+    : `${window.location.origin}/api`);
 
 interface ApiResponse {
   success: boolean;

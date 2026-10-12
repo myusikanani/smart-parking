@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { API_BASE } from '../services/api';
 
 interface LiveSlot {
   status: string;
@@ -15,7 +16,7 @@ export default function LiveAvailabilityBar() {
 
     const load = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/slots`);
+        const res = await fetch(`${API_BASE}/slots`);
         const text = await res.text();
         const data = text ? JSON.parse(text) : {};
         if (!active) return;
