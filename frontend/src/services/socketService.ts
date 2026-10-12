@@ -3,8 +3,13 @@ import { io, Socket } from 'socket.io-client';
 // Production cloud backend URL on Vercel
 const PRODUCTION_SOCKET = 'https://backend-eta-jet-79.vercel.app';
 
+const envSocketUrl = import.meta.env.VITE_SOCKET_URL;
+// Guard: ignore stale or deleted 'backend-myusi' Vercel dashboard environment variable
+const validSocketUrl =
+  envSocketUrl && !envSocketUrl.includes('backend-myusi') ? envSocketUrl : null;
+
 const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL ||
+  validSocketUrl ||
   (typeof window !== 'undefined' &&
   window.location.hostname !== 'localhost' &&
   window.location.hostname !== '127.0.0.1'

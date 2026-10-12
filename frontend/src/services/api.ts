@@ -1,8 +1,13 @@
 // Production cloud backend URL on Vercel
 const PRODUCTION_API = 'https://backend-eta-jet-79.vercel.app/api';
 
+const envApiUrl = import.meta.env.VITE_API_URL;
+// Guard: ignore stale or deleted 'backend-myusi' Vercel dashboard environment variable
+const validApiUrl =
+  envApiUrl && !envApiUrl.includes('backend-myusi') ? envApiUrl : null;
+
 export const API_BASE =
-  import.meta.env.VITE_API_URL ||
+  validApiUrl ||
   (typeof window !== 'undefined' &&
   window.location.hostname !== 'localhost' &&
   window.location.hostname !== '127.0.0.1'
