@@ -8,23 +8,24 @@ const connectDB = async () => {
   }
 
   if (!cachedPromise) {
-    const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/parking-system';
+    const DEFAULT_URI = 'mongodb+srv://myusiudaynkanani_db_user:67tkMuTXIsml8SM7@cluster0.eehhaos.mongodb.net/parking-system?retryWrites=true&w=majority&appName=Cluster0';
+    const uri = process.env.MONGO_URI || DEFAULT_URI;
 
     cachedPromise = mongoose
       .connect(uri, {
-        serverSelectionTimeoutMS: 4000,
+        serverSelectionTimeoutMS: 5000,
       })
       .then((m) => {
         console.log(`✅ MongoDB Connected: ${m.connection.host}`);
         return m.connection;
       })
       .catch(async (err) => {
-        console.warn(`⚠️ Primary MongoDB Connection Failed (${err.message}). Trying fallback local MongoDB...`);
+        console.warn(`⚠️ Primary MongoDB Connection Failed (${err.message}). Retrying Atlas connection...`);
         try {
-          const fallback = await mongoose.connect('mongodb://127.0.0.1:27017/parking-system', {
-            serverSelectionTimeoutMS: 3000,
+          const fallback = await mongoose.connect(DEFAULT_URI, {
+            serverSelectionTimeoutMS: 5000,
           });
-          console.log(`✅ Fallback Local MongoDB Connected: ${fallback.connection.host}`);
+          console.log(`✅ Fallback MongoDB Connected: ${fallback.connection.host}`);
           return fallback.connection;
         } catch (fallbackErr) {
           cachedPromise = null;
