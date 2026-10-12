@@ -102,27 +102,49 @@ const NoShowReport = () => {
   }, []);
 
   const filtered = useMemo(
-    () => (dateFilter ? data.filter((d) => d.date === dateFilter) : data),
+    () => (dateFilter ? data.filter((d) => d.date.includes(dateFilter)) : data),
     [data, dateFilter],
   );
 
   const totalNoShows = data.length;
-  const chargedCount = data.filter((d) => d.penaltyStatus === 'charged').length;
-  const lostRevenue = chargedCount * 10;
+  const lostRevenue = data.reduce((s, d) => s + (d.penaltyAmount || 50), 0);
 
   const columns = useMemo(() => [
     { key: 'bookingId', label: 'Booking ID', sortable: true },
     { key: 'user', label: 'User', sortable: true },
     { key: 'slot', label: 'Slot', sortable: true },
-    { key: 'date', label: 'Date', sortable: true },
+    {
+      key: 'date',
+      label: 'Date',
+      sortable: true,
+      render: (item: Record<string, unknown>) => {
+        const dStr = String(item.date || '');
+        if (!dStr) return '-';
+        try {
+          const d = new Date(dStr);
+          if (!isNaN(d.getTime())) {
+            return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+          }
+        } catch {
+          // fallback
+        }
+        return dStr;
+      },
+    },
     { key: 'noShowTime', label: 'No-Show Time', sortable: true },
     {
-      key: 'penaltyStatus', label: 'Penalty Status', sortable: true,
+      key: 'penaltyStatus',
+      label: 'Penalty Status',
+      sortable: true,
       render: (item: Record<string, unknown>) => penaltyBadge(item.penaltyStatus as string),
     },
     {
-      key: 'penaltyAmount', label: 'Penalty', sortable: true,
-      render: (item: Record<string, unknown>) => (item.penaltyAmount ? <span className="neon-text-cyan">₹{String(item.penaltyAmount)}</span> : <span className="text-gray-500">-</span>),
+      key: 'penaltyAmount',
+      label: 'Penalty',
+      sortable: true,
+      render: (item: Record<string, unknown>) => (
+        <span className="neon-text-cyan">₹{String(item.penaltyAmount ?? 50)}</span>
+      ),
     },
   ], []);
 
