@@ -503,14 +503,28 @@ const getAnalytics = async (req, res) => {
 const getNoShowReport = async (req, res) => {
   try {
     const bookings = await Booking.find({ status: 'expired' })
-      .populate('user', 'name')
-      .populate('slot', 'number');
+      .populate('user', 'name email')
+      .populate('slot', 'number slotNumber floor');
 
     const count = bookings.length;
     const total = await Booking.countDocuments();
     const percentage = total > 0 ? (count / total) * 100 : 0;
 
-    res.status(200).json({ success: true, count, percentage, bookings });
+    const formatted = bookings.map(b => ({
+      _id: b._id,
+      id: b._id,
+      bookingId: `BK-${String(b._id).slice(-6).toUpperCase()}`,
+      user: b.user?.name || b.user?.email || 'Driver',
+      userName: b.user?.name || b.user?.email || 'Driver',
+      slot: b.slot?.number || b.slot?.slotNumber || 'Bay',
+      slotNumber: b.slot?.number || b.slot?.slotNumber || 'Bay',
+      date: b.startTime ? new Date(b.startTime).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+      noShowTime: b.startTime ? new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
+      penaltyStatus: b.penaltyPaymentStatus === 'paid' ? 'charged' : 'pending',
+      penaltyAmount: b.overstayPenalty || 10
+    }));
+
+    res.status(200).json({ success: true, count, percentage: Math.round(percentage * 10) / 10, bookings: formatted });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -519,8 +533,8 @@ const getNoShowReport = async (req, res) => {
 const getOverstayReport = async (req, res) => {
   try {
     const bookings = await Booking.find({ overstayDuration: { $gt: 0 } })
-      .populate('user', 'name')
-      .populate('slot', 'number');
+      .populate('user', 'name email')
+      .populate('slot', 'number slotNumber floor');
 
     const count = bookings.length;
 
@@ -536,7 +550,24 @@ const getOverstayReport = async (req, res) => {
     ]);
     const avgOverstay = avgOverstayResult[0]?.avg || 0;
 
-    res.status(200).json({ success: true, count, totalPenalty, avgOverstay, bookings });
+    const formatted = bookings.map(b => ({
+      _id: b._id,
+      id: b._id,
+      bookingId: `BK-${String(b._id).slice(-6).toUpperCase()}`,
+      user: b.user?.name || b.user?.email || 'Driver',
+      userName: b.user?.name || b.user?.email || 'Driver',
+      slot: b.slot?.number || b.slot?.slotNumber || 'Bay',
+      slotNumber: b.slot?.number || b.slot?.slotNumber || 'Bay',
+      expectedEnd: b.endTime ? new Date(b.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
+      actualEnd: b.exitTime ? new Date(b.exitTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Still Parked',
+      overstayDuration: `${b.overstayDuration || 0} mins`,
+      overstayMinutes: b.overstayDuration || 0,
+      penalty: b.overstayPenalty || 0,
+      overstayPenalty: b.overstayPenalty || 0,
+      penaltyPaid: b.penaltyPaymentStatus === 'paid'
+    }));
+
+    res.status(200).json({ success: true, count, totalPenalty, avgOverstay, bookings: formatted });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

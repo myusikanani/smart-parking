@@ -47,18 +47,66 @@ const OverstayReport = () => {
       .then((res) => {
         if (!mounted) return;
         setTotalPenalty(res.totalPenalty ?? 0);
-        const mapped = (res.bookings || []).map((b: Record<string, unknown>) => ({
-          id: String(b._id || b.id),
-          bookingId: String(b.bookingId || ''),
-          user: String(b.userName || b.user || ''),
-          slot: String(b.slotNumber || b.slot || ''),
-          expectedEnd: String(b.expectedEnd || ''),
-          actualEnd: String(b.actualEnd || ''),
-          overstayDuration: String(b.overstayDuration || ''),
-          overstayMinutes: Number(b.overstayMinutes ?? 0),
-          penalty: Number(b.penalty ?? 0),
-          penaltyPaid: Boolean(b.penaltyPaid),
-        }));
+        const parseUserName = (u: unknown, uName: unknown): string => {
+          if (typeof uName === 'string' && uName && uName !== '[object Object]') return uName;
+          if (typeof u === 'string' && u && u !== '[object Object]') return u;
+          if (u && typeof u === 'object') {
+            const obj = u as Record<string, unknown>;
+            return String(obj.name || obj.userName || obj.email || 'Driver');
+          }
+          return 'Driver';
+        };
+
+        const parseSlotNumber = (s: unknown, sNum: unknown): string => {
+          if (typeof sNum === 'string' && sNum && sNum !== '[object Object]') return sNum;
+          if (typeof s === 'string' && s && s !== '[object Object]') return s;
+          if (s && typeof s === 'object') {
+            const obj = s as Record<string, unknown>;
+            return String(obj.number || obj.slotNumber || 'Bay');
+          }
+          return 'Bay';
+        };
+
+        const parseTime = (val: unknown, fallback: string): string => {
+          if (!val) return fallback;
+          if (typeof val === 'string' && (val.includes(':') || val === 'Still Parked' || val === '-')) return val;
+          try {
+            const d = new Date(String(val));
+            if (!isNaN(d.getTime())) {
+              return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+            }
+          } catch {
+            // fallback
+          }
+          return String(val);
+        };
+
+        const mapped = (res.bookings || []).map((b: Record<string, unknown>) => {
+          const rawId = String(b._id || b.id || '');
+          const bId = b.bookingId
+            ? String(b.bookingId)
+            : rawId
+              ? `BK-${rawId.slice(-6).toUpperCase()}`
+              : 'BK-000000';
+
+          const mins = Number(b.overstayMinutes ?? b.overstayDuration ?? 0);
+          const durationStr = b.overstayDuration && typeof b.overstayDuration === 'string' && (b.overstayDuration.includes('m') || b.overstayDuration.includes('h'))
+            ? String(b.overstayDuration)
+            : `${mins} mins`;
+
+          return {
+            id: rawId || String(Math.random()),
+            bookingId: bId,
+            user: parseUserName(b.user, b.userName),
+            slot: parseSlotNumber(b.slot, b.slotNumber),
+            expectedEnd: parseTime(b.expectedEnd || b.endTime, '-'),
+            actualEnd: parseTime(b.actualEnd || b.exitTime, 'Still Parked'),
+            overstayDuration: durationStr,
+            overstayMinutes: mins,
+            penalty: Number(b.penalty ?? b.overstayPenalty ?? 0),
+            penaltyPaid: Boolean(b.penaltyPaid || b.penaltyPaymentStatus === 'paid'),
+          };
+        });
         setData(mapped);
       })
       .catch(() => { if (mounted) setData([]); })
@@ -92,7 +140,7 @@ const OverstayReport = () => {
     { key: 'overstayDuration', label: 'Overstay Duration', sortable: true },
     {
       key: 'penalty', label: 'Penalty', sortable: true,
-      render: (item: Record<string, unknown>) => <span className="neon-text-cyan">${String(item.penalty ?? '')}</span>,
+      render: (item: Record<string, unknown>) => <span className="neon-text-cyan">₹{String(item.penalty ?? 0)}</span>,
     },
     {
       key: 'penaltyPaid', label: 'Status', sortable: true,

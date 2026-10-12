@@ -55,16 +55,45 @@ const NoShowReport = () => {
       .then((res) => {
         if (!mounted) return;
         setPercentage(res.percentage ?? 0);
-        const mapped = (res.bookings || []).map((b: Record<string, unknown>) => ({
-          id: String(b._id || b.id),
-          bookingId: String(b.bookingId || ''),
-          user: String(b.userName || b.user || ''),
-          slot: String(b.slotNumber || b.slot || ''),
-          date: String(b.date || ''),
-          noShowTime: String(b.noShowTime || ''),
-          penaltyStatus: (b.penaltyStatus || 'pending') as NoShowEntry['penaltyStatus'],
-          penaltyAmount: Number(b.penaltyAmount ?? 0),
-        }));
+        const parseUserName = (u: unknown, uName: unknown): string => {
+          if (typeof uName === 'string' && uName && uName !== '[object Object]') return uName;
+          if (typeof u === 'string' && u && u !== '[object Object]') return u;
+          if (u && typeof u === 'object') {
+            const obj = u as Record<string, unknown>;
+            return String(obj.name || obj.userName || obj.email || 'Driver');
+          }
+          return 'Driver';
+        };
+
+        const parseSlotNumber = (s: unknown, sNum: unknown): string => {
+          if (typeof sNum === 'string' && sNum && sNum !== '[object Object]') return sNum;
+          if (typeof s === 'string' && s && s !== '[object Object]') return s;
+          if (s && typeof s === 'object') {
+            const obj = s as Record<string, unknown>;
+            return String(obj.number || obj.slotNumber || 'Bay');
+          }
+          return 'Bay';
+        };
+
+        const mapped = (res.bookings || []).map((b: Record<string, unknown>) => {
+          const rawId = String(b._id || b.id || '');
+          const bId = b.bookingId
+            ? String(b.bookingId)
+            : rawId
+              ? `BK-${rawId.slice(-6).toUpperCase()}`
+              : 'BK-000000';
+
+          return {
+            id: rawId || String(Math.random()),
+            bookingId: bId,
+            user: parseUserName(b.user, b.userName),
+            slot: parseSlotNumber(b.slot, b.slotNumber),
+            date: String(b.date || (b.startTime ? new Date(String(b.startTime)).toISOString().slice(0, 10) : '')),
+            noShowTime: String(b.noShowTime || (b.startTime ? new Date(String(b.startTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-')),
+            penaltyStatus: (b.penaltyStatus || 'pending') as NoShowEntry['penaltyStatus'],
+            penaltyAmount: Number(b.penaltyAmount ?? b.overstayPenalty ?? 10),
+          };
+        });
         setData(mapped);
       })
       .catch(() => { if (mounted) setData([]); })
