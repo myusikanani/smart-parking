@@ -384,7 +384,7 @@ const svgFig6_4 = `
   <circle cx="30" cy="15" r="4.5" fill="#f59e0b" />
   <circle cx="44" cy="15" r="4.5" fill="#10b981" />
   <rect x="70" y="6" width="380" height="18" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
-  <text x="80" y="19" fill="#64748b" font-size="9" font-family="Cambria, sans-serif">https://parksmart-responsive.vercel.app/dashboard</text>
+  <text x="80" y="19" fill="#64748b" font-size="9" font-family="Cambria, sans-serif">https://park-ease-myusi.vercel.app/dashboard</text>
   <rect x="635" y="7" width="90" height="16" rx="8" fill="#dcfce7" />
   <text x="680" y="19" fill="#15803d" font-size="8.5" font-weight="bold" text-anchor="middle" font-family="Cambria, sans-serif">● Live Socket</text>
 
