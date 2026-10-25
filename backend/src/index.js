@@ -51,7 +51,7 @@ app.use(express.urlencoded({ extended: false }));
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    name: 'ParkEase Smart Parking API Server',
+    name: 'ParkSmart Smart Parking API Server',
     status: 'online',
     healthCheck: '/api/health',
     slots: '/api/slots',

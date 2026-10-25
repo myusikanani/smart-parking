@@ -33,12 +33,12 @@ const sendWelcomeEmail = async (userEmail, userDetails = {}) => {
   const html = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 28px; background: #070d1e; color: #f8fafc; border-radius: 16px; border: 1px solid #1e293b;">
       <div style="text-align: center; margin-bottom: 24px;">
-        <h1 style="color: #06b6d4; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: 1px;">ParkEase</h1>
+        <h1 style="color: #06b6d4; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: 1px;">ParkSmart</h1>
         <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Smart Facility & Automated Parking Platform</p>
       </div>
 
       <div style="background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 12px; padding: 18px; margin-bottom: 22px;">
-        <h2 style="color: #38bdf8; margin: 0 0 8px 0; font-size: 18px;">🎉 Welcome to ParkEase, ${name}!</h2>
+        <h2 style="color: #38bdf8; margin: 0 0 8px 0; font-size: 18px;">🎉 Welcome to ParkSmart, ${name}!</h2>
         <p style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.5;">
           Your account has been successfully created. You can now effortlessly reserve parking slots, access digital QR gate passes, and manage your vehicle garage.
         </p>
@@ -65,7 +65,7 @@ const sendWelcomeEmail = async (userEmail, userDetails = {}) => {
       </div>
 
       <p style="font-size: 12px; color: #64748b; text-align: center; border-top: 1px solid #1e293b; padding-top: 16px; margin-top: 24px;">
-        © 2026 ParkEase Smart Systems • 24/7 Automated Parking Management
+        © 2026 ParkSmart Smart Systems • 24/7 Automated Parking Management
       </p>
     </div>
   `;
@@ -78,9 +78,9 @@ const sendWelcomeEmail = async (userEmail, userDetails = {}) => {
   try {
     const sender = process.env.SMTP_USER || process.env.EMAIL_USER || 'support.parkeaseee@gmail.com';
     await transporter.sendMail({
-      from: `"ParkEase Official" <${sender}>`,
+      from: `"ParkSmart Official" <${sender}>`,
       to: userEmail,
-      subject: `Welcome to ParkEase, ${name}! 🎉`,
+      subject: `Welcome to ParkSmart, ${name}! 🎉`,
       html
     });
     return true;
@@ -103,7 +103,7 @@ const sendBookingEmail = async (userEmail, bookingDetails = {}) => {
   const html = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 28px; background: #070d1e; color: #f8fafc; border-radius: 16px; border: 1px solid #1e293b;">
       <div style="text-align: center; margin-bottom: 20px;">
-        <h1 style="color: #06b6d4; margin: 0; font-size: 26px; font-weight: 800;">ParkEase</h1>
+        <h1 style="color: #06b6d4; margin: 0; font-size: 26px; font-weight: 800;">ParkSmart</h1>
         <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Smart Facility & Automated Parking Platform</p>
       </div>
 
@@ -142,7 +142,7 @@ const sendBookingEmail = async (userEmail, bookingDetails = {}) => {
       </table>
 
       <p style="margin-top: 24px; font-size: 12px; color: #64748b; text-align: center; border-top: 1px solid #1e293b; padding-top: 16px;">
-        Need assistance? Contact ParkEase Security Desk or visit your Dashboard.
+        Need assistance? Contact ParkSmart Security Desk or visit your Dashboard.
       </p>
     </div>
   `;
@@ -155,9 +155,9 @@ const sendBookingEmail = async (userEmail, bookingDetails = {}) => {
   try {
     const sender = process.env.SMTP_USER || process.env.EMAIL_USER || 'support.parkeaseee@gmail.com';
     await transporter.sendMail({
-      from: `"ParkEase Bookings" <${sender}>`,
+      from: `"ParkSmart Bookings" <${sender}>`,
       to: userEmail,
-      subject: `✅ Booking Confirmed (Bay #${slotNumber}) - ParkEase`,
+      subject: `✅ Booking Confirmed (Bay #${slotNumber}) - ParkSmart`,
       html,
       attachments: qrDataUrl
         ? [{ filename: 'parkease-gate-pass.png', path: qrDataUrl, cid: 'bookingqr' }]
@@ -183,7 +183,7 @@ const sendResetPasswordEmail = async (userEmail, resetToken, resetCode, userName
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 28px; background: #070d1e; color: #e2e8f0; border-radius: 16px; border: 1px solid #1e293b;">
       <div style="text-align: center; margin-bottom: 20px;">
-        <h1 style="color: #06b6d4; margin: 0; font-size: 24px; font-weight: 800;">ParkEase</h1>
+        <h1 style="color: #06b6d4; margin: 0; font-size: 24px; font-weight: 800;">ParkSmart</h1>
         <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Account Security & Recovery</p>
       </div>
 
@@ -220,9 +220,9 @@ const sendResetPasswordEmail = async (userEmail, resetToken, resetCode, userName
   try {
     const sender = process.env.SMTP_USER || process.env.EMAIL_USER || 'support.parkeaseee@gmail.com';
     await transporter.sendMail({
-      from: `"ParkEase Security" <${sender}>`,
+      from: `"ParkSmart Security" <${sender}>`,
       to: userEmail,
-      subject: `${resetCode} is your Password Reset Code - ParkEase`,
+      subject: `${resetCode} is your Password Reset Code - ParkSmart`,
       html
     });
     return true;
@@ -237,10 +237,10 @@ const send2FAEmailCode = async (userEmail, code, userName = 'User') => {
   const transporter = createTransporter();
   const html = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 550px; margin: 0 auto; padding: 26px; background: #070d1e; color: #e2e8f0; border-radius: 16px; border: 1px solid #1e293b; text-align: center;">
-      <h2 style="color: #06b6d4; margin-top: 0; font-size: 22px;">ParkEase Verification Code</h2>
+      <h2 style="color: #06b6d4; margin-top: 0; font-size: 22px;">ParkSmart Verification Code</h2>
       <p style="font-size: 14px; line-height: 1.6; color: #94a3b8; text-align: left;">
         Hello <strong>${userName}</strong>,<br/>
-        You requested a one-time verification code to sign in to your ParkEase account:
+        You requested a one-time verification code to sign in to your ParkSmart account:
       </p>
       
       <div style="margin: 25px 0;">
@@ -264,9 +264,9 @@ const send2FAEmailCode = async (userEmail, code, userName = 'User') => {
   try {
     const sender = process.env.SMTP_USER || process.env.EMAIL_USER || 'support.parkeaseee@gmail.com';
     await transporter.sendMail({
-      from: `"ParkEase Security Shield" <${sender}>`,
+      from: `"ParkSmart Security Shield" <${sender}>`,
       to: userEmail,
-      subject: `${code} is your ParkEase Login Verification Code`,
+      subject: `${code} is your ParkSmart Login Verification Code`,
       html
     });
     return true;

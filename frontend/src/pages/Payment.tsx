@@ -267,7 +267,7 @@ const Payment = () => {
           amount: orderRes.amount,
           currency: orderRes.currency,
           order_id: orderRes.orderId,
-          name: 'ParkEase',
+          name: 'ParkSmart',
           description: `Payment for slot ${slotNumber}`,
           theme: { color: '#ec4899' },
           prefill: {

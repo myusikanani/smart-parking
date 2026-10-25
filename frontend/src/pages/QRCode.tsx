@@ -149,7 +149,7 @@ const QRCode = () => {
       // Header Text
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 32px sans-serif';
-      ctx.fillText('ParkEase Gate Pass', 50, 80);
+      ctx.fillText('ParkSmart Gate Pass', 50, 80);
 
       ctx.fillStyle = '#a5f3fc';
       ctx.font = 'bold 14px monospace';
@@ -293,7 +293,7 @@ const QRCode = () => {
       ctx.fillStyle = '#475569';
       ctx.font = 'bold 13px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('PARKEASE SMART PARKING SYSTEM • OFFICIAL ENTRY PASS', 400, 1100);
+      ctx.fillText('PARKSMART SMART PARKING SYSTEM • OFFICIAL ENTRY PASS', 400, 1100);
 
       // Trigger Download
       canvas.toBlob((blob) => {
@@ -301,7 +301,7 @@ const QRCode = () => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `ParkEase-ParkingPass-${passId}.png`;
+        link.download = `ParkSmart-ParkingPass-${passId}.png`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

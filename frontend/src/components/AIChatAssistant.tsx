@@ -23,7 +23,7 @@ export const AIChatAssistant: FC = () => {
     {
       id: 'welcome-1',
       sender: 'bot',
-      text: "👋 Hi there! I'm **ParkEase AI Assistant**. How can I help you find or book parking today?",
+      text: "👋 Hi there! I'm **ParkSmart AI Assistant**. How can I help you find or book parking today?",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -85,7 +85,7 @@ export const AIChatAssistant: FC = () => {
       return {
         id: `bot-${Date.now()}`,
         sender: 'bot',
-        text: '💰 **ParkEase Pricing Structure**:\n• 2-Wheeler: ₹10/hr (₹50/day)\n• 4-Wheeler: ₹30/hr (₹150/day)\n• EV Charging: ₹25/hr (₹120/day)\n• Accessible/VIP: ₹15/hr (₹80/day)',
+        text: '💰 **ParkSmart Pricing Structure**:\n• 2-Wheeler: ₹10/hr (₹50/day)\n• 4-Wheeler: ₹30/hr (₹150/day)\n• EV Charging: ₹25/hr (₹120/day)\n• Accessible/VIP: ₹15/hr (₹80/day)',
         timestamp: ts,
         action: { label: 'Check Live Rates', link: '/available-slots' },
       };
@@ -158,7 +158,7 @@ export const AIChatAssistant: FC = () => {
           <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-cyan-400 rounded-full border-2 border-slate-950" />
           <div className="absolute right-full mr-3 hidden group-hover:flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-900/95 border border-cyan-500/40 text-xs text-white font-semibold shadow-2xl whitespace-nowrap backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5 text-cyan-300 animate-spin" />
-            <span>Ask ParkEase AI</span>
+            <span>Ask ParkSmart AI</span>
           </div>
         </motion.button>
       )}
@@ -181,7 +181,7 @@ export const AIChatAssistant: FC = () => {
                 </div>
                 <div>
                   <h3 className="font-extrabold text-sm text-[var(--text)] flex items-center gap-1.5">
-                    ParkEase AI Assistant
+                    ParkSmart AI Assistant
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                   </h3>
                   <p className="text-[10px] text-emerald-400 font-mono font-semibold flex items-center gap-1">

@@ -53,7 +53,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => (
           <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-2xl shadow-cyan-400/40 border border-cyan-300/40 flex-shrink-0 transition-transform duration-300 group-hover:scale-105 bg-[#06101d]">
             <img src="/logo.png" alt="ParkSmart Logo" className="w-full h-full object-cover" />
           </div>
-          <span className="text-3xl font-bold text-white tracking-tight">ParkEase</span>
+          <span className="text-3xl font-bold text-white tracking-tight">ParkSmart</span>
         </Link>
         <h2 className="text-2xl text-white/95 text-center max-w-md font-semibold">
           Smart Parking, Smarter City
@@ -80,7 +80,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => (
           <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-cyan-500/30 border border-cyan-400/30 flex-shrink-0 bg-[#06101d]">
             <img src="/logo.png" alt="ParkSmart Logo" className="w-full h-full object-cover" />
           </div>
-          <span className="text-xl font-bold neon-text">ParkEase</span>
+          <span className="text-xl font-bold neon-text">ParkSmart</span>
         </Link>
         <motion.div
           initial={{ opacity: 0, y: 20 }}

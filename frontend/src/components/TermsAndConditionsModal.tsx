@@ -141,7 +141,7 @@ export default function TermsAndConditionsModal({ isOpen, onClose, onAccept }: T
           <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 text-sm">
             {/* Notice Banner */}
             <div className="p-3.5 rounded-xl bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-500/30 text-xs sm:text-sm text-cyan-950 dark:text-cyan-200 leading-relaxed font-medium">
-              📌 <strong>Important:</strong> By registering an account with ParkSmart / ParkEase, you agree to comply with our digital parking terms, slot reservation holds, facility speed limits, and fee policies outlined below.
+              📌 <strong>Important:</strong> By registering an account with ParkSmart, you agree to comply with our digital parking terms, slot reservation holds, facility speed limits, and fee policies outlined below.
             </div>
 
             {termsSections.map((section) => {

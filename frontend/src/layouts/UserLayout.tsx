@@ -205,7 +205,7 @@ const UserLayout = () => {
                 <div className="w-8 h-8 rounded-xl overflow-hidden shadow-lg shadow-cyan-500/30 border border-cyan-400/30 flex-shrink-0 transition-transform duration-300 group-hover:scale-105 bg-[#06101d]">
                   <img src="/logo.png" alt="ParkSmart Logo" className="w-full h-full object-cover" />
                 </div>
-                <span className="text-lg font-bold neon-text truncate">ParkEase</span>
+                <span className="text-lg font-bold neon-text truncate">ParkSmart</span>
                 <span className="badge-neon text-[10px] font-mono px-1.5 py-0.2">User</span>
               </Link>
             ) : (

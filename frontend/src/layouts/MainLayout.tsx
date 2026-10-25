@@ -51,7 +51,7 @@ const MainLayout = () => {
               <div className="w-9 h-9 rounded-xl overflow-hidden shadow-lg shadow-cyan-500/30 border border-cyan-400/30 flex-shrink-0 transition-all duration-300 group-hover:scale-105 group-hover:shadow-cyan-400/50 bg-[#06101d]">
                 <img src="/logo.png" alt="ParkSmart Logo" className="w-full h-full object-cover" />
               </div>
-              <span className="text-xl font-bold neon-text">ParkEase</span>
+              <span className="text-xl font-bold neon-text">ParkSmart</span>
             </Link>
 
             <nav className="hidden md:flex items-center gap-1">

@@ -50,7 +50,7 @@ const PaymentReceiptModal = ({ open, onClose, txn }: Props) => {
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-lg font-bold neon-text">Payment Receipt</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">ParkEase · Smart Parking</p>
+                  <p className="text-xs text-gray-400 mt-0.5">ParkSmart · Smart Parking</p>
                 </div>
                 <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
                   paid ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'

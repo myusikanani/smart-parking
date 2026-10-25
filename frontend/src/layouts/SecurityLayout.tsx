@@ -68,7 +68,7 @@ const SecurityLayout = () => {
             <div className="w-7 h-7 rounded-lg overflow-hidden shadow-lg shadow-cyan-500/30 border border-cyan-400/30 flex-shrink-0 transition-transform duration-300 group-hover:scale-105 bg-[#06101d]">
               <img src="/logo.png" alt="ParkSmart Logo" className="w-full h-full object-cover" />
             </div>
-            <span className="text-base font-bold neon-text">ParkEase</span>
+            <span className="text-base font-bold neon-text">ParkSmart</span>
           </Link>
           <button
             onClick={() => setMobileOpen(false)}

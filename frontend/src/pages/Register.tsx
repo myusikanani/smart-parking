@@ -264,7 +264,7 @@ const Register = () => {
           >
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold neon-text">Create Account</h1>
-              <p className="text-gray-400 mt-2">Join ParkEase today</p>
+              <p className="text-gray-400 mt-2">Join ParkSmart today</p>
             </div>
 
             <div className="flex gap-2 mb-6">

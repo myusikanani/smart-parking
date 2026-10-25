@@ -104,7 +104,7 @@ const About = () => (
           </div>
           About{' '}
           <span className="neon-text">
-            ParkEase
+            ParkSmart
           </span>
         </motion.h1>
         <motion.p
@@ -167,7 +167,7 @@ const About = () => (
                 <div className="relative">
                   <div className="absolute -left-[1.35rem] w-3 h-3 rounded-full bg-[#06b6d4]" />
                   <p className="leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    ParkEase was born in 2023 when our founders spent 45 minutes circling a downtown block looking for parking before missing an important meeting. That evening, they decided there had to be a better way.
+                    ParkSmart was born in 2023 when our founders spent 45 minutes circling a downtown block looking for parking before missing an important meeting. That evening, they decided there had to be a better way.
                   </p>
                 </div>
                 <div className="relative">
@@ -179,7 +179,7 @@ const About = () => (
                 <div className="relative">
                   <div className="absolute -left-[1.35rem] w-3 h-3 rounded-full bg-[#10b981]" />
                   <p className="leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    Today, ParkEase powers over 10,000 parking spaces in 50+ locations, processing thousands of transactions daily. But our mission remains the same: make parking effortless for everyone.
+                    Today, ParkSmart powers over 10,000 parking spaces in 50+ locations, processing thousands of transactions daily. But our mission remains the same: make parking effortless for everyone.
                   </p>
                 </div>
               </div>
@@ -212,7 +212,7 @@ const About = () => (
           <span className="inline-block px-4 py-1.5 mb-4 text-xs font-semibold uppercase tracking-widest text-orange-400 bg-orange-500/10 rounded-full border border-orange-500/20">
             Team
           </span>
-          <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">Meet the people behind ParkEase</h2>
+          <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">Meet the people behind ParkSmart</h2>
           <p className="text-lg max-w-2xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
             A passionate team dedicated to solving urban parking challenges.
           </p>

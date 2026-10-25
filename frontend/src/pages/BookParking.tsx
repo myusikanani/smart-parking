@@ -1758,7 +1758,7 @@ const BookParking = () => {
           <div>
             <h3 className="text-lg font-bold text-white">Please Log In First</h3>
             <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
-              You must be logged in to your ParkEase user account to finalize your parking slot reservation and receive your digital QR pass.
+              You must be logged in to your ParkSmart user account to finalize your parking slot reservation and receive your digital QR pass.
             </p>
           </div>
 

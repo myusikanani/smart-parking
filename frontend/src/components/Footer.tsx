@@ -25,7 +25,7 @@ const socialLinks = [
   },
   {
     name: 'WhatsApp',
-    url: 'https://wa.me/919876543210?text=Hello%20ParkEase%20Support',
+    url: 'https://wa.me/919876543210?text=Hello%20ParkSmart%20Support',
     icon: FaWhatsapp,
     defaultClass: 'bg-white/80 dark:bg-slate-900/80 text-[#25D366] border-emerald-500/20 shadow-sm',
     hoverClass: 'hover:bg-gradient-to-tr hover:from-[#25D366] hover:to-[#128C7E] hover:text-white hover:border-transparent hover:shadow-[0_0_22px_rgba(37,211,102,0.7)]',
@@ -117,7 +117,7 @@ const Footer = () => (
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`Visit our ${social.name} page`}
-                    title={`Visit ParkEase on ${social.name}`}
+                    title={`Visit ParkSmart on ${social.name}`}
                     className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-all duration-300 hover:scale-115 hover:-translate-y-1 active:scale-95 cursor-pointer ${social.defaultClass} ${social.hoverClass}`}
                   >
                     <Icon className="w-4 h-4 transition-colors duration-300" />
@@ -145,7 +145,7 @@ const Footer = () => (
       </div>
 
       <div className="pt-6 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-gray-500 font-mono">
-        <p>&copy; {new Date().getFullYear()} ParkEase Inc. • All rights reserved • Model 100-243</p>
+        <p>&copy; {new Date().getFullYear()} ParkSmart Inc. • All rights reserved • Model 100-243</p>
         <div className="flex items-center gap-4">
           <Link to="/about" className="hover:text-cyan-600 dark:hover:text-gray-300 transition-colors">Privacy</Link>
           <Link to="/about" className="hover:text-cyan-600 dark:hover:text-gray-300 transition-colors">Terms</Link>

@@ -85,7 +85,7 @@ const RevenueDashboard = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `ParkEase_Revenue_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `ParkSmart_Revenue_Report_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

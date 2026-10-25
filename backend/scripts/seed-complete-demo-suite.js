@@ -620,7 +620,7 @@ async function seedCompleteDemo() {
     const user = userMap[driver.name];
     await Notification.create({
       user: user._id,
-      title: 'Booking Confirmed - ParkEase Smart Parking',
+      title: 'Booking Confirmed - ParkSmart Smart Parking',
       message: `Your reservation for vehicle ${driver.vehicleNumber} was successfully confirmed. Dynamic QR pass is ready for gate entry.`,
       type: 'booking',
       read: false,
