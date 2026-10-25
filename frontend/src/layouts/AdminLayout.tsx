@@ -143,26 +143,17 @@ const AdminLayout = () => {
         } ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="flex items-center justify-between h-14 px-4 border-b border-white/5">
-          {!collapsed && (
-            <Link to="/admin" className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-cyan-500/30 relative overflow-hidden">
-                <span className="text-white font-bold text-xs">P</span>
-                <motion.div
-                  initial={{ x: -8 }}
-                  animate={{ x: 8 }}
-                  transition={{ repeat: Infinity, duration: 2, ease: 'linear', repeatType: 'reverse' }}
-                  className="absolute bottom-0 opacity-30"
-                >
-                  <CarSedan className="w-3 h-auto" color="#ffffff" />
-                </motion.div>
+          {!collapsed ? (
+            <Link to="/admin" className="flex items-center gap-2.5 group">
+              <div className="w-7 h-7 rounded-lg overflow-hidden shadow-lg shadow-cyan-500/30 border border-cyan-400/30 flex-shrink-0 transition-transform duration-300 group-hover:scale-105 bg-[#06101d]">
+                <img src="/logo.png" alt="ParkSmart Admin Logo" className="w-full h-full object-cover" />
               </div>
               <span className="text-sm font-bold neon-text tracking-wide">ParkSmart Admin</span>
             </Link>
-          )}
-          {collapsed && (
-            <Link to="/admin" className="mx-auto">
-              <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 relative overflow-hidden">
-                <span className="text-white font-bold text-xs">P</span>
+          ) : (
+            <Link to="/admin" className="mx-auto group">
+              <div className="w-7 h-7 rounded-lg overflow-hidden shadow-lg shadow-cyan-500/30 border border-cyan-400/30 transition-transform duration-300 group-hover:scale-105 bg-[#06101d]">
+                <img src="/logo.png" alt="ParkSmart Admin Logo" className="w-full h-full object-cover" />
               </div>
             </Link>
           )}

@@ -200,21 +200,19 @@ const UserLayout = () => {
         <div>
           {/* LOGO BAR */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-[var(--border)]">
-            {!collapsed && (
-              <Link to="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-cyan-500/30 relative overflow-hidden">
-                  <span className="text-white font-bold text-xs">P</span>
-                  <motion.div
-                    initial={{ x: -8 }}
-                    animate={{ x: 8 }}
-                    transition={{ repeat: Infinity, duration: 2, ease: 'linear', repeatType: 'reverse' }}
-                    className="absolute bottom-0 opacity-30"
-                  >
-                    <CarSedan className="w-3 h-auto" color="#ffffff" />
-                  </motion.div>
+            {!collapsed ? (
+              <Link to="/" className="flex items-center gap-2.5 group">
+                <div className="w-8 h-8 rounded-xl overflow-hidden shadow-lg shadow-cyan-500/30 border border-cyan-400/30 flex-shrink-0 transition-transform duration-300 group-hover:scale-105 bg-[#06101d]">
+                  <img src="/logo.png" alt="ParkSmart Logo" className="w-full h-full object-cover" />
                 </div>
                 <span className="text-lg font-bold neon-text truncate">ParkEase</span>
                 <span className="badge-neon text-[10px] font-mono px-1.5 py-0.2">User</span>
+              </Link>
+            ) : (
+              <Link to="/" className="flex items-center justify-center w-8 h-8 mx-auto group">
+                <div className="w-8 h-8 rounded-xl overflow-hidden shadow-lg shadow-cyan-500/30 border border-cyan-400/30 transition-transform duration-300 group-hover:scale-105 bg-[#06101d]">
+                  <img src="/logo.png" alt="ParkSmart Logo" className="w-full h-full object-cover" />
+                </div>
               </Link>
             )}
 

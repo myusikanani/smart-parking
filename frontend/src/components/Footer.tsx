@@ -86,8 +86,8 @@ const Footer = () => (
       <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
         <div className="col-span-2">
           <div className="flex items-center gap-2.5 mb-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/25">
-              <span className="text-white font-bold text-sm">P</span>
+            <div className="w-8 h-8 rounded-xl overflow-hidden shadow-lg shadow-cyan-500/25 border border-cyan-400/30 flex-shrink-0 bg-[#06101d]">
+              <img src="/logo.png" alt="ParkSmart Logo" className="w-full h-full object-cover" />
             </div>
             <span className="text-xl font-extrabold text-slate-900 dark:text-white tracking-wide font-space">
               Park<span className="text-cyan-500 dark:text-cyan-400">Ease</span>

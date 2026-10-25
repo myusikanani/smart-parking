@@ -49,19 +49,11 @@ const AuthLayout = ({ children }: AuthLayoutProps) => (
       </div>
 
       <div className="relative z-10 flex flex-col items-center justify-center w-full p-12">
-        <Link to="/" className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center shadow-xl relative overflow-hidden">
-            <span className="text-white font-bold text-xl">P</span>
-            <motion.div
-              initial={{ x: -10 }}
-              animate={{ x: 10 }}
-              transition={{ repeat: Infinity, duration: 2, ease: 'linear', repeatType: 'reverse' }}
-              className="absolute bottom-0 opacity-40"
-            >
-              <CarSedan className="w-4 h-auto" color="#ffffff" />
-            </motion.div>
+        <Link to="/" className="flex items-center gap-3.5 mb-8 group">
+          <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-2xl shadow-cyan-400/40 border border-cyan-300/40 flex-shrink-0 transition-transform duration-300 group-hover:scale-105 bg-[#06101d]">
+            <img src="/logo.png" alt="ParkSmart Logo" className="w-full h-full object-cover" />
           </div>
-          <span className="text-3xl font-bold text-white">ParkEase</span>
+          <span className="text-3xl font-bold text-white tracking-tight">ParkEase</span>
         </Link>
         <h2 className="text-2xl text-white/95 text-center max-w-md font-semibold">
           Smart Parking, Smarter City
@@ -84,9 +76,9 @@ const AuthLayout = ({ children }: AuthLayoutProps) => (
 
     <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 bg-[var(--bg)]">
       <div className="w-full max-w-md">
-        <Link to="/" className="flex items-center gap-2 lg:hidden mb-8 justify-center">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/25">
-            <span className="text-white font-bold text-sm">P</span>
+        <Link to="/" className="flex items-center gap-2.5 lg:hidden mb-8 justify-center group">
+          <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-cyan-500/30 border border-cyan-400/30 flex-shrink-0 bg-[#06101d]">
+            <img src="/logo.png" alt="ParkSmart Logo" className="w-full h-full object-cover" />
           </div>
           <span className="text-xl font-bold neon-text">ParkEase</span>
         </Link>

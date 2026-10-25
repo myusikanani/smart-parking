@@ -47,17 +47,9 @@ const MainLayout = () => {
       <header className="glass-nav fixed top-0 left-0 right-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 relative overflow-hidden">
-                <span className="text-white font-bold text-sm">P</span>
-                <motion.div
-                  initial={{ x: -20 }}
-                  animate={{ x: 20 }}
-                  transition={{ repeat: Infinity, duration: 3, ease: 'linear', repeatType: 'reverse' }}
-                  className="absolute bottom-0 opacity-30"
-                >
-                  <CarSedan className="w-4 h-auto" color="#ffffff" />
-                </motion.div>
+            <Link to="/" className="flex items-center gap-2.5 group">
+              <div className="w-9 h-9 rounded-xl overflow-hidden shadow-lg shadow-cyan-500/30 border border-cyan-400/30 flex-shrink-0 transition-all duration-300 group-hover:scale-105 group-hover:shadow-cyan-400/50 bg-[#06101d]">
+                <img src="/logo.png" alt="ParkSmart Logo" className="w-full h-full object-cover" />
               </div>
               <span className="text-xl font-bold neon-text">ParkEase</span>
             </Link>

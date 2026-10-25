@@ -64,17 +64,9 @@ const SecurityLayout = () => {
         }`}
       >
         <div className="flex items-center justify-between h-14 px-4 border-b border-white/5">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 relative overflow-hidden">
-              <span className="text-white font-bold text-xs">P</span>
-              <motion.div
-                initial={{ x: -6 }}
-                animate={{ x: 6 }}
-                transition={{ repeat: Infinity, duration: 2, ease: 'linear', repeatType: 'reverse' }}
-                className="absolute bottom-0 opacity-30"
-              >
-                <CarSedan className="w-2.5 h-auto" color="#ffffff" />
-              </motion.div>
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <div className="w-7 h-7 rounded-lg overflow-hidden shadow-lg shadow-cyan-500/30 border border-cyan-400/30 flex-shrink-0 transition-transform duration-300 group-hover:scale-105 bg-[#06101d]">
+              <img src="/logo.png" alt="ParkSmart Logo" className="w-full h-full object-cover" />
             </div>
             <span className="text-base font-bold neon-text">ParkEase</span>
           </Link>
