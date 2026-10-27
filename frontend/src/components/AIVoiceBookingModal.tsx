@@ -62,9 +62,9 @@ export default function AIVoiceBookingModal({ isOpen, onClose, onApplyBooking }:
     const result: ParsedVoiceData = { rawTranscript: rawText };
 
     // 1. Category extraction
-    if (text.includes('ev') || text.includes('electric') || text.includes('tesla') || text.includes('charging')) {
+    if (text.includes('ev') || text.includes('electric') || text.includes('tesla') || text.includes('charging') || text.includes('battery')) {
       result.category = 'ev';
-    } else if (text.includes('bike') || text.includes('scooter') || text.includes('two wheeler') || text.includes('motorcycle')) {
+    } else if (text.includes('bike') || text.includes('scooter') || text.includes('two wheeler') || text.includes('2 wheeler') || text.includes('motorcycle') || text.includes('activa')) {
       result.category = 'two-wheeler';
     } else if (text.includes('vip') || text.includes('accessible') || text.includes('disabled') || text.includes('handicap')) {
       result.category = 'disabled';
@@ -72,27 +72,62 @@ export default function AIVoiceBookingModal({ isOpen, onClose, onApplyBooking }:
       result.category = 'four-wheeler';
     }
 
-    // 2. Duration extraction
+    // 2. Duration extraction (supports digits & words: "3 hours", "four hours", "24 hrs", "full day")
+    const wordToNumber: Record<string, number> = {
+      'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+      'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
+      'twelve': 12, 'twenty-four': 24, 'twenty four': 24,
+    };
+
     if (text.includes('full day') || text.includes('24 hour') || text.includes('whole day')) {
       result.durationHours = 24;
-    } else if (text.includes('4 hour') || text.includes('four hour')) {
-      result.durationHours = 4;
-    } else if (text.includes('1 hour') || text.includes('one hour')) {
-      result.durationHours = 1;
     } else {
-      result.durationHours = 2; // default
+      const durMatch = text.match(/(?:for\s+)?(\d+|one|two|three|four|five|six|seven|eight|nine|ten|twelve|twenty[- ]four)\s*(?:hours?|hrs?)\b/i);
+      if (durMatch) {
+        const rawVal = durMatch[1].toLowerCase();
+        const parsedNum = wordToNumber[rawVal] || parseInt(rawVal, 10);
+        if (!isNaN(parsedNum) && parsedNum > 0) {
+          result.durationHours = parsedNum;
+        } else {
+          result.durationHours = 2;
+        }
+      } else {
+        result.durationHours = 2; // fallback default
+      }
     }
 
-    // 3. Time extraction (e.g., "10 am", "2 pm", "14:00", "8 o'clock")
-    const timeMatch = text.match(/(\d{1,2})\s*(am|pm|o'clock|:00)?/);
-    if (timeMatch) {
-      let hr = parseInt(timeMatch[1], 10);
+    // 3. Time extraction (e.g. "at 10:00 PM", "at 11:00 AM", "at 2 PM", "at 10 PM", "at 14:00")
+    // Use specific time patterns to prevent picking up duration numbers
+    const timeWithAtMatch = text.match(/(?:at|around|from)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i);
+    const timeWithAmPmMatch = text.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i);
+    const timeColonMatch = text.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+
+    let foundHour: number | null = null;
+    let foundMin: string = '00';
+
+    if (timeWithAtMatch) {
+      foundHour = parseInt(timeWithAtMatch[1], 10);
+      foundMin = timeWithAtMatch[2] || '00';
+      const meridiem = (timeWithAtMatch[3] || '').toLowerCase();
+      const isPm = meridiem === 'pm' || (!meridiem && (text.includes('evening') || text.includes('night')));
+      const isAm = meridiem === 'am' || (!meridiem && text.includes('morning'));
+      if (isPm && foundHour < 12) foundHour += 12;
+      if (isAm && foundHour === 12) foundHour = 0;
+    } else if (timeWithAmPmMatch) {
+      foundHour = parseInt(timeWithAmPmMatch[1], 10);
+      foundMin = timeWithAmPmMatch[2] || '00';
+      const meridiem = timeWithAmPmMatch[3].toLowerCase();
+      if (meridiem === 'pm' && foundHour < 12) foundHour += 12;
+      if (meridiem === 'am' && foundHour === 12) foundHour = 0;
+    } else if (timeColonMatch) {
+      foundHour = parseInt(timeColonMatch[1], 10);
+      foundMin = timeColonMatch[2];
       const isPm = text.includes('pm') || text.includes('evening') || text.includes('night');
-      if (isPm && hr < 12) hr += 12;
-      if (!isPm && hr === 12) hr = 0;
-      if (hr >= 8 && hr <= 21) {
-        result.time = `${String(hr).padStart(2, '0')}:00`;
-      }
+      if (isPm && foundHour < 12) foundHour += 12;
+    }
+
+    if (foundHour !== null && foundHour >= 0 && foundHour <= 23) {
+      result.time = `${String(foundHour).padStart(2, '0')}:${foundMin === '00' ? '00' : foundMin}`;
     }
 
     // 4. Date extraction
@@ -100,14 +135,18 @@ export default function AIVoiceBookingModal({ isOpen, onClose, onApplyBooking }:
     if (text.includes('tomorrow')) {
       const tomorrow = new Date(now.getTime() + 86400000);
       result.date = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+    } else if (text.includes('day after tomorrow')) {
+      const dayAfter = new Date(now.getTime() + 2 * 86400000);
+      result.date = `${dayAfter.getFullYear()}-${String(dayAfter.getMonth() + 1).padStart(2, '0')}-${String(dayAfter.getDate()).padStart(2, '0')}`;
     } else {
       result.date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     }
 
-    // 5. Vehicle Number Plate extraction (e.g. "GJ 01 AB 1234" or "MH 12 AB 3456")
-    const plateMatch = rawText.match(/([A-Z]{2}[ -]?[0-9]{1,2}[ -]?[A-Z]{1,3}[ -]?[0-9]{3,4})/i);
+    // 5. Vehicle Number Plate extraction (handles speech commas e.g. "AB 02, CD 1234" -> "AB-02-CD-1234")
+    const cleanedText = rawText.replace(/[,.]/g, ' ').toUpperCase();
+    const plateMatch = cleanedText.match(/\b([A-Z]{2}\s*[-]?\s*\d{1,2}\s*[-]?\s*[A-Z]{1,3}\s*[-]?\s*\d{3,4})\b/i);
     if (plateMatch) {
-      result.vehicleNumber = plateMatch[1].toUpperCase().replace(/\s+/g, '-');
+      result.vehicleNumber = plateMatch[1].replace(/\s+/g, '-').toUpperCase();
     }
 
     return result;
@@ -191,15 +230,20 @@ export default function AIVoiceBookingModal({ isOpen, onClose, onApplyBooking }:
         onApplyBooking(parsedData);
       }
       onClose();
-      navigate('/dashboard/book-parking', {
-        state: {
-          category: parsedData.category,
-          duration: parsedData.durationHours,
-          time: parsedData.time,
-          date: parsedData.date,
-          vehicleNumber: parsedData.vehicleNumber
-        }
-      });
+
+      // Only navigate if we're not currently on a booking page to avoid resetting state
+      const currentPath = window.location.pathname;
+      if (!currentPath.includes('book-parking')) {
+        navigate('/dashboard/book-parking', {
+          state: {
+            category: parsedData.category,
+            duration: parsedData.durationHours,
+            time: parsedData.time,
+            date: parsedData.date,
+            vehicleNumber: parsedData.vehicleNumber
+          }
+        });
+      }
     }
   };
 
@@ -332,6 +376,18 @@ export default function AIVoiceBookingModal({ isOpen, onClose, onApplyBooking }:
                 <span className="text-[10px] text-gray-400 block">Arrival Time</span>
                 <strong className="text-pink-300 font-mono">{parsedData.time || 'Next Hour'}</strong>
               </div>
+              {parsedData.date && (
+                <div className="bg-slate-900/80 p-2 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-gray-400 block">Date</span>
+                  <strong className="text-emerald-300 font-mono">{parsedData.date}</strong>
+                </div>
+              )}
+              {parsedData.vehicleNumber && (
+                <div className="bg-slate-900/80 p-2 rounded-xl border border-white/5 col-span-2 sm:col-span-1">
+                  <span className="text-[10px] text-gray-400 block">Plate</span>
+                  <strong className="text-amber-300 font-mono">{parsedData.vehicleNumber}</strong>
+                </div>
+              )}
             </div>
 
             {aiReply && (

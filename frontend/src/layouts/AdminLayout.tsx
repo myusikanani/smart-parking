@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import type { ComponentType } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { adminApi } from '../services/api';
 import {
   HiOutlineHome,
   HiOutlineUsers,
@@ -82,6 +83,75 @@ const AdminLayout = () => {
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
+
+  interface AdminNotificationItem {
+    id: string;
+    title: string;
+    desc: string;
+    time: string;
+    type?: string;
+    targetUrl?: string;
+  }
+
+  const [adminNotifs, setAdminNotifs] = useState<AdminNotificationItem[]>([]);
+
+  const fetchAdminNotifs = useCallback(async () => {
+    try {
+      const res = await adminApi.getAllBookings({ limit: '8' });
+      if (res.success && Array.isArray(res.bookings)) {
+        const notifList: AdminNotificationItem[] = [];
+        res.bookings.slice(0, 6).forEach((b: Record<string, unknown>) => {
+          const bId = String(b._id || b.id || '').slice(-6).toUpperCase();
+          const slot = (b.slot as Record<string, unknown>)?.number || b.slotNumber || 'Bay';
+          const userStr = (b.user as Record<string, unknown>)?.name || b.vehicleNumber || 'Driver';
+          const pStatus = String(b.paymentStatus || 'pending');
+          const status = String(b.status || 'confirmed');
+          const dateStr = String(b.createdAt || b.updatedAt || new Date().toISOString());
+
+          const diffMins = Math.max(1, Math.round((Date.now() - new Date(dateStr).getTime()) / 60000));
+          const timeText = diffMins < 60 ? `${diffMins}m ago` : `${Math.floor(diffMins / 60)}h ago`;
+
+          if (pStatus === 'paid') {
+            notifList.push({
+              id: `notif-${bId}-paid`,
+              title: 'Payment Received',
+              desc: `₹${b.amount || 60} collected from ${userStr} for Slot ${slot}`,
+              time: timeText,
+              type: 'payment',
+              targetUrl: '/admin/payments'
+            });
+          } else if (status === 'active') {
+            notifList.push({
+              id: `notif-${bId}-active`,
+              title: 'Vehicle Inside Bay',
+              desc: `${userStr} checked in at ${slot}`,
+              time: timeText,
+              type: 'entry',
+              targetUrl: '/admin/bookings'
+            });
+          } else {
+            notifList.push({
+              id: `notif-${bId}-res`,
+              title: 'New Reservation',
+              desc: `Slot ${slot} reserved by ${userStr} (#${bId})`,
+              time: timeText,
+              type: 'booking',
+              targetUrl: '/admin/bookings'
+            });
+          }
+        });
+        setAdminNotifs(notifList);
+      }
+    } catch (_) {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAdminNotifs();
+    const interval = setInterval(fetchAdminNotifs, 30000);
+    return () => clearInterval(interval);
+  }, [fetchAdminNotifs]);
 
   useEffect(() => {
     if (isMoreActive) setMoreExpanded(true);
@@ -247,9 +317,11 @@ const AdminLayout = () => {
                   title="Notifications"
                 >
                   <HiOutlineBell className="w-4 h-4" />
-                  <span className="badge-neon absolute top-1 right-1 w-3.5 h-3.5 text-[9px] font-bold rounded-full flex items-center justify-center">
-                    5
-                  </span>
+                  {adminNotifs.length > 0 && (
+                    <span className="badge-neon absolute top-1 right-1 w-3.5 h-3.5 text-[9px] font-bold rounded-full flex items-center justify-center">
+                      {adminNotifs.length}
+                    </span>
+                  )}
                 </button>
                 <AnimatePresence>
                   {notifOpen && (
@@ -262,19 +334,41 @@ const AdminLayout = () => {
                     >
                       <div className="px-4 py-2 border-b border-white/5 flex items-center justify-between">
                         <p className="text-xs font-semibold neon-text">System Alerts & Notifications</p>
-                        <span className="text-[10px] text-cyan-400 font-mono">Live</span>
+                        <span className="text-[10px] text-cyan-400 font-mono">Live ({adminNotifs.length})</span>
                       </div>
-                      {[
-                        { title: 'New Reservation', desc: 'Slot P1-02 reserved by John Doe', time: '2m ago' },
-                        { title: 'Payment Received', desc: '₹60 paid via Razorpay (UPI)', time: '14m ago' },
-                        { title: 'Emergency Buffer Ready', desc: 'BUF-1A and BUF-2A verified active', time: '1h ago' }
-                      ].map((item, i) => (
-                        <div key={i} className="px-4 py-2.5 hover:bg-cyan-500/5 cursor-pointer transition-colors border-b border-white/5 last:border-0">
-                          <p className="text-xs font-semibold text-gray-200">{item.title}</p>
-                          <p className="text-[11px] text-gray-400">{item.desc}</p>
-                          <p className="text-[9px] text-gray-500 mt-0.5">{item.time}</p>
-                        </div>
-                      ))}
+                      <div className="max-h-72 overflow-y-auto">
+                        {adminNotifs.length === 0 ? (
+                          <div className="px-4 py-6 text-center text-xs text-gray-400">
+                            No new system alerts
+                          </div>
+                        ) : (
+                          adminNotifs.map((item) => (
+                            <div
+                              key={item.id}
+                              onClick={() => {
+                                if (item.targetUrl) navigate(item.targetUrl);
+                                setNotifOpen(false);
+                              }}
+                              className="px-4 py-2.5 hover:bg-cyan-500/5 cursor-pointer transition-colors border-b border-white/5 last:border-0"
+                            >
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs font-semibold text-gray-200">{item.title}</p>
+                                <p className="text-[9px] text-gray-500">{item.time}</p>
+                              </div>
+                              <p className="text-[11px] text-gray-400 mt-0.5">{item.desc}</p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      <div className="px-4 py-2 border-t border-white/5 text-center">
+                        <Link
+                          to="/admin/bookings"
+                          onClick={() => setNotifOpen(false)}
+                          className="text-[11px] text-cyan-400 hover:underline font-medium"
+                        >
+                          View All Bookings →
+                        </Link>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

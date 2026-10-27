@@ -208,8 +208,30 @@ export const bookingApi = {
   cancel: (id: string, reason?: string) =>
     api.put<{ success: boolean; booking: Record<string, unknown> }>(`/bookings/${id}/cancel`, { cancellationReason: reason }),
 
+  getWaitingList: (category?: string) => {
+    const query = category ? `?category=${category}` : '';
+    return api.get<{
+      success: boolean;
+      category: string;
+      isJoined: boolean;
+      position: number;
+      totalWaiting: number;
+      totalSlots: number;
+      availableSlots: number;
+      occupiedSlots: number;
+      isFull: boolean;
+      estimatedWaitMinutes: number;
+      earliestWaitMinutes: number;
+      earliestSlotNumber: string;
+      joinedAt?: string;
+    }>(`/bookings/waiting${query}`);
+  },
+
   joinWaitingList: (category: string) =>
-    api.post<{ success: boolean; message: string }>('/bookings/waiting', { category }),
+    api.post<{ success: boolean; message: string; position: number }>('/bookings/waiting', { category }),
+
+  leaveWaitingList: (category?: string) =>
+    api.post<{ success: boolean; message: string }>('/bookings/waiting/leave', { category }),
 
   getDynamicQR: (id: string) =>
     api.get<{

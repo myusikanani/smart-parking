@@ -6,6 +6,7 @@ const Booking = require('../models/Booking');
 const Notification = require('../models/Notification');
 const Blacklist = require('../models/Blacklist');
 const IncidentReport = require('../models/IncidentReport');
+const WaitingList = require('../models/WaitingList');
 
 const seedAll = async () => {
   await User.deleteMany({});
@@ -15,6 +16,7 @@ const seedAll = async () => {
   await Notification.deleteMany({});
   await Blacklist.deleteMany({});
   await IncidentReport.deleteMany({});
+  await WaitingList.deleteMany({});
 
   const admin = await User.create({
     name: 'Admin User',
@@ -379,10 +381,116 @@ const seedAll = async () => {
     status: 'open',
   });
 
+  // Seed Waiting List Entries
+  await WaitingList.create([
+    {
+      user: user1._id,
+      category: 'four-wheeler',
+      locationId: locA._id,
+      status: 'waiting',
+      joinedAt: new Date(Date.now() - 25 * 60000)
+    },
+    {
+      user: user2._id,
+      category: 'ev',
+      locationId: locF._id,
+      status: 'waiting',
+      joinedAt: new Date(Date.now() - 10 * 60000)
+    }
+  ]);
+
+  // Seed Sample Historical and Active Bookings for Rich Analytics
+  const now = new Date();
+  const sampleBookings = [];
+  const carSlot = slots.find(s => s.category === 'four-wheeler');
+  const bikeSlot = slots.find(s => s.category === 'two-wheeler');
+  const evSlot = slots.find(s => s.category === 'ev');
+  const disSlot = slots.find(s => s.category === 'disabled');
+
+  // Active booking for User 1
+  if (carSlot) {
+    sampleBookings.push({
+      user: user1._id,
+      slot: carSlot._id,
+      locationId: locA._id,
+      vehicleNumber: user1.vehicleNumber || 'GJ-05-CD-5678',
+      vehicleType: '4-wheeler',
+      status: 'active',
+      paymentStatus: 'paid',
+      startTime: new Date(now.getTime() - 45 * 60000),
+      endTime: new Date(now.getTime() + 75 * 60000),
+      entryTime: new Date(now.getTime() - 40 * 60000),
+      duration: 2,
+      amount: 60,
+      createdAt: new Date(now.getTime() - 50 * 60000)
+    });
+  }
+
+  // Generate 18 realistic past bookings across the last 14 days
+  for (let i = 1; i <= 18; i++) {
+    const daysAgo = i % 10;
+    const hour = 8 + (i * 2) % 12;
+    const bDate = new Date(now);
+    bDate.setDate(bDate.getDate() - daysAgo);
+    bDate.setHours(hour, (i * 17) % 60, 0, 0);
+
+    const slotChoice = i % 4 === 0 ? disSlot : i % 3 === 0 ? evSlot : i % 2 === 0 ? bikeSlot : carSlot;
+    const dur = 1 + (i % 3);
+    const amount = (slotChoice?.pricePerHour || 30) * dur;
+
+    sampleBookings.push({
+      user: i % 2 === 0 ? user1._id : user2._id,
+      slot: slotChoice?._id || slots[0]._id,
+      locationId: locA._id,
+      vehicleNumber: i % 2 === 0 ? 'GJ-05-CD-5678' : 'GJ-01-AB-1234',
+      vehicleType: slotChoice?.category === 'two-wheeler' ? '2-wheeler' : '4-wheeler',
+      status: 'completed',
+      paymentStatus: 'paid',
+      startTime: bDate,
+      endTime: new Date(bDate.getTime() + dur * 3600000),
+      entryTime: new Date(bDate.getTime() + 5 * 60000),
+      exitTime: new Date(bDate.getTime() + dur * 3600000),
+      duration: dur,
+      amount,
+      createdAt: bDate
+    });
+  }
+
+  await Booking.insertMany(sampleBookings);
+
+  // Seed Real Initial Notifications
+  await Notification.create([
+    {
+      user: admin._id,
+      title: 'New Online Reservation',
+      message: 'Slot A-C1A booked by John Doe (GJ-05-CD-5678)',
+      type: 'booking',
+      read: false,
+      createdAt: new Date(now.getTime() - 15 * 60000)
+    },
+    {
+      user: admin._id,
+      title: 'Payment Confirmed',
+      message: '₹60 received via Razorpay UPI for Slot A-C1A',
+      type: 'payment',
+      read: false,
+      createdAt: new Date(now.getTime() - 14 * 60000)
+    },
+    {
+      user: admin._id,
+      title: 'New Waiting Queue Entry',
+      message: 'Driver joined waiting list for EV Charging Bay at Vesu Boulevard',
+      type: 'alert',
+      read: false,
+      createdAt: new Date(now.getTime() - 10 * 60000)
+    }
+  ]);
+
   return {
     usersCount: 5,
     locationsCount: createdLocations.length,
     slotsCount: slots.length,
+    bookingsCount: sampleBookings.length,
   };
 };
 

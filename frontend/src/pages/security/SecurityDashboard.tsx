@@ -23,6 +23,11 @@ import {
   HiOutlineCamera,
   HiOutlinePhoto,
   HiOutlineArrowPath,
+  HiOutlineChevronDown,
+  HiOutlineChevronUp,
+  HiOutlineEye,
+  HiOutlineEyeSlash,
+  HiOutlineCubeTransparent,
 } from 'react-icons/hi2';
 import { createWorker, type Worker } from 'tesseract.js';
 import StatCard from '../../components/StatCard';
@@ -151,6 +156,20 @@ const SecurityDashboard = () => {
   const [emergencyNotes, setEmergencyNotes] = useState('');
   const [emergencySubmitting, setEmergencySubmitting] = useState(false);
   const [liveAlertBanner, setLiveAlertBanner] = useState<string | null>(null);
+
+  // 3D Surveillance & ANPR HUD collapse state (default collapsed as requested, with persistence)
+  const [show3DHero, setShow3DHero] = useState<boolean>(() => {
+    const saved = localStorage.getItem('parksmart_security_3d_visible');
+    return saved !== null ? saved === 'true' : false;
+  });
+
+  const toggle3DHero = () => {
+    setShow3DHero(prev => {
+      const next = !prev;
+      localStorage.setItem('parksmart_security_3d_visible', String(next));
+      return next;
+    });
+  };
 
   // Load Razorpay checkout script once (used for overstay penalty collection)
   useEffect(() => {
@@ -1037,9 +1056,60 @@ const SecurityDashboard = () => {
         </button>
       </motion.div>
 
-      {/* 3D SURVEILLANCE & ALPR HUD CANVAS */}
-      <motion.div variants={itemVariants}>
-        <SecurityHero3D />
+      {/* 3D SURVEILLANCE & ALPR HUD CANVAS (COLLAPSIBLE) */}
+      <motion.div variants={itemVariants} className="overflow-hidden rounded-3xl border border-cyan-500/20 bg-slate-900/60 backdrop-blur-xl shadow-xl transition-all">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:p-4 bg-gradient-to-r from-slate-900 via-slate-900/90 to-cyan-950/40 border-b border-cyan-500/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+              <HiOutlineCubeTransparent className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-sm sm:text-base text-white">3D Surveillance & ANPR Digital Twin</h3>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                  3D View
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">Interactive Gate Surveillance, LiDAR Beam & Vehicle Laser Scanner</p>
+            </div>
+          </div>
+
+          <button
+            onClick={toggle3DHero}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-400/50 shadow-sm transition active:scale-95 cursor-pointer"
+            aria-expanded={show3DHero}
+          >
+            {show3DHero ? (
+              <>
+                <HiOutlineEyeSlash className="w-4 h-4 text-cyan-400" />
+                <span>Collapse 3D Feed</span>
+                <HiOutlineChevronUp className="w-4 h-4 text-cyan-400" />
+              </>
+            ) : (
+              <>
+                <HiOutlineEye className="w-4 h-4 text-cyan-400" />
+                <span>Expand 3D Feed</span>
+                <HiOutlineChevronDown className="w-4 h-4 text-cyan-400" />
+              </>
+            )}
+          </button>
+        </div>
+
+        <AnimatePresence initial={false}>
+          {show3DHero && (
+            <motion.div
+              key="security-3d-content"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.35, ease: 'easeInOut' }}
+              className="overflow-hidden p-2 sm:p-3 bg-slate-950"
+            >
+              <SecurityHero3D />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* 2. STATS ROW */}

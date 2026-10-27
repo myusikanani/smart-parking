@@ -1,207 +1,311 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { HiOutlineUserGroup, HiOutlineClock, HiOutlineXCircle, HiOutlineArrowRightOnRectangle, HiOutlinePlusCircle } from 'react-icons/hi2';
+import {
+  HiOutlineUserGroup,
+  HiOutlineClock,
+  HiOutlineXCircle,
+  HiOutlineArrowRightOnRectangle,
+  HiOutlinePlusCircle,
+  HiOutlineCheckCircle,
+  HiOutlineSparkles,
+  HiOutlineBolt,
+  HiOutlineArrowRight
+} from 'react-icons/hi2';
 import { bookingApi } from '../services/api';
-import { CarSedan } from '../components/vehicles';
+import { CarSedan, BikeScooter, ElectricCar, AccessibleCar } from '../components/vehicles';
+
+interface WaitingStatusData {
+  category: string;
+  isJoined: boolean;
+  position: number;
+  totalWaiting: number;
+  totalSlots: number;
+  availableSlots: number;
+  occupiedSlots: number;
+  isFull: boolean;
+  estimatedWaitMinutes: number;
+  earliestWaitMinutes: number;
+  earliestSlotNumber: string;
+}
 
 const categories = [
-  { id: 'two-wheeler', label: 'Two Wheeler' },
-  { id: 'four-wheeler', label: 'Four Wheeler' },
-  { id: 'ev', label: 'EV' },
-  { id: 'disabled', label: 'Disabled' },
+  { id: 'four-wheeler', label: 'Four Wheeler', icon: CarSedan, emoji: '🚗' },
+  { id: 'two-wheeler', label: 'Two Wheeler', icon: BikeScooter, emoji: '🛵' },
+  { id: 'ev', label: 'EV Charging', icon: ElectricCar, emoji: '⚡' },
+  { id: 'disabled', label: 'Accessible / VIP', icon: AccessibleCar, emoji: '♿' },
 ];
 
 const WaitingList = () => {
   const navigate = useNavigate();
   const [category, setCategory] = useState('four-wheeler');
-  const [joined, setJoined] = useState(false);
-  const [joining, setJoining] = useState(false);
-  const [position, setPosition] = useState(0);
-  const [isLeaving, setIsLeaving] = useState(false);
+  const [statusData, setStatusData] = useState<WaitingStatusData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const res = await bookingApi.getMyBookings();
-        const bookings = (res.bookings || []) as Record<string, unknown>[];
-        const cancelledExpired = bookings.filter(b =>
-          (b.status as string) === 'cancelled' || (b.status as string) === 'expired'
-        );
-        setPosition(Math.min(cancelledExpired.length + 1, 5));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  const handleJoin = async () => {
-    setJoining(true);
+  const loadWaitingStatus = useCallback(async (cat: string) => {
+    setLoading(true);
     setError('');
     try {
-      await bookingApi.joinWaitingList(category);
-      setJoined(true);
-      setPosition(prev => prev || 1);
+      const res = await bookingApi.getWaitingList(cat);
+      if (res) {
+        setStatusData(res);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch waiting status');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadWaitingStatus(category);
+  }, [category, loadWaitingStatus]);
+
+  const handleJoin = async () => {
+    setActionLoading(true);
+    setError('');
+    setSuccessMsg('');
+    try {
+      const res = await bookingApi.joinWaitingList(category);
+      setSuccessMsg(`✓ You have joined queue position #${res.position || 1}!`);
+      await loadWaitingStatus(category);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to join waiting list');
     } finally {
-      setJoining(false);
+      setActionLoading(false);
     }
   };
 
-  const handleLeave = () => {
-    setIsLeaving(true);
-    setJoined(false);
-    setTimeout(() => navigate('/dashboard'), 1500);
+  const handleLeave = async () => {
+    setActionLoading(true);
+    setError('');
+    setSuccessMsg('');
+    try {
+      await bookingApi.leaveWaitingList(category);
+      setSuccessMsg('✓ Left waiting list queue');
+      await loadWaitingStatus(category);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to leave queue');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const waitTimes: Record<string, string> = {
-    'two-wheeler': '15 min',
-    'four-wheeler': '35 min',
-    'ev': '25 min',
-    'disabled': '10 min',
-  };
-
-  if (loading) {
-    return (
-      <div className="max-w-lg mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold neon-text">Waiting List</h1>
-          <p className="mt-1" style={{ color: 'var(--text-muted)' }}>Track your position in the queue</p>
-        </div>
-        <div className="animate-pulse space-y-4">
-          <div className="h-64 glass-card rounded-2xl" />
-        </div>
-      </div>
-    );
-  }
+  const currentCategoryObj = categories.find((c) => c.id === category) || categories[0];
+  const CategoryIcon = currentCategoryObj.icon;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="max-w-lg mx-auto space-y-6"
+      className="max-w-xl mx-auto space-y-6"
     >
-      <div className="relative">
-        <div className="absolute right-0 top-0 opacity-15 hidden sm:block">
-          <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 3 }}>
-            <CarSedan className="w-24 h-auto" color="#10b981" />
-          </motion.div>
+      {/* Page Title & Visual Mascot */}
+      <div className="relative flex items-center justify-between">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 text-xs font-semibold mb-1.5">
+            <HiOutlineSparkles className="w-3.5 h-3.5" />
+            <span>Smart Queue Management</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold neon-text">Waiting List</h1>
+          <p className="text-xs sm:text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            Real-time queue tracking & auto bay release prediction
+          </p>
         </div>
-        <h1 className="text-2xl font-bold neon-text">Waiting List</h1>
-        <p className="mt-1" style={{ color: 'var(--text-muted)' }}>Track your position in the queue</p>
+        <div className="hidden sm:block opacity-30">
+          <CategoryIcon className="w-20 h-auto" />
+        </div>
+      </div>
+
+      {/* Category Tabs */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {categories.map((cat) => {
+          const isSelected = category === cat.id;
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => {
+                setCategory(cat.id);
+                setSuccessMsg('');
+              }}
+              className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1.5 ${
+                isSelected
+                  ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-lg shadow-cyan-500/20'
+                  : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <span className="text-lg">{cat.emoji}</span>
+              <span className="truncate">{cat.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {error && (
-        <p className="text-red-400 text-sm text-center">{error}</p>
+        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs text-center">
+          {error}
+        </div>
       )}
 
-      {joined ? (
-        <motion.div
-          initial={{ scale: 0.95 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.1 }}
-        >
-          <div className={`glass-card-glow p-6 rounded-2xl text-center ${isLeaving ? 'opacity-50' : ''}`}>
-            <div className="w-20 h-20 rounded-full bg-[#06b6d4]/10 flex items-center justify-center mx-auto mb-4">
-              <HiOutlineUserGroup className="w-10 h-10 text-[#06b6d4]" />
-            </div>
-            <p className="text-5xl font-bold neon-text-cyan mb-2">#{position}</p>
-            <p style={{ color: 'var(--text-secondary)' }}>
-              You are #{position} in line for{' '}
-              <span className="font-semibold" style={{ color: 'var(--text)' }}>
-                {categories.find(c => c.id === category)?.label}
-              </span>{' '}
-              slots
-            </p>
+      {successMsg && (
+        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs text-center font-semibold">
+          {successMsg}
+        </div>
+      )}
 
-            <div className="flex items-center justify-center gap-2 mt-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
-              <HiOutlineClock className="w-4 h-4 text-[#06b6d4]" />
-              <span>Estimated wait time: <strong style={{ color: 'var(--text)' }}>{waitTimes[category]}</strong></span>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-3 mt-6">
-            <div className="glass-card p-4 w-full">
-              <div className="flex items-center justify-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                <HiOutlineClock className="w-4 h-4 text-[#06b6d4]" />
-                <span>Estimated wait: <strong style={{ color: 'var(--text)' }}>{waitTimes[category]}</strong></span>
-              </div>
-              <div className="flex items-center justify-center gap-2 mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                <HiOutlineUserGroup className="w-4 h-4 text-[#ec4899]" />
-                <span>Category: <strong style={{ color: 'var(--text)' }}>{categories.find(c => c.id === category)?.label}</strong></span>
-              </div>
-            </div>
-            <button
-              onClick={handleLeave}
-              disabled={isLeaving}
-              className="btn-danger w-full"
-            >
-              <span className="flex items-center justify-center gap-2">
-                <HiOutlineXCircle className="w-5 h-5" />
-                Leave Waiting List
-              </span>
-            </button>
-          </div>
-        </motion.div>
+      {/* Loading Skeleton */}
+      {loading ? (
+        <div className="animate-pulse glass-card p-8 rounded-3xl space-y-4">
+          <div className="h-6 bg-white/10 rounded-xl w-1/2 mx-auto" />
+          <div className="h-16 bg-white/10 rounded-2xl w-1/3 mx-auto" />
+          <div className="h-8 bg-white/10 rounded-xl w-3/4 mx-auto" />
+        </div>
       ) : (
-        <motion.div
-          initial={{ scale: 0.95 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.1 }}
-        >
-          <div className="glass-card p-6 rounded-2xl">
-            <div className="w-16 h-16 rounded-full bg-[#06b6d4]/10 flex items-center justify-center mx-auto mb-4">
-              <HiOutlinePlusCircle className="w-8 h-8 text-[#06b6d4]" />
-            </div>
-            <h2 className="text-lg font-semibold text-center mb-2">Join Waiting List</h2>
-            <p className="text-sm text-center mb-6" style={{ color: 'var(--text-secondary)' }}>
-              Select a category to join the queue
-            </p>
-
-            <div className="space-y-3 mb-6">
-              <label className="block text-sm font-medium">Category</label>
-              <select
-                value={category}
-                onChange={e => setCategory(e.target.value)}
-                className="input-neon w-full"
-              >
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <button
-              onClick={handleJoin}
-              disabled={joining}
-              className="btn-neon w-full flex items-center justify-center gap-2"
-            >
-              {joining ? (
-                <span className="animate-spin w-5 h-5 border-2 border-[#06b6d4] border-t-transparent rounded-full" />
+        <AnimatePresence mode="wait">
+          {statusData && (
+            <div className="space-y-4">
+              {/* LIVE AVAILABILITY BANNER */}
+              {statusData.availableSlots > 0 ? (
+                <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left shadow-lg shadow-emerald-500/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-300 flex-shrink-0">
+                      <HiOutlineCheckCircle className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-emerald-300">
+                        {statusData.availableSlots} Bays Available Right Now!
+                      </h4>
+                      <p className="text-xs text-gray-400">
+                        Total {statusData.totalSlots} bays in system. No wait needed for {currentCategoryObj.label}.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => navigate('/dashboard/book-parking')}
+                    className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-md flex-shrink-0"
+                  >
+                    <span>Book Now</span>
+                    <HiOutlineArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               ) : (
-                <HiOutlinePlusCircle className="w-5 h-5" />
+                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between gap-2">
+                  <span className="font-semibold">⚠️ All {statusData.totalSlots} {currentCategoryObj.label} bays are currently occupied.</span>
+                  <span className="font-mono text-[11px] bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-500/40">100% Full</span>
+                </div>
               )}
-              Join Waiting List
-            </button>
-          </div>
-        </motion.div>
+
+              {/* MAIN QUEUE STATUS CARD */}
+              <div className="glass-card-glow p-6 sm:p-8 rounded-3xl text-center space-y-4 border border-cyan-500/30">
+                <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center mx-auto text-cyan-300 shadow-inner">
+                  <HiOutlineUserGroup className="w-8 h-8" />
+                </div>
+
+                {statusData.isJoined ? (
+                  <div>
+                    <span className="text-xs font-semibold text-cyan-400 uppercase tracking-widest block mb-1">
+                      Active Queue Position
+                    </span>
+                    <p className="text-6xl font-extrabold neon-text-cyan my-1 tracking-tight">
+                      #{statusData.position}
+                    </p>
+                    <p className="text-xs sm:text-sm text-gray-300 font-medium">
+                      You are <strong className="text-white">#{statusData.position}</strong> in line for{' '}
+                      <span className="text-cyan-300">{currentCategoryObj.label}</span> slots.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest block mb-1">
+                      Next Available Queue Spot
+                    </span>
+                    <p className="text-6xl font-extrabold text-white my-1 tracking-tight">
+                      #{statusData.position}
+                    </p>
+                    <p className="text-xs sm:text-sm text-gray-300">
+                      Join the queue to be notified as soon as a bay becomes free.
+                    </p>
+                  </div>
+                )}
+
+                {/* DYNAMIC TELEMETRY GRID */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2 text-left">
+                  <div className="bg-slate-900/80 p-3 rounded-2xl border border-white/5 space-y-0.5">
+                    <span className="text-[10px] text-gray-400 flex items-center gap-1 font-semibold uppercase">
+                      <HiOutlineClock className="w-3.5 h-3.5 text-pink-400" /> Wait Time
+                    </span>
+                    <strong className="text-sm font-mono text-pink-300 block">
+                      {statusData.isFull
+                        ? `${statusData.estimatedWaitMinutes} min`
+                        : statusData.availableSlots > 0
+                        ? '0 min (Instant)'
+                        : `${statusData.earliestWaitMinutes} min`}
+                    </strong>
+                    <span className="text-[9px] text-gray-500 block">based on departures</span>
+                  </div>
+
+                  <div className="bg-slate-900/80 p-3 rounded-2xl border border-white/5 space-y-0.5">
+                    <span className="text-[10px] text-gray-400 flex items-center gap-1 font-semibold uppercase">
+                      <HiOutlineBolt className="w-3.5 h-3.5 text-cyan-400" /> Next Free Bay
+                    </span>
+                    <strong className="text-sm font-mono text-cyan-300 block">
+                      {statusData.earliestSlotNumber || 'Bay A-01'}
+                    </strong>
+                    <span className="text-[9px] text-gray-500 block">earliest ending slot</span>
+                  </div>
+
+                  <div className="bg-slate-900/80 p-3 rounded-2xl border border-white/5 col-span-2 sm:col-span-1 space-y-0.5">
+                    <span className="text-[10px] text-gray-400 flex items-center gap-1 font-semibold uppercase">
+                      <HiOutlineUserGroup className="w-3.5 h-3.5 text-emerald-400" /> Drivers in Queue
+                    </span>
+                    <strong className="text-sm font-mono text-emerald-300 block">
+                      {statusData.totalWaiting} {statusData.totalWaiting === 1 ? 'driver' : 'drivers'}
+                    </strong>
+                    <span className="text-[9px] text-gray-500 block">for {currentCategoryObj.label}</span>
+                  </div>
+                </div>
+
+                {/* ACTION BUTTONS */}
+                <div className="pt-2">
+                  {statusData.isJoined ? (
+                    <button
+                      onClick={handleLeave}
+                      disabled={actionLoading}
+                      className="btn-danger w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
+                    >
+                      <HiOutlineXCircle className="w-4 h-4" />
+                      <span>Leave Waiting List</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleJoin}
+                      disabled={actionLoading}
+                      className="btn-neon w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/30"
+                    >
+                      <HiOutlinePlusCircle className="w-4 h-4" />
+                      <span>Join Waiting List Queue (#{statusData.position})</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </AnimatePresence>
       )}
 
-      <div className="text-center">
+      {/* Back to Dashboard Navigation */}
+      <div className="text-center pt-2">
         <button
           onClick={() => navigate('/dashboard')}
-          className="btn-outline inline-flex items-center gap-2"
+          className="btn-outline px-6 py-2.5 rounded-xl inline-flex items-center gap-2 text-xs font-semibold"
         >
           <HiOutlineArrowRightOnRectangle className="w-4 h-4" />
-          Back to Dashboard
+          <span>Back to Dashboard</span>
         </button>
       </div>
     </motion.div>

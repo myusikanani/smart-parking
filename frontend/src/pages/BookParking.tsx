@@ -100,14 +100,15 @@ const categories = [
 const durationPresets = [
   { label: '1 Hour', hours: 1 },
   { label: '2 Hours', hours: 2 },
+  { label: '3 Hours', hours: 3 },
   { label: '4 Hours', hours: 4 },
   { label: 'Full Day (24h)', hours: 24 },
 ];
 
 const timeSlots = [
-  '08:00', '09:00', '10:00', '11:00', '12:00',
-  '13:00', '14:00', '15:00', '16:00', '17:00',
-  '18:00', '19:00', '20:00', '21:00',
+  '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
+  '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00',
+  '20:00', '21:00', '22:00', '23:00',
 ];
 
 const DEFAULT_FACILITY_LOCATIONS: ParkingLocationItem[] = [
@@ -198,7 +199,15 @@ const BookParking = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
-  const locationState = location.state as { locationId?: string; preSelectedSlotId?: string; category?: string } | null;
+  const locationState = location.state as {
+    locationId?: string;
+    preSelectedSlotId?: string;
+    category?: string;
+    duration?: number;
+    time?: string;
+    date?: string;
+    vehicleNumber?: string;
+  } | null;
   const initialLocationId = locationState?.locationId || searchParams.get('locationId') || '';
 
   const { user, token, updateUser } = useAuth();
@@ -309,13 +318,13 @@ const BookParking = () => {
   const initialSlot = (() => {
     const now = new Date();
     const h = now.getMinutes() > 0 ? now.getHours() + 1 : now.getHours();
-    if (h >= 8 && h <= 21) return { date: fmtLocal(now), time: `${String(h).padStart(2, '0')}:00` };
-    if (h < 8) return { date: fmtLocal(now), time: '08:00' };
+    if (h >= 6 && h <= 23) return { date: fmtLocal(now), time: `${String(h).padStart(2, '0')}:00` };
+    if (h < 6) return { date: fmtLocal(now), time: '06:00' };
     return { date: fmtLocal(new Date(now.getTime() + 86400e3)), time: '08:00' };
   })();
   const todayStr = fmtLocal(new Date());
-  const [date, setDate] = useState(initialSlot.date);
-  const [selectedTime, setSelectedTime] = useState(initialSlot.time);
+  const [date, setDate] = useState(() => locationState?.date || initialSlot.date);
+  const [selectedTime, setSelectedTime] = useState(() => locationState?.time || initialSlot.time);
 
   type VehicleCategory = 'four-wheeler' | 'two-wheeler' | 'ev' | 'disabled';
   interface GarageVehicleItem {
@@ -366,8 +375,11 @@ const BookParking = () => {
   const [category, setCategory] = useState<string>(
     locationState?.category || (user?.vehicleType ? mapVehicleTypeToCategory(user.vehicleType) : 'four-wheeler')
   );
-  const [selectedHours, setSelectedHours] = useState(2);
-  const [vehicleNumber, setVehicleNumber] = useState(() => {
+  const [selectedHours, setSelectedHours] = useState<number>(() => locationState?.duration || 2);
+  const [vehicleNumber, setVehicleNumber] = useState<string>(() => {
+    if (locationState?.vehicleNumber) {
+      return formatIndianLicensePlate(locationState.vehicleNumber);
+    }
     return formatIndianLicensePlate(user?.vehicleNumber || '');
   });
   const [selectedSlotId, setSelectedSlotId] = useState<string>(locationState?.preSelectedSlotId || '');
@@ -507,12 +519,38 @@ const BookParking = () => {
     }
   }, [user?.vehicleNumber, user?.vehicleType, locationState?.category]);
 
+  // Synchronize when navigating with locationState (e.g. from Voice Booking or external redirects)
+  useEffect(() => {
+    if (locationState) {
+      if (locationState.category) setCategory(locationState.category);
+      if (locationState.duration) setSelectedHours(locationState.duration);
+      if (locationState.time) setSelectedTime(locationState.time);
+      if (locationState.date) setDate(locationState.date);
+      if (locationState.vehicleNumber) {
+        const formatted = formatIndianLicensePlate(locationState.vehicleNumber);
+        setVehicleNumber(formatted);
+        setLocalVehicles((prev) => {
+          if (prev.some((v) => v.plate === formatted)) return prev;
+          return [{ plate: formatted, type: (locationState.category as VehicleCategory) || 'four-wheeler', isPrimary: true }, ...prev];
+        });
+      }
+    }
+  }, [locationState]);
+
   const handleApplyVoiceBooking = (data: { category?: 'four-wheeler' | 'two-wheeler' | 'ev' | 'disabled'; durationHours?: number; time?: string; date?: string; vehicleNumber?: string }) => {
     if (data.category) setCategory(data.category);
     if (data.durationHours) setSelectedHours(data.durationHours);
     if (data.time) setSelectedTime(data.time);
     if (data.date) setDate(data.date);
-    if (data.vehicleNumber) setVehicleNumber(formatIndianLicensePlate(data.vehicleNumber));
+    if (data.vehicleNumber) {
+      const formatted = formatIndianLicensePlate(data.vehicleNumber);
+      setVehicleNumber(formatted);
+      setLocalVehicles((prev) => {
+        if (prev.some((v) => v.plate === formatted)) return prev;
+        return [{ plate: formatted, type: data.category || 'four-wheeler', isPrimary: true }, ...prev];
+      });
+    }
+    toast(`✓ Applied Voice Booking: ${getVehicleTypeLabel(data.category || category)} for ${data.durationHours || selectedHours}h at ${data.time || selectedTime}`, 'success');
   };
 
   const handleAddNewVehicle = async () => {

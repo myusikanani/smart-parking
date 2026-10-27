@@ -2,6 +2,7 @@ const Booking = require('../models/Booking');
 const ParkingSlot = require('../models/ParkingSlot');
 const AIScore = require('../models/AIScore');
 const Notification = require('../models/Notification');
+const WaitingList = require('../models/WaitingList');
 const qrcode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
 const { emitSlotUpdate, emitBookingUpdate, emitVehicleMotion } = require('../utils/socket');
@@ -560,7 +561,82 @@ exports.checkExpiredBookings = async (req, res) => {
 
 exports.getWaitingList = async (req, res) => {
   try {
-    res.status(200).json({ success: true, message: 'Waiting list feature active', count: 0 });
+    const category = req.query.category || 'four-wheeler';
+    const userId = req.user?._id;
+
+    if (require('mongoose').connection.readyState !== 1) {
+      return res.status(200).json({
+        success: true,
+        category,
+        isJoined: false,
+        position: 1,
+        totalWaiting: 0,
+        totalSlots: 18,
+        availableSlots: 6,
+        occupiedSlots: 12,
+        isFull: false,
+        estimatedWaitMinutes: 10,
+        earliestSlotNumber: 'A-01'
+      });
+    }
+
+    // 1. Get real slot counts for this category
+    const totalSlots = await ParkingSlot.countDocuments({ category });
+    const availableSlots = await ParkingSlot.countDocuments({ category, status: 'available' });
+    const occupiedSlots = Math.max(0, totalSlots - availableSlots);
+    const isFull = availableSlots === 0 && totalSlots > 0;
+
+    // 2. Query active bookings to calculate earliest departure time
+    const slotIds = await ParkingSlot.find({ category }).distinct('_id');
+    const activeBookings = await Booking.find({
+      slot: { $in: slotIds },
+      status: { $in: ['active', 'confirmed'] },
+      endTime: { $gt: new Date() }
+    }).populate('slot').sort({ endTime: 1 });
+
+    let estimatedWaitMinutes = 15;
+    let earliestSlotNumber = 'A-01';
+    if (activeBookings.length > 0) {
+      const diffMs = new Date(activeBookings[0].endTime).getTime() - Date.now();
+      estimatedWaitMinutes = Math.max(2, Math.round(diffMs / 60000));
+      if (activeBookings[0].slot?.number) {
+        earliestSlotNumber = activeBookings[0].slot.number;
+      }
+    }
+
+    // 3. Check if user is in waiting list
+    let userEntry = null;
+    let position = 1;
+    const totalWaiting = await WaitingList.countDocuments({ category, status: 'waiting' });
+
+    if (userId) {
+      userEntry = await WaitingList.findOne({ user: userId, category, status: 'waiting' });
+      if (userEntry) {
+        position = await WaitingList.countDocuments({
+          category,
+          status: 'waiting',
+          joinedAt: { $lte: userEntry.joinedAt }
+        });
+      } else {
+        position = totalWaiting > 0 ? totalWaiting + 1 : 1;
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      category,
+      isJoined: Boolean(userEntry),
+      position: userEntry ? position : (totalWaiting > 0 ? totalWaiting + 1 : 1),
+      totalWaiting,
+      totalSlots,
+      availableSlots,
+      occupiedSlots,
+      isFull,
+      estimatedWaitMinutes: isFull ? (position * estimatedWaitMinutes) : 0,
+      earliestWaitMinutes: estimatedWaitMinutes,
+      earliestSlotNumber,
+      joinedAt: userEntry?.joinedAt || null
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -568,8 +644,52 @@ exports.getWaitingList = async (req, res) => {
 
 exports.joinWaitingList = async (req, res) => {
   try {
-    const { category } = req.body;
-    res.status(200).json({ success: true, message: `Added to waiting list for ${category}` });
+    const category = req.body.category || 'four-wheeler';
+    const userId = req.user._id;
+
+    if (require('mongoose').connection.readyState === 1) {
+      let entry = await WaitingList.findOne({ user: userId, category, status: 'waiting' });
+      if (!entry) {
+        entry = await WaitingList.create({
+          user: userId,
+          category,
+          locationId: req.body.locationId || undefined,
+          status: 'waiting',
+          joinedAt: new Date()
+        });
+      }
+      const position = await WaitingList.countDocuments({
+        category,
+        status: 'waiting',
+        joinedAt: { $lte: entry.joinedAt }
+      });
+      return res.status(200).json({
+        success: true,
+        message: `Successfully joined waiting list for ${category}`,
+        position,
+        entry
+      });
+    }
+
+    res.status(200).json({ success: true, message: `Added to waiting list for ${category}`, position: 1 });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.leaveWaitingList = async (req, res) => {
+  try {
+    const category = req.body.category || req.query.category || 'four-wheeler';
+    const userId = req.user._id;
+
+    if (require('mongoose').connection.readyState === 1) {
+      await WaitingList.updateMany(
+        { user: userId, category, status: 'waiting' },
+        { status: 'cancelled' }
+      );
+    }
+
+    res.status(200).json({ success: true, message: 'Successfully removed from waiting list' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

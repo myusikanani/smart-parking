@@ -12,6 +12,7 @@ const {
   checkExpiredBookings,
   getWaitingList,
   joinWaitingList,
+  leaveWaitingList,
   emailBookingQR,
   sendBookingWhatsApp
 } = require('../controllers/bookingController');
@@ -21,6 +22,7 @@ router.get('/', protect, getMyBookings);
 router.get('/waiting', protect, getWaitingList);
 router.post('/', protect, authorize('user', 'admin', 'security'), createBooking);
 router.post('/waiting', protect, authorize('user', 'admin', 'security'), joinWaitingList);
+router.post('/waiting/leave', protect, authorize('user', 'admin', 'security'), leaveWaitingList);
 router.post('/verify-qr', protect, authorize('admin', 'security'), verifyQR);
 router.get('/check-expired', protect, authorize('admin'), checkExpiredBookings);
 router.get('/:id/dynamic-qr', protect, getDynamicQR);
