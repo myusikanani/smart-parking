@@ -44,11 +44,39 @@ const Analytics = () => {
       .then((res) => {
         if (!mounted) return;
         const d = res.analytics || {};
-        setPeakHours((d.peakHours as Record<string, unknown>[]) || []);
-        setVehicleDistribution((d.vehicleDistribution as Record<string, unknown>[]) || []);
-        setBookingTrend((d.bookingTrend as Record<string, unknown>[]) || []);
+        const pRaw = (d.peakHours as Record<string, unknown>[]) || [];
+        setPeakHours(
+          pRaw.map((p) => ({
+            hour: String(p.hour || ''),
+            bookings: Number(p.bookings ?? p.count ?? 0),
+          }))
+        );
+
+        const vRaw = (d.vehicleDistribution as Record<string, unknown>[]) || (d.categoryDistribution as Record<string, unknown>[]) || [];
+        setVehicleDistribution(
+          vRaw.map((v) => ({
+            name: String(v.name || v.category || ''),
+            value: Number(v.value ?? v.count ?? 0),
+          }))
+        );
+
+        const bRaw = (d.bookingTrend as Record<string, unknown>[]) || [];
+        setBookingTrend(
+          bRaw.map((b) => ({
+            day: String(b.day || b.date || ''),
+            bookings: Number(b.bookings ?? b.count ?? 0),
+          }))
+        );
+
         setOccupancyGrid((d.occupancyGrid as Record<string, unknown>[]) || []);
-        setAverageDuration((d.averageDuration as Record<string, unknown>[]) || []);
+
+        const aRaw = (d.averageDuration as Record<string, unknown>[]) || [];
+        setAverageDuration(
+          aRaw.map((a) => ({
+            category: String(a.category || a.name || ''),
+            hours: Number(a.hours ?? a.duration ?? 2.5),
+          }))
+        );
       })
       .catch(() => { if (mounted) {} })
       .finally(() => { if (mounted) setLoading(false); });

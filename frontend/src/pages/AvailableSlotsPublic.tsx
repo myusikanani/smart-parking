@@ -77,7 +77,12 @@ const AvailableSlotsPublic = () => {
     locationApi
       .getAll({ all: 'true' })
       .then((res) => {
-        if (res.locations) setLocations(res.locations);
+        if (res.locations && res.locations.length > 0) {
+          setLocations(res.locations);
+          // Default to first mall (Katargam Central Mall) so the user gets mall-wise data immediately!
+          setSelectedLocationId(res.locations[0]._id);
+          setSelectedArea(res.locations[0].area || 'all');
+        }
       })
       .catch((err) => console.error('Error fetching locations:', err));
   }, []);
@@ -238,6 +243,10 @@ const AvailableSlotsPublic = () => {
     });
   }, [slots, searchQuery, selectedCategory, selectedFloor, selectedStatus, remoteMatchIds]);
 
+  const activeLocation = useMemo(() => {
+    return locations.find((l) => l._id === selectedLocationId);
+  }, [locations, selectedLocationId]);
+
   // Statistics
   const totalSlots = slots.length;
   const availableCount = slots.filter((s) => s.status === 'available').length;
@@ -321,8 +330,52 @@ const AvailableSlotsPublic = () => {
               Find Exact <span className="neon-text">Available Parking Spots</span>
             </h1>
             <p className="text-sm sm:text-base text-[var(--text-secondary)]">
-              Check live bay availability, floor locations, EV charging status, and hourly rates in real time.
+              {activeLocation
+                ? `Live slot occupancy and EV status for ${activeLocation.name} in ${activeLocation.area}, Surat.`
+                : 'Check live bay availability, floor locations, EV charging status, and hourly rates in real time.'}
             </p>
+
+            {/* Mall Quick Selection Pills */}
+            <div className="flex flex-wrap items-center gap-2 pt-2">
+              <span className="text-xs font-bold text-cyan-400 flex items-center gap-1 mr-1">
+                <HiOutlineBuildingStorefront className="w-4 h-4" /> Select Mall:
+              </span>
+              {locations.map((loc) => {
+                const isSelected = selectedLocationId === loc._id;
+                return (
+                  <button
+                    key={loc._id}
+                    onClick={() => {
+                      setSelectedLocationId(loc._id);
+                      setSelectedArea(loc.area);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-lg shadow-cyan-500/25 border border-cyan-400'
+                        : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-white border border-[var(--border)] hover:border-cyan-500/40'
+                    }`}
+                  >
+                    <span>{loc.name.split('-')[0].trim()}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${isSelected ? 'bg-slate-950/30 text-slate-950 font-extrabold' : 'bg-slate-800 text-slate-400'}`}>
+                      {loc.area}
+                    </span>
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => {
+                  setSelectedLocationId('all');
+                  setSelectedArea('all');
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                  selectedLocationId === 'all'
+                    ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/25 border border-pink-400'
+                    : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-white border border-[var(--border)]'
+                }`}
+              >
+                🌐 All Surat Malls
+              </button>
+            </div>
           </div>
 
           {/* Stat Cards Grid */}
@@ -349,7 +402,9 @@ const AvailableSlotsPublic = () => {
             </div>
 
             <div className="bg-[var(--bg-elevated)] p-4 rounded-2xl border border-[var(--border)]">
-              <span className="text-xs text-[var(--text-secondary)] font-semibold uppercase block">Total Capacity</span>
+              <span className="text-xs text-[var(--text-secondary)] font-semibold uppercase block">
+                {activeLocation ? `${activeLocation.name.split('-')[0].trim()} Capacity` : 'Total Capacity'}
+              </span>
               <span className="text-2xl font-extrabold text-[var(--text)] font-mono mt-0.5">
                 {totalSlots} Bays
               </span>
