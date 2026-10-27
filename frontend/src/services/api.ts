@@ -443,6 +443,8 @@ export interface ParkingLocationItem {
   status: 'active' | 'inactive' | 'maintenance';
   operatingHours?: string;
   stats?: LocationStats;
+  totalSlots?: number;
+  availableSlots?: number;
   distanceMeters?: number;
   distanceFormatted?: string;
   categoryAvailable?: number;

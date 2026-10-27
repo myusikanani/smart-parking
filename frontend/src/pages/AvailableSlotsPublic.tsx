@@ -16,7 +16,8 @@ import {
   HiOutlineRectangleGroup,
   HiOutlineMapPin,
   HiOutlineBuildingStorefront,
-  HiOutlineArrowRight
+  HiOutlineArrowRight,
+  HiOutlineArrowTopRightOnSquare
 } from 'react-icons/hi2';
 import { slotApi, layoutApi, aiApi, locationApi } from '../services/api';
 import type { ParkingLocationItem } from '../services/api';
@@ -72,7 +73,9 @@ const AvailableSlotsPublic = () => {
   const [error, setError] = useState('');
   const [layoutItemsByFloor, setLayoutItemsByFloor] = useState<Record<number, ThreeDLayoutItem[]>>({});
 
-  // Load locations on mount
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Load locations on mount and fetch user geolocation
   useEffect(() => {
     locationApi
       .getAll({ all: 'true' })
@@ -85,6 +88,21 @@ const AvailableSlotsPublic = () => {
         }
       })
       .catch((err) => console.error('Error fetching locations:', err));
+
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        () => {
+          // Fallback to Surat Central Ring Road
+          setUserCoords({ lat: 21.1702, lng: 72.8311 });
+        },
+        { timeout: 6000 }
+      );
+    } else {
+      setUserCoords({ lat: 21.1702, lng: 72.8311 });
+    }
   }, []);
 
   const distinctAreas = useMemo(() => {
@@ -92,6 +110,37 @@ const AvailableSlotsPublic = () => {
     locations.forEach((l) => { if (l.area) s.add(l.area); });
     return Array.from(s);
   }, [locations]);
+
+  // Calculate distance in km from user's GPS position
+  const getDistanceToLoc = (loc: ParkingLocationItem) => {
+    if (!loc.latitude || !loc.longitude) return null;
+    const current = userCoords || { lat: 21.1702, lng: 72.8311 };
+    const R = 6371;
+    const dLat = (loc.latitude - current.lat) * (Math.PI / 180);
+    const dLon = (loc.longitude - current.lng) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(current.lat * (Math.PI / 180)) *
+      Math.cos(loc.latitude * (Math.PI / 180)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c * 10) / 10;
+  };
+
+  // Live Occupancy badge calculation per mall
+  const getOccupancyBadge = (loc: ParkingLocationItem) => {
+    const total = loc.stats?.totalSlots ?? loc.totalSlots ?? 0;
+    const free = loc.stats?.availableSlots ?? loc.availableSlots ?? total;
+    if (total === 0) return { label: 'Active', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' };
+    const freePct = Math.round((free / total) * 100);
+    if (freePct === 0) {
+      return { label: 'Housefull 🔴', color: 'bg-red-500/20 text-red-400 border-red-500/40' };
+    }
+    if (freePct <= 40) {
+      return { label: `${freePct}% Free 🟡`, color: 'bg-amber-500/20 text-amber-300 border-amber-500/40' };
+    }
+    return { label: `${freePct}% Free 🟢`, color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' };
+  };
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
@@ -335,13 +384,15 @@ const AvailableSlotsPublic = () => {
                 : 'Check live bay availability, floor locations, EV charging status, and hourly rates in real time.'}
             </p>
 
-            {/* Mall Quick Selection Pills */}
+            {/* Mall Quick Selection Pills with GPS Distance & Live Occupancy */}
             <div className="flex flex-wrap items-center gap-2 pt-2">
               <span className="text-xs font-bold text-cyan-400 flex items-center gap-1 mr-1">
                 <HiOutlineBuildingStorefront className="w-4 h-4" /> Select Mall:
               </span>
               {locations.map((loc) => {
                 const isSelected = selectedLocationId === loc._id;
+                const dist = getDistanceToLoc(loc);
+                const occ = getOccupancyBadge(loc);
                 return (
                   <button
                     key={loc._id}
@@ -349,15 +400,20 @@ const AvailableSlotsPublic = () => {
                       setSelectedLocationId(loc._id);
                       setSelectedArea(loc.area);
                     }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm ${
                       isSelected
                         ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-lg shadow-cyan-500/25 border border-cyan-400'
                         : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-white border border-[var(--border)] hover:border-cyan-500/40'
                     }`}
                   >
                     <span>{loc.name.split('-')[0].trim()}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${isSelected ? 'bg-slate-950/30 text-slate-950 font-extrabold' : 'bg-slate-800 text-slate-400'}`}>
-                      {loc.area}
+                    {dist !== null && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-md flex items-center gap-0.5 ${isSelected ? 'bg-slate-950/40 text-slate-950 font-extrabold' : 'bg-cyan-500/10 text-cyan-400'}`}>
+                        📍 {dist} km
+                      </span>
+                    )}
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-md border font-semibold ${isSelected ? 'bg-slate-950/40 text-slate-950 border-slate-950/40 font-extrabold' : occ.color}`}>
+                      {occ.label}
                     </span>
                   </button>
                 );
@@ -377,6 +433,42 @@ const AvailableSlotsPublic = () => {
               </button>
             </div>
           </div>
+
+          {/* ACTIVE MALL INFO & GOOGLE MAPS GET DIRECTIONS BAR */}
+          {activeLocation && (
+            <div className="mt-4 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-950/30 via-slate-900/60 to-cyan-950/30 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm sm:text-base text-white flex items-center gap-1.5">
+                    <HiOutlineBuildingStorefront className="w-4 h-4 text-emerald-400" />
+                    {activeLocation.name}
+                  </span>
+                  {getDistanceToLoc(activeLocation) !== null && (
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                      📍 {getDistanceToLoc(activeLocation)} km away
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-300">
+                  {activeLocation.address || `${activeLocation.area}, Surat`} · <span className="text-cyan-400">{activeLocation.operatingHours || '24/7 Open'}</span>
+                </p>
+              </div>
+
+              {activeLocation.latitude && activeLocation.longitude && (
+                <button
+                  onClick={() => {
+                    const url = `https://www.google.com/maps/dir/?api=1&destination=${activeLocation.latitude},${activeLocation.longitude}`;
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                  }}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-600/20 border border-emerald-400/40 transition active:scale-95 cursor-pointer whitespace-nowrap"
+                >
+                  <HiOutlineMapPin className="w-4 h-4 text-emerald-200" />
+                  <span>Get Directions (Google Maps)</span>
+                  <HiOutlineArrowTopRightOnSquare className="w-3.5 h-3.5 opacity-80" />
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Stat Cards Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-[var(--border)] relative z-10">
