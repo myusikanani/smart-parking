@@ -456,6 +456,82 @@ const seedAll = async () => {
     });
   }
 
+  // Add No-Show entries (status: 'expired') for No-Show Report
+  sampleBookings.push({
+    user: user1._id,
+    slot: carSlot?._id || slots[0]._id,
+    locationId: locA._id,
+    vehicleNumber: 'GJ-05-CD-5678',
+    vehicleType: '4-wheeler',
+    status: 'expired',
+    paymentStatus: 'paid',
+    cancellationReason: 'Auto-cancelled due to No-Show (Failed to check-in within 30 minutes)',
+    startTime: new Date(now.getTime() - 2 * 3600000),
+    endTime: new Date(now.getTime() - 3600000),
+    duration: 1,
+    amount: 30,
+    overstayPenalty: 15,
+    penaltyPaymentStatus: 'paid',
+    createdAt: new Date(now.getTime() - 3 * 3600000)
+  });
+  sampleBookings.push({
+    user: user2._id,
+    slot: bikeSlot?._id || slots[1]._id,
+    locationId: locB._id,
+    vehicleNumber: 'GJ-01-AB-1234',
+    vehicleType: '2-wheeler',
+    status: 'expired',
+    paymentStatus: 'paid',
+    cancellationReason: 'Auto-cancelled due to No-Show (Failed to check-in within 30 minutes)',
+    startTime: new Date(now.getTime() - 5 * 3600000),
+    endTime: new Date(now.getTime() - 4 * 3600000),
+    duration: 1,
+    amount: 15,
+    overstayPenalty: 10,
+    penaltyPaymentStatus: 'pending',
+    createdAt: new Date(now.getTime() - 6 * 3600000)
+  });
+
+  // Add Overstay entries (overstayDuration > 0) for Overstay Report
+  sampleBookings.push({
+    user: user1._id,
+    slot: carSlot?._id || slots[0]._id,
+    locationId: locA._id,
+    vehicleNumber: 'GJ-05-CD-5678',
+    vehicleType: '4-wheeler',
+    status: 'completed',
+    paymentStatus: 'paid',
+    startTime: new Date(now.getTime() - 6 * 3600000),
+    endTime: new Date(now.getTime() - 4 * 3600000),
+    entryTime: new Date(now.getTime() - 6 * 3600000),
+    exitTime: new Date(now.getTime() - 3 * 3600000 - 15 * 60000), // 45 mins late
+    duration: 2,
+    amount: 60,
+    overstayDuration: 45,
+    overstayPenalty: 75,
+    penaltyPaymentStatus: 'paid',
+    createdAt: new Date(now.getTime() - 7 * 3600000)
+  });
+  sampleBookings.push({
+    user: user2._id,
+    slot: evSlot?._id || slots[2]._id,
+    locationId: locC._id,
+    vehicleNumber: 'GJ-03-EV-9999',
+    vehicleType: '4-wheeler',
+    status: 'completed',
+    paymentStatus: 'paid',
+    startTime: new Date(now.getTime() - 10 * 3600000),
+    endTime: new Date(now.getTime() - 8 * 3600000),
+    entryTime: new Date(now.getTime() - 10 * 3600000),
+    exitTime: new Date(now.getTime() - 7 * 3600000 - 30 * 60000), // 30 mins late
+    duration: 2,
+    amount: 80,
+    overstayDuration: 30,
+    overstayPenalty: 50,
+    penaltyPaymentStatus: 'paid',
+    createdAt: new Date(now.getTime() - 11 * 3600000)
+  });
+
   await Booking.insertMany(sampleBookings);
 
   // Seed Real Initial Notifications
