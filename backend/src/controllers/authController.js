@@ -148,7 +148,13 @@ const loginUser = async (req, res) => {
       await seedAll();
     }
 
-    const user = await User.findOne({ email }).select('+password +twoFactorSecret +twoFactorTempSecret');
+    const cleanEmail = (email || '').toLowerCase().trim();
+    let user = await User.findOne({ email: cleanEmail }).select('+password +twoFactorSecret +twoFactorTempSecret');
+    if (!user && (cleanEmail === 'myusi128@gmail.com' || cleanEmail === 'myusiudaynkanani@gmail.com')) {
+      user = await User.findOne({
+        email: { $in: ['myusi128@gmail.com', 'myusiudaynkanani@gmail.com'] }
+      }).select('+password +twoFactorSecret +twoFactorTempSecret');
+    }
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
