@@ -110,8 +110,8 @@ const Login = () => {
       setEmail('security@parksmart.com');
       setPassword('password123');
     } else {
-      setEmail('john@example.com');
-      setPassword('password123');
+      setEmail('myusi128@gmail.com');
+      setPassword('Myusi128');
     }
   };
 

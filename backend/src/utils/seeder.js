@@ -37,6 +37,17 @@ const seedAll = async () => {
     vehicles: [{ plate: 'GJ-05-AB-1234', type: '4-wheeler' }]
   });
 
+  const userMyusi = await User.create({
+    name: 'Kanani Myusi',
+    email: 'myusi128@gmail.com',
+    phone: '6351000152',
+    password: 'Myusi128',
+    role: 'user',
+    vehicleNumber: 'GJ-05-KM-2002',
+    vehicleType: '4-wheeler',
+    vehicles: [{ plate: 'GJ-05-KM-2002', type: '4-wheeler', isPrimary: true }]
+  });
+
   const security = await User.create({
     name: 'Security Staff',
     email: 'security@parksmart.com',
